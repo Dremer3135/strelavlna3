@@ -4,8 +4,6 @@
     import type { CorrectorsResponse } from '$lib/pocketbase-types';
 </script>
 
-<Navbar user={data.user as CorrectorsResponse} />
+<Navbar user={data.user as CorrectorsResponse} isAdmin={false}/>
 
-<main style="padding: 1rem;">
-    {@render children()}
-</main>
+{@render children()}
