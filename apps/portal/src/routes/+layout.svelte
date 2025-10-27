@@ -32,6 +32,9 @@
         --color-pink: #EB0072;
         --color-orange: #EB6E00;
         --color-yellow: #EBAD00;
+        --color-blue: #3118ba;
+        --color-lightblue:#4c33da;
+        --color-gray: #353538;
     }
 
 
