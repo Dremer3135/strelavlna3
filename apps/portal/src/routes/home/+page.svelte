@@ -1,10 +1,9 @@
 <script lang="ts">
-
+    
 </script>
 
 
-
-<h1>Hello Filip tyc</h1>
+<h1>Здравствуйте товарищи</h1>
 
 
 
@@ -14,5 +13,6 @@
         font-family: "Fredoka";
         font-size: 60px;
         color: var(--color-yellow);
+        padding-left: 30px;
     }
 </style>
