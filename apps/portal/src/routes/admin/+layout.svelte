@@ -4,6 +4,15 @@
     import type { CorrectorsResponse } from '$lib/pocketbase-types';
 </script>
 
-<Navbar user={data.user as CorrectorsResponse} isAdmin={false}/>
+<div class="admin-layout-container">
+    <Navbar user={data.user as CorrectorsResponse} isAdmin={false}/>
+    {@render children()}
+</div>
 
-{@render children()}
+<style>
+    .admin-layout-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh; /* Ensure the container takes full viewport height */
+    }
+</style>
