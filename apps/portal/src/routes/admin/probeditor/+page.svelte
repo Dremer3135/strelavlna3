@@ -1,92 +1,51 @@
 <script lang="ts">
+    import ContentEditor from "./ContentEditor.svelte";
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
     import type { CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
     import { onMount } from "svelte";
-    import { probs } from "$lib/stores/probs.js";
+    import { editableProbs } from "$lib/stores/probs.js";
     import { pb } from "$lib/pocketbase";
+    import type { EditableProb } from "$lib/types.js";
+    import { filterRecord, getEditedState, isEdited } from "$lib/utils.js";
     let { data, form } = $props();
 
 
-    let selectedProbId: string = $state("");
-    let selectedProb: ProbsResponse | undefined = $state();
-    let selectedProbName: string = $state("");
-    let selectedProbText: string = $state("");
-    let selectedProbAnswer: string = $state("");
 
-
-    $effect(() => {
-        selectedProb = $probs.find(prob => prob.id === selectedProbId);
-    });
-
-    $effect(() => {
-        selectedProbName = selectedProb?.name ?? "";
-        selectedProbText = selectedProb?.text ?? "";
-        selectedProbAnswer = selectedProb?.answer ?? "";
-    });
-
-    $effect(() => {
-        probs.update(currentProbs => currentProbs.map(prob => { 
-            if (prob.id !== selectedProbId) { return prob; }
-            else {
-                prob.name = selectedProbName;
-                return prob;
-            }
-        }));
-    });
-
-    $effect(() => {
-        probs.update(currentProbs => currentProbs.map(prob => { 
-            if (prob.id !== selectedProbId) { return prob; }
-            else {
-                prob.text = selectedProbText;
-                return prob;
-            }
-        }));
-    });
-
-    $effect(() => {
-        probs.update(currentProbs => currentProbs.map(prob => { 
-            if (prob.id !== selectedProbId) { return prob; }
-            else {
-                prob.answer = selectedProbAnswer;
-                return prob;
-            }
-        }));
-    });
-
+    let selectedProb: EditableProb | undefined = $state();  // its named just a prob even tho its an EditableProb
 
     let filters = $state([
         [
-            {name: "all", function: (probs: ProbsResponse[]) => { return probs; }},
-            {name: "my", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.author == data.user?.id); }},
+            {name: "all", function: (probIds: string[]) => { return probIds; }},
+            {name: "my", function: (probIds: string[]) => { return probIds.filter( probId => getEditedState($editableProbs[probId]).author == data.user?.id )}},
+            {name: "free", function: (probIds: string[]) => { return probIds.filter( probId => getEditedState($editableProbs[probId]).author == "" )}}
         ],[
-            {name: "all", function: (probs: ProbsResponse[]) => { return probs; }},
-            {name: "[A]", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.diff == "A"); }},
-            {name: "[B]", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.diff == "B"); }},
-            {name: "[C]", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.diff == "C"); }},
+            {name: "all", function: (probIds: string[]) => { return probIds; }},
+            {name: "[A]", function: (probIds: string[]) => { return probIds.filter(probId => getEditedState($editableProbs[probId]).diff == "A"); }},
+            {name: "[B]", function: (probIds: string[]) => { return probIds.filter(probId => getEditedState($editableProbs[probId]).diff == "B"); }},
+            {name: "[C]", function: (probIds: string[]) => { return probIds.filter(probId => getEditedState($editableProbs[probId]).diff == "C"); }},
         ]
     ]);
 
     let filteresSelected = $state(Array(filters.length).fill(0));
-    let filteredProbs = $state($probs);
+    let filteredProbIds = $state(Object.keys($editableProbs));
 
 
     $effect(() => {
-        let temp = $probs;
+        let temp = Object.keys($editableProbs);
         for (let i = 0; i < filters.length; i++) {
             temp = filters[i][filteresSelected[i]].function(temp);
         }
-        filteredProbs = temp;
+        filteredProbIds = temp;
     });
 
     let filtersOpen = $state(false);
 
     async function addProb() {
-        let prob: ProbsResponse;
+        let probResponse: ProbsResponse;
 
         try {
-            prob = await pb.collection("probs").create({
+            probResponse = await pb.collection("probs").create({
                 name: "Moje uloha",
                 diff: "A",
                 auto: false,
@@ -100,31 +59,98 @@
             });
         } catch (err) {
             console.log(err);
+            return;
+        }
+
+        const newProb: EditableProb = {
+            prob: probResponse,
+            edit: {}
         }
         
-        probs.update(currentProbs => [prob, ...currentProbs])
+        editableProbs.update(currentProbs => {
+            currentProbs[newProb.prob.id] = newProb;
+            return currentProbs;
+        });
+
+        selectedProb = $editableProbs[newProb.prob.id];
     }
 
     async function deleteProb(id: string) {
         await pb.collection("probs").delete(id);
-        probs.update(currentProbs => currentProbs.filter(prob => prob.id != id));
+        editableProbs.update(currentProbs => {
+            delete currentProbs[id];
+            return currentProbs;
+        });
+
+        selectedProb = undefined;
     }
 
     async function saveChanges() {
-        if (!selectedProb) return;
+        const updatePromises = [];
+        for (let probId of Object.keys($editableProbs)) {
+            if (isEdited($editableProbs[probId])) {
+                const promise = pb.collection('probs').update(probId, {
+                    ...$editableProbs[probId].edit
+                });
+                updatePromises.push(promise);
+            }
+        }
 
         try {
-            await pb.collection('probs').update(selectedProb.id, {
-                name: selectedProbName,
-                text: selectedProbText,
-                answer: selectedProbAnswer
+            await Promise.all(updatePromises);
+
+            editableProbs.update(currentProbs => {
+                for (let probId of Object.keys(currentProbs)) {
+                    if (Object.keys(currentProbs[probId].edit).length > 0) {
+                        Object.assign(currentProbs[probId].prob, currentProbs[probId].edit);
+                        currentProbs[probId].edit = {};
+                    }
+                }
+                return currentProbs;
             });
-            // alert('Changes saved successfully!');
+
         } catch (err) {
             console.error('Failed to save changes:', err);
             alert('Failed to save changes.');
         }
     }
+
+    async function uploadImages(files: FileList) {
+        if (!selectedProb) { return; }
+        const imagesArray = Array.from(files);
+        const updatedProb = await pb.collection("probs").update(selectedProb.prob.id, {
+            "images+": imagesArray
+        });
+
+        editableProbs.update(currentProbs => {
+            currentProbs[updatedProb.id].prob.images = updatedProb.images;
+            return currentProbs;
+        });
+
+        if (selectedProb && selectedProb.prob.id == updatedProb.id) {
+            selectedProb = $editableProbs[selectedProb.prob.id];
+        }
+    }
+
+    async function deleteImages(names: string[]) {
+        if (!selectedProb) { return; }
+
+        const updatedProb = await pb.collection("probs").update(selectedProb.prob.id, {
+            "images-": names
+        });
+
+        editableProbs.update(currentProbs => {
+            currentProbs[updatedProb.id].prob.images = updatedProb.images;
+            return currentProbs;
+        });
+
+        if (selectedProb && selectedProb.prob.id == updatedProb.id) {
+            selectedProb = $editableProbs[selectedProb.prob.id];
+        }
+    }   
+
+
+
 </script>
 
 
@@ -157,35 +183,70 @@
         </div>
         <div class="banners-scrollview">
             <div class="banners-holder">
-                {#each filteredProbs as prob}
+                {#each filteredProbIds as probId}
                 <button class="banner-select" onclick={() => {
                     saveChanges();
-                    selectedProbId = prob.id;
+                    selectedProb = $editableProbs[probId];
                     }}>
-                    <ProbBanner prob={prob} user={data.user as CorrectorsResponse} selected={ selectedProbId == prob.id } />
+                    <ProbBanner eprob={ $editableProbs[probId] } user={data.user as CorrectorsResponse} selected={ selectedProb?.prob.id == $editableProbs[probId].prob.id } />
                 </button>
                 {/each}
             </div>
         </div>
         <div class="controls-wrapper">
             <button class="add" onclick={() => { addProb(); }}>Add</button>
-            <button class="remove" onclick={() => { if (selectedProbId) { deleteProb(selectedProbId); }}}>Remove</button>
+            <button class="remove" onclick={() => { if (selectedProb) { deleteProb(selectedProb.prob.id); }}}>Remove</button>
         </div>
     </div>
     <div class="main-content">
-        <div class="left">
-            <input type="text" class="title" placeholder="Title"
-            value={selectedProbName}
-            oninput={(event) => { selectedProbName = event.currentTarget.value; }}
-            >
-            <textarea name="text" id="prob-text" class="text"
-            oninput={(event) => { selectedProbText = event.currentTarget.value; }}
-            >{selectedProbText}</textarea>
-            <input type="text" class="answer" placeholder="Answer"
-            value={selectedProbAnswer}
-            oninput={(event) => { selectedProbAnswer = event.currentTarget.value; }}
-            >
-        </div>
+        {#if selectedProb}
+            <ContentEditor
+                probRecord={getEditedState(selectedProb)}
+                value_name={getEditedState(selectedProb).name}
+                value_text={getEditedState(selectedProb).text}
+                value_answer={getEditedState(selectedProb).answer}
+                value_code={getEditedState(selectedProb).code}
+                value_images={getEditedState(selectedProb).images}
+                on:name={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.name = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:text={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.text = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:answer={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.answer = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:code={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.code = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:image-add={(e) => {
+                    uploadImages(e.detail.value);
+                }}
+                on:image-delete={(e) => {
+                    deleteImages(e.detail.value);
+                }}
+            />
+        {/if}
     </div>
 
 </main>
@@ -200,7 +261,10 @@
     }
 
     .main-content {
-
+        display: flex;
+        flex-direction: row;
+        flex-grow: 1;
+        padding: 20px;
     }
     
 

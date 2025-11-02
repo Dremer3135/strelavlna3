@@ -1,10 +1,13 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { probs } from "$lib/stores/probs";
+    import { editableProbs } from "$lib/stores/probs";
+    import type { EditableProb } from '$lib/types';
+
     let { children, data } = $props();
 
+    editableProbs.set(Object.fromEntries(data.probs.map(prob => [prob.id, {prob, edit: {}}])));
+
     $effect(() => {
-        probs.set(data.probs);
+        editableProbs.set(Object.fromEntries(data.probs.map(prob => [prob.id, {prob, edit: {}}])));
     });
 
 </script>
