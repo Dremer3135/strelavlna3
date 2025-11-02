@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"log"
 	"math/rand"
+	"net/http"
 	"net/mail"
 
 	"github.com/pocketbase/dbx"
@@ -75,6 +79,78 @@ func main() {
 	)
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+
+		e.Router.POST("/code", func(e *core.RequestEvent) error {
+			data := struct{
+				Id string `json:"id"`
+			}{}
+			err := e.BindBody(&data)
+			if err != nil {
+				return e.Error(400, "invalid data", err)
+			}
+			rec := core.Record{}
+			err = e.App.RecordQuery("probs").AndWhere(dbx.HashExp{"id": data.Id}).Limit(1).One(&rec)
+			if err != nil {
+				return e.Error(400, "invalid prob id", err)
+			}
+			consts := []*core.Record{}
+			err = e.App.RecordQuery("consts").All(&consts)
+			if err != nil {
+				return e.Error(500, "idk", err)
+			}
+			constsMap := map[string]float64{}
+			for _, cnst := range consts {
+				constsMap[cnst.GetString("var")] = cnst.GetFloat("value")
+			}
+			jbody, err := json.Marshal(struct{
+				Code string `json:"code"`
+				Text string `json:"text"`
+				Answer string `json:"answer"`
+				Consts map[string]float64 `json:"consts"`
+				Timeout float32 `json:"timeout"`
+				MemMB int `json:"mem_mb"`
+			}{
+				rec.GetString("code"),
+				rec.GetString("text"),
+				rec.GetString("answer"),
+				constsMap,
+				1,
+				32,
+			})
+			if err != nil {
+				return e.Error(500, "atp idk bro", err)
+			}
+			resp, err := http.DefaultClient.Post("localhost:8000", "application/json", bytes.NewBuffer(jbody))
+			if err != nil {
+				return e.Error(500, "atp idk bro", err)
+			}
+			defer resp.Body.Close()
+			prespb, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return e.Error(500, "atp idk bro", err)
+			}
+			presp := map[string]any{}
+			err = json.Unmarshal(prespb, &presp)
+			if err != nil {
+				return e.Error(500, "atp idk bro", err)
+			}
+			succ, ok := presp["success"].(bool)
+			if !ok || !succ {
+				return e.Error(400, "error", presp["error"])
+			}
+			text, ok := presp["text"].(string)
+			if !ok {
+				return e.Error(500, "atp idk bro", err)
+			}
+			answer, ok := presp["answer"].(string)
+			if !ok {
+				return e.Error(500, "atp idk bro", err)
+			}
+			return e.JSON(200, struct{
+				Text string `json:"text"`
+				Answer string `json:"answer"`
+			}{text, answer})
+		})
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
 		//
