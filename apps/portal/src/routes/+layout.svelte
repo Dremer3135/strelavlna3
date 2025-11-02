@@ -50,6 +50,7 @@
         --color-blue: #3118ba;
         --color-lightblue:#4c33da;
         --color-gray: #353538;
+        --color-light-gray: #f8f7ff;
     }
 
     :global(*, *::before, *::after) {
