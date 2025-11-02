@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
-import type { UsersResponse } from '$lib/pocketbase-types';
+// import type { AppUser } from '$lib/pocketbase-types';
+import type { AppUser } from '../../app';
 
-export const currentUser = writable<UsersResponse | undefined | null>(undefined);
+export const currentUser = writable<AppUser | undefined | null>(undefined);

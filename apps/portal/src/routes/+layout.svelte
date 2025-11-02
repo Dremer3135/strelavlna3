@@ -1,13 +1,28 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
-    import { page } from '$app/stores';
-    import { currentUser } from '$lib/stores/auth';
+	import { currentUser } from '$lib/stores/auth';
+	import { pb } from '$lib/pocketbase'; // Correctly import the client-side instance
 
-	let { children } = $props();
+	let { children, data } = $props();
 
-    $effect(() => {
-        currentUser.set($page.data.user);
-    });
+	$effect(() => {
+		// This syncs the client-side auth store with the cookie from the server
+		pb.authStore.loadFromCookie(document.cookie || '');
+
+		// This sets the Svelte store with the user data passed from the server
+		currentUser.set(data.user);
+
+		// Optional: You can add a listener to keep the Svelte store updated
+		// if the auth state changes for any reason (e.g., manual login/logout).
+		const removeListener = pb.authStore.onChange(() => {
+			currentUser.set(pb.authStore.model as typeof data.user);
+		});
+
+		// Cleanup the listener when the component is destroyed
+		return () => {
+			removeListener();
+		};
+	});
 </script>
 
 <svelte:head>
@@ -35,6 +50,10 @@
         --color-blue: #3118ba;
         --color-lightblue:#4c33da;
         --color-gray: #353538;
+    }
+
+    :global(*, *::before, *::after) {
+        box-sizing: border-box;
     }
 
 
