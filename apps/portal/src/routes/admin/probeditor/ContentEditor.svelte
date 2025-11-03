@@ -1,5 +1,6 @@
 <script lang="ts">
     import CodeEditor from "$lib/components/admin/CodeEditor.svelte";
+    import LoadingAnimation from "$lib/components/general/LoadingAnimation.svelte";
     import { pb } from "$lib/pocketbase";
     import type { ProbsResponse } from "$lib/pocketbase-types";
 import { createEventDispatcher } from "svelte";
@@ -21,11 +22,6 @@ import { createEventDispatcher } from "svelte";
         dispatch(field, { value: target.value });
     }
 
-    $effect(() => {
-        value_code;
-        dispatch("code", { value: value_code });
-    });
-
     let selectedTool = $state(0);
 
 
@@ -37,7 +33,8 @@ import { createEventDispatcher } from "svelte";
         }
     }
 
-    let selectedImages: number[] = $state([]);
+    let selectedImages: number[] = $state(Array(value_images.length).fill(false));
+    let imagesLoaded: Record<string, boolean> = $state({});
 
     function handleImageDelete() {
         if (selectedImages.length > 0) {
@@ -96,12 +93,12 @@ import { createEventDispatcher } from "svelte";
         </div>
         {:else if selectedTool == 1}
         <div class="content-code">
-            <CodeEditor bind:value={value_code}></CodeEditor>
+            <CodeEditor value={ value_code } on:code={(e) => { dispatch("code", e.detail) }}></CodeEditor>
         </div>
         {:else if selectedTool == 2}
         <div class="content-images">
             <div class="input">
-                <input type="file" name="image-input" accept="image/*" bind:this={imageInput} onchange={handleImageUpload} class="hidden-input" id="image-input">
+                <input type="file" name="image-input" accept="image/*" bind:this={imageInput} onchange={handleImageUpload} class="hidden-input" id="image-input" multiple>
                 <label for="image-input" class="image-input-button">
                     <i class="fa-regular fa-square-plus"></i>
                     <p>Upload images</p>
@@ -115,15 +112,29 @@ import { createEventDispatcher } from "svelte";
             <div class="images-holder">
                 {#each value_images as image, i}
                     <button
-                    class:selected={ selectedImages.includes(i) }
-                    onclick={() => {
-                        if (selectedImages.includes(i)) { selectedImages = selectedImages.filter((item) => item != i); }
-                        else { selectedImages.push(i); }
-                    }}>
-                        <img src={pb.files.getURL(probRecord, image)} alt="">
+                        class:selected={ selectedImages.includes(i) }
+                        onclick={() => {
+                            if (selectedImages.includes(i)) { selectedImages = selectedImages.filter((item) => item != i); }
+                            else { selectedImages.push(i); }
+                        }}
+                    >
+                        {#if !imagesLoaded[image]}
+                            <LoadingAnimation />
+                        {/if}
+                        <img 
+                            src={pb.files.getURL(probRecord, image)} 
+                            alt={`Image ${i + 1}`}
+                            class:hidden={!imagesLoaded[image]}
+                            onload={() => imagesLoaded[image] = true}
+                            onerror={() => imagesLoaded[image] = true}
+                        >
                     </button>
                 {/each}
             </div>
+        </div>
+        {:else if selectedTool == 3}
+        <div class="content-consts">
+            
         </div>
         {/if}
     </div>
@@ -180,6 +191,7 @@ import { createEventDispatcher } from "svelte";
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        min-height: 0px;
         
         .content-text {
             display: flex;
@@ -227,6 +239,7 @@ import { createEventDispatcher } from "svelte";
             display: flex;
             flex-direction: column;
             gap: 20px;
+            min-height: 0px;
 
             .input {
                 display: flex;
@@ -316,14 +329,28 @@ import { createEventDispatcher } from "svelte";
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
+                // overflow: auto;
+
+                .loading-placeholder {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 150px;
+                    background-color: #f0f0f0;
+                    border-radius: 5px;
+                }
+
+                .hidden {
+                    display: none;
+                }
 
                 button {
                     all: unset;
                     max-width: 100%;
-                    border-radius: 5px;
+                    border-radius: 10px;
                     overflow: hidden;
-                    border: 5px transparent dashed;
-                    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.5s;
+                    border: 5px transparent solid;
+                    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
                     cursor: pointer;
                     box-sizing: border-box;
                     width: fit-content;
@@ -335,13 +362,15 @@ import { createEventDispatcher } from "svelte";
                         border-style: solid;
 
                         img {
-                            filter: sepia(100%) hue-rotate(280deg) saturate(200%) brightness(150%);
+                            filter: sepia(100%) hue-rotate(280deg) saturate(200%);
                         }
                     }
 
                     &:hover {
-                        transition: all 0s;
-                        border-color: var(--color-pink);
+                        // border-color: var(--color-pink);
+                        transform: rotate(1.5deg);
+                        box-shadow: 2px 10px 15px gray;
+
                     }
 
                     img {
@@ -350,6 +379,7 @@ import { createEventDispatcher } from "svelte";
                         border-radius: 5px;
                         overflow: hidden;
                         display: block;
+                        transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.15s;
                     }
 
                 }

@@ -9,13 +9,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type * as Monaco from 'monaco-editor';
+	import { createEventDispatcher } from "svelte";
+	import LoadingAnimation from '$lib/components/general/LoadingAnimation.svelte';
 
-	let { value = $bindable('') } = $props<{ value: string }>();
+	let isLoading = $state(true);
+
+
+	let { value } = $props<{ value: string }>();
 
 	let editorEl: HTMLDivElement;
 	let editor = $state<Monaco.editor.IStandaloneCodeEditor | undefined>(undefined);
 
 	let isUpdatingFromParent = false;
+
+	const dispatch = createEventDispatcher<{ 
+        "code": { value: string };
+    }>();
 
 	onMount(() => {
 		async function initializeMonaco() {
@@ -58,9 +67,12 @@
 				if (currentValue !== value) {
 					isUpdatingFromParent = true;
 					value = currentValue;
+					dispatch("code", { value: value });
 					isUpdatingFromParent = false;
 				}
 			});
+
+			isLoading = false;
 		}
 
 		initializeMonaco();
@@ -72,19 +84,47 @@
 		};
 	});
 
+
 	$effect(() => {
 		value;
 
 		const currentEditor = editor;
-		if (currentEditor && value !== currentEditor.getValue() && !isUpdatingFromParent) {
+		if (currentEditor && value !== currentEditor.getValue() && !isUpdatingFromParent) {  
 			currentEditor.setValue(value);
-		}
+		}	
 	});
 </script>
 
-<div class="monaco-editor-wrapper" bind:this={editorEl}></div>
+<div class="editor-container">
+    {#if isLoading}
+        <div class="loading-overlay">
+            <LoadingAnimation />
+        </div>
+    {/if}
+    <div class="monaco-editor-wrapper" bind:this={editorEl}></div>
+</div>
 
 <style>
+	.editor-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		min-height: 400px;
+	}
+
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: #f8f8f8;
+	}
+
 	.monaco-editor-wrapper {
 		width: 100%;
 		height: 100%;
