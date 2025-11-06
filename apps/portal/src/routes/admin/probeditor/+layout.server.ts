@@ -13,7 +13,6 @@ export const load = async ({ locals }) => {
 		return {
 			probs: probs,
 			consts: consts
-            // pb: locals.pb
 		};
 	} catch (err) {
 		console.error('Error in probeditor load function:', err);
