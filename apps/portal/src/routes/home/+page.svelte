@@ -1,9 +1,320 @@
 <script lang="ts">
-    
+let canvas: HTMLCanvasElement | null = null;
+let loading_ctx: CanvasRenderingContext2D | null = null;
+
+class Block {
+    x: number;
+    y: number;
+    target_x: number;
+    target_y: number;
+    destroy_x: number;
+    destroy_y: number;
+
+    constructor(x: number, y: number, target_x: number, target_y: number, destroy_x: number, destroy_y: number) {
+        this.x = x;
+        this.y = y;
+        this.target_x = target_x;
+        this.target_y = target_y;
+        this.destroy_x = destroy_x;
+        this.destroy_y = destroy_y;
+    }
+}
+
+class Pos {
+    x: number;
+    y: number;
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class Void {
+    x: number;
+    y: number;
+    destination_x: number;
+    destination_y: number;
+
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+        this.destination_x = x;
+        this.destination_y = y;
+    }
+}
+
+
+function voidIndex(void_: Void, list: Void[]): number {
+    return list.findIndex((e) => e.x === void_.x && e.y === void_.y);
+}
+
+function uppdate_blocks(blocks: Block[], k: number) {
+    for (let i = 0; i < blocks.length; i++) {
+        const b = blocks[i];
+        b.x += (b.target_x - b.x) * k;
+        b.y += (b.target_y - b.y) * k;
+
+        if (Math.abs(b.destroy_x - b.x) < 0.05 && Math.abs(b.destroy_y - b.y) < 0.05) {
+            blocks.splice(i, 1);
+            i--;
+        } else if (Math.abs(b.target_x - b.x) < 0.01 && Math.abs(b.target_y - b.y) < 0.01) {
+            b.x = b.target_x;
+            b.y = b.target_y;
+        }
+    }
+}
+
+function draw_blocks() {
+    if (!loading_ctx || !canvas) return;
+
+    loading_ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const block of canvas_accual) {
+        loading_ctx.beginPath();
+        loading_ctx.roundRect(30 * block.x, 30 * block.y, spacing, spacing, corner);
+        loading_ctx.fill();
+    }
+}
+
+function blockIndex(block: Block, list: Block[]): number {
+    return list.findIndex((b) => b.target_x === block.target_x && b.target_y === block.target_y);
+}
+
+function count_blocks(trgt_canvas: number[][]): number {
+    let i = 0;
+    for (let y = 0; y < 10; y++)
+        for (let x = 0; x < 22; x++)
+            if (trgt_canvas[y][x] === 0) i++;
+    return i;
+}
+
+function change_screen(starting_canvas: number[][], target_canvas: number[][]) {
+    let delta_N = count_blocks(target_canvas) - count_blocks(starting_canvas);
+    let modified_canvas = starting_canvas.map(row => [...row]);
+
+    if (delta_N !== 0) {
+        if (delta_N > 0) {
+            for (let y = 0; y < 10 && delta_N !== 0; y++) {
+                for (let x = 0; x < 22 && delta_N !== 0; x++) {
+                    if (starting_canvas[y][x] === 0) {
+                        const dirs = [
+                            [1, 0], [0, 1], [-1, 0], [0, -1]
+                        ];
+                        for (const [dx, dy] of dirs) {
+                            if (modified_canvas[y + dy]?.[x + dx] === 1) {
+                                canvas_accual.push(new Block(x, y, x + dx, y + dy, -1, -1));
+                                modified_canvas[y + dy][x + dx] = 0;
+                                delta_N--;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for (let y = 0; y < 10 && delta_N !== 0; y++) {
+                for (let x = 0; x < 22 && delta_N !== 0; x++) {
+                    if (modified_canvas[y][x] === 0) {
+                        const dirs = [
+                            [1, 0], [0, 1], [-1, 0], [0, -1]
+                        ];
+                        for (const [dx, dy] of dirs) {
+                            if (modified_canvas[y + dy]?.[x + dx] === 0) {
+                                const idx = blockIndex(new Block(x, y, x, y, -1, -1), canvas_accual);
+                                if (idx !== -1) {
+                                    canvas_accual[idx].target_x = x + dx;
+                                    canvas_accual[idx].target_y = y + dy;
+                                    canvas_accual[idx].destroy_x = x + dx;
+                                    canvas_accual[idx].destroy_y = y + dy;
+                                    modified_canvas[y][x] = 1;
+                                    delta_N++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    starting_canvas = modified_canvas.map(row => [...row]);
+
+    voids = [];
+    target_voids = [];
+
+    for (let y = 0; y < 10; y++)
+        for (let x = 0; x < 22; x++) {
+            if (starting_canvas[y][x] === 1) voids.push(new Void(x, y));
+            if (target_canvas[y][x] === 1) target_voids.push(new Pos(x, y));
+        }
+
+    for (let i = 0; i < voids.length; i++) {
+        let min_dist = Infinity;
+        let idx = -1;
+        for (let j = 0; j < target_voids.length; j++) {
+            const dist = Math.abs(voids[i].x - target_voids[j].x) + Math.abs(voids[i].y - target_voids[j].y);
+            if (dist < min_dist) {
+                min_dist = dist;
+                voids[i].destination_x = target_voids[j].x;
+                voids[i].destination_y = target_voids[j].y;
+                idx = j;
+            }
+        }
+        target_voids.splice(idx, 1);
+    }
+}
+
+function voids_done(voids: Void[], target_canvas: number[][]): boolean {
+    return !voids.some(v => target_canvas[v.y][v.x] === 0);
+}
+
+function uppdate_voids() {
+    if (voids.length === 0) return;
+
+    let idx = Math.floor(Math.random() * voids.length);
+    while (voids[idx].destination_x === voids[idx].x &&
+           voids[idx].destination_y === voids[idx].y &&
+           voids.length > 1) {
+        idx = Math.floor(Math.random() * voids.length);
+    }
+
+    const v = voids[idx];
+    let dx = v.destination_x - v.x;
+    let dy = v.destination_y - v.y;
+
+    if (Math.random() > Math.abs(dx) / (Math.abs(dx) + Math.abs(dy) || 1)) {
+        dx = 0; dy = Math.sign(dy);
+    } else {
+        dx = Math.sign(dx); dy = 0;
+    }
+
+    const bi = blockIndex(new Block(0, 0, v.x + dx, v.y + dy, 0, 0), canvas_accual);
+    if (bi !== -1) {
+        canvas_accual[bi].target_x = v.x;
+        canvas_accual[bi].target_y = v.y;
+        v.x += dx;
+        v.y += dy;
+    } else {
+        const vi = voidIndex(new Void(v.x + dx, v.y + dy), voids);
+        if (vi !== -1) {
+            voids[vi].x -= dx;
+            voids[vi].y -= dy;
+            v.x += dx;
+            v.y += dy;
+        }
+    }
+
+    if (voids_done(voids, canvas_targets[target_canvas])) {
+        setTimeout(() => {
+            target_canvas = (target_canvas + 1) % canvas_targets.length;
+            change_screen(canvas_targets[(target_canvas + canvas_targets.length - 1) % canvas_targets.length].map(r => [...r]),
+                          canvas_targets[target_canvas].map(r => [...r]));
+            setTimeout(() => uppdate_voids(), 500);
+        }, 3000);
+    } else {
+        setTimeout(() => uppdate_voids(), 50);
+    }
+}
+
+const canvas_targets = [[ //vlna
+    [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    [1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+],[ //strela
+    [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0]
+],[ //gchd
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+]
+]
+
+
+let canvas_accual: Block[] = [];
+let canvas_semitarget: number[][] = [];
+let target_voids: Pos[] = [];
+let voids: Void[] = [];
+
+let spacing = 29.5;
+let corner = 4;
+let target_canvas = 0;
+
+function generate_random_blocks(n: number) {
+    canvas_semitarget = Array.from({ length: 10 }, () => Array(22).fill(1));
+    for (let i = 0; i < n; i++) {
+        const x = Math.floor(Math.random() * 22);
+        const y = Math.floor(Math.random() * 10);
+        if (canvas_semitarget[y][x] === 1) {
+            canvas_semitarget[y][x] = 0;
+            canvas_accual.push(new Block(x, y, x, y, -1, -1));
+        } else i--;
+    }
+}
+
+$effect(() => {
+    if (!canvas) return;
+
+    loading_ctx = canvas.getContext("2d");
+    if (!loading_ctx) {
+        console.warn("Canvas 2D context could not be initialized.");
+        return;
+    }
+
+    loading_ctx.fillStyle = "#f1effc";
+
+    generate_random_blocks(count_blocks(canvas_targets[target_canvas]));
+    draw_blocks();
+
+    setTimeout(() => change_screen(canvas_semitarget.map(r => [...r]), canvas_targets[target_canvas].map(r => [...r])), 1000);
+    setTimeout(() => uppdate_voids(), 1000);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        uppdate_blocks(canvas_accual, 0.3);
+        draw_blocks();
+    }
+    animate();
+});
+
 </script>
 
 
+
+
+
+
+
 <!-- <h1>Здравствуйте товарищи</h1> -->
+<div class="grid-header blue-background">
+    <div class="header1">
+        <p>Inovativní matematická a fyzikální soutěž pro
+        8. a 9. třídu.</p>
+    </div>
+    <canvas class="header2" width="660" height="300" id="this_year_canvas" bind:this={canvas}></canvas>
+</div>
 <div id="main">
     <div class="main-a-content">
     <!-- <p style="text-align: center;">
@@ -69,6 +380,34 @@
 
     
 <style>
+
+
+    .blue-background{
+        background-color: var(--color-blue);
+    }
+.header1 {
+    max-width: 700px;
+    margin: 5%;
+    margin-left: 10vw;
+    min-width: 30vw;
+    height: 300px;
+    font-size: 48px;
+    font-weight: 700;
+    color: white;
+    line-height: 60px;
+    font-family: 'Lexend';
+}
+.header2{
+    margin: auto;
+    max-width: 45vw;
+    padding-right: 5vw;
+}
+
+.grid-header{
+    display: grid;
+    max-width: 100vw;
+    grid-template: 'h1 h2';
+}
 .link{
     font-weight: 900;
     text-decoration: none;
@@ -122,6 +461,8 @@ h3{
 .m-c0 {grid-area: mc0}
 .m-c1 {grid-area: mc1}
 .m-c2 {grid-area: mc2}
+.header1 {grid-area: h1}
+.header2 {grid-area: h2}
 .grid-main-a{
     display: grid;
     grid-template:
@@ -260,6 +601,19 @@ h3{
     .main-a-content{
         padding-left: 5%;
     }
+    .header1{
+    margin: auto;
+    }
+    .header2{
+        margin: auto;
+        max-width: 90vw;
+        padding: 0px;
+    }
+    .grid-header{
+        grid-template: 
+            'h1'
+            'h2'
+    }
     
 }
 @media (max-width: 700px){
@@ -303,12 +657,33 @@ h3{
         align-items: center;
         max-width: 400px;
     }
+    .grid-header{
+    grid-template: 
+        'h1'
+        'h2'
+    } 
+    .header2{
+        max-width: 80vw;
+    }      
+    .header1{
+        min-width: 80%;
+        font-size: 40px;
+        line-height: 55px;
+        height: auto;
+        margin: auto;
+        max-width: 80vw;
+    }
 }
 @media (max-width:300px){
     .m-b0{
         font-size: 12vw
     }
+    .header1{
+    font-size: 14vw;
+    line-height: 17vw;
+    }
 }
+
 .section-title{
     margin-top: 10px;
 }
