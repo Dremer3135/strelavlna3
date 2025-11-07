@@ -8,11 +8,11 @@ import { POCKETBASE_SUPERUSER_EMAIL, POCKETBASE_SUPERUSER_PASSWORD } from '$env/
 export const load = async ({ locals }) => {
 	try {
 		const probs = await locals.pb.collection('probs').getFullList();
-		const consts = await locals.pb.collection('consts').getFullList();
+		const constants = await locals.pb.collection('constants').getFullList();
 
 		return {
 			probs: probs,
-			consts: consts
+			constants: constants
 		};
 	} catch (err) {
 		console.error('Error in probeditor load function:', err);

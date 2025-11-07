@@ -7,10 +7,10 @@
       <div class="nav1">
         <a href="/home"><img class="logo" alt="" src={logo} width="446px" height="50px"></a>
       </div>
-      <a href="../home/about_us" class="nav-element nav2">O nás</a>
-      <a href="../home/register" class="nav-element nav3">Registrace</a>
-      <a href="../home/archive" class="nav-element nav4">Archiv</a>
-      <a href="../home/rules" class="nav-element nav5">Pravidla</a>
+      <a href="/home/about_us" class="nav-element nav2">O nás</a>
+      <a href="/home/register" class="nav-element nav3">Registrace</a>
+      <a href="/home/archive" class="nav-element nav4">Archiv</a>
+      <a href="/home/rules" class="nav-element nav5">Pravidla</a>
     </div>
 </nav>
 

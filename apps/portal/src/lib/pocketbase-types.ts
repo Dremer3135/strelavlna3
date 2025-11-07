@@ -11,7 +11,7 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
-	Consts = "consts",
+	Constants = "constants",
 	Contests = "contests",
 	Correctors = "correctors",
 	Probs = "probs",
@@ -99,7 +99,7 @@ export type SuperusersRecord = {
 	verified?: boolean
 }
 
-export type ConstsRecord = {
+export type ConstantsRecord = {
 	created: IsoAutoDateString
 	desc?: string
 	group?: string
@@ -109,6 +109,7 @@ export type ConstsRecord = {
 	unit?: string
 	updated: IsoAutoDateString
 	value?: number
+	variable_name?: string
 }
 
 export enum ContestsTypeOptions {
@@ -253,7 +254,7 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
-export type ConstsResponse<Texpand = unknown> = Required<ConstsRecord> & BaseSystemFields<Texpand>
+export type ConstantsResponse<Texpand = unknown> = Required<ConstantsRecord> & BaseSystemFields<Texpand>
 export type ContestsResponse<Texpand = unknown> = Required<ContestsRecord> & BaseSystemFields<Texpand>
 export type CorrectorsResponse<Texpand = unknown> = Required<CorrectorsRecord> & AuthSystemFields<Texpand>
 export type ProbsResponse<Texpand = unknown> = Required<ProbsRecord> & BaseSystemFields<Texpand>
@@ -270,7 +271,7 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
-	consts: ConstsRecord
+	constants: ConstantsRecord
 	contests: ContestsRecord
 	correctors: CorrectorsRecord
 	probs: ProbsRecord
@@ -286,7 +287,7 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
-	consts: ConstsResponse
+	constants: ConstantsResponse
 	contests: ContestsResponse
 	correctors: CorrectorsResponse
 	probs: ProbsResponse

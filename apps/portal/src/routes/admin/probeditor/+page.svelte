@@ -1,35 +1,40 @@
 <script lang="ts">
     import ContentEditor from "./ContentEditor.svelte";
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
-    import type { CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
+    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
     import { onMount } from "svelte";
     import { editableProbs } from "$lib/stores/probs.js";
-    import { pb } from "$lib/pocketbase";
+    import { editableConstants } from "$lib/stores/consts";
+    import type { EditableConstant } from "$lib/types.js";
+    import { pocketbase } from "$lib/pocketbase";
     import type { EditableProb } from "$lib/types.js";
-    import { filterRecord, getEditedState, isEdited } from "$lib/utils.js";
+    import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited } from "$lib/utils.js";
+    import { getRequestEvent } from "$app/server";
     let { data, form } = $props();
 
 
 
-    let selectedProb: EditableProb | undefined = $state();  // its named just a prob even tho its an EditableProb
+    let selectedProbId = $state<string | undefined>(undefined);
+    let selectedProb = $derived(selectedProbId ? $editableProbs[selectedProbId] : undefined);
+
+
 
     let filters = $state([
         [
             {name: "all", function: (probIds: string[]) => { return probIds; }},
-            {name: "my", function: (probIds: string[]) => { return probIds.filter( probId => getEditedState($editableProbs[probId]).author == data.user?.id )}},
-            {name: "free", function: (probIds: string[]) => { return probIds.filter( probId => getEditedState($editableProbs[probId]).author == "" )}}
+            {name: "my", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).author == data.user?.id )}},
+            {name: "free", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).author == "" )}}
         ],[
             {name: "all", function: (probIds: string[]) => { return probIds; }},
-            {name: "[A]", function: (probIds: string[]) => { return probIds.filter(probId => getEditedState($editableProbs[probId]).diff == "A"); }},
-            {name: "[B]", function: (probIds: string[]) => { return probIds.filter(probId => getEditedState($editableProbs[probId]).diff == "B"); }},
-            {name: "[C]", function: (probIds: string[]) => { return probIds.filter(probId => getEditedState($editableProbs[probId]).diff == "C"); }},
+            {name: "[A]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "A"); }},
+            {name: "[B]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "B"); }},
+            {name: "[C]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "C"); }},
         ]
     ]);
 
     let filteresSelected = $state(Array(filters.length).fill(0));
     let filteredProbIds = $state(Object.keys($editableProbs));
-
 
     $effect(() => {
         let temp = Object.keys($editableProbs);
@@ -45,10 +50,10 @@
         let probResponse: ProbsResponse;
 
         try {
-            probResponse = await pb.collection("probs").create({
+            probResponse = await pocketbase.collection("probs").create({
                 name: "Moje uloha",
                 diff: "A",
-                auto: false,
+                auto: false,    
                 infinite: false,
                 code: "",
                 text: "Tohle bude text ulohy",
@@ -72,25 +77,34 @@
             return currentProbs;
         });
 
-        selectedProb = $editableProbs[newProb.prob.id];
+        selectedProbId = newProb.prob.id;
     }
 
     async function deleteProb(id: string) {
-        await pb.collection("probs").delete(id);
+        await pocketbase.collection("probs").delete(id);
         editableProbs.update(currentProbs => {
             delete currentProbs[id];
             return currentProbs;
         });
 
-        selectedProb = undefined;
+        selectedProbId = undefined;
     }
 
     async function saveChanges() {
         const updatePromises = [];
         for (let probId of Object.keys($editableProbs)) {
-            if (isEdited($editableProbs[probId])) {
-                const promise = pb.collection('probs').update(probId, {
+            if (isProbEdited($editableProbs[probId])) {
+                const promise = pocketbase.collection('probs').update(probId, {
                     ...$editableProbs[probId].edit
+                });
+                updatePromises.push(promise);
+            }
+        }
+
+        for (let constId of Object.keys($editableConstants)) {
+            if (isConstantEdited($editableConstants[constId])) {
+                const promise = pocketbase.collection('constants').update(constId, {
+                    ...$editableConstants[constId].edit
                 });
                 updatePromises.push(promise);
             }
@@ -109,6 +123,16 @@
                 return currentProbs;
             });
 
+            editableConstants.update(currentConstants => {
+                for (let constId of Object.keys(currentConstants)) {
+                    if (Object.keys(currentConstants[constId].edit).length > 0) {
+                        Object.assign(currentConstants[constId].constant, currentConstants[constId].edit);
+                        currentConstants[constId].edit = {};
+                    }
+                }
+                return currentConstants;
+            });
+
         } catch (err) {
             console.error('Failed to save changes:', err);
             alert('Failed to save changes.');
@@ -118,7 +142,7 @@
     async function uploadImages(files: FileList) {
         if (!selectedProb) { return; }
         const imagesArray = Array.from(files);
-        const updatedProb = await pb.collection("probs").update(selectedProb.prob.id, {
+        const updatedProb = await pocketbase.collection("probs").update(selectedProb.prob.id, {
             "images+": imagesArray
         });
 
@@ -135,7 +159,7 @@
     async function deleteImages(names: string[]) {
         if (!selectedProb) { return; }
 
-        const updatedProb = await pb.collection("probs").update(selectedProb.prob.id, {
+        const updatedProb = await pocketbase.collection("probs").update(selectedProb.prob.id, {
             "images-": names
         });
 
@@ -147,7 +171,39 @@
         if (selectedProb && selectedProb.prob.id == updatedProb.id) {
             selectedProb = $editableProbs[selectedProb.prob.id];
         }
-    }   
+    }
+    
+    async function addConstant(values: Partial<ConstantsRecord>) {
+        let newConstant = await pocketbase.collection("constants").create(values);
+
+        editableConstants.update(currentConstants => {
+            currentConstants[newConstant.id] = {
+                constant: newConstant,
+                edit: {}
+            }
+            return currentConstants;
+        });
+    }
+
+    async function deleteConstants(ids: string[]) {
+        const promisses = [];
+        for (let id of ids) {
+            promisses.push(pocketbase.collection("constants").delete(id));
+        }
+
+        await Promise.all(promisses);
+
+        editableConstants.update(currentConstants => {
+            currentConstants = Object.fromEntries(Object.entries(currentConstants).filter(constant => !ids.includes(constant[1].constant.id))) 
+            return currentConstants;
+        });
+    }
+    
+    // $effect(() => {
+    //     $editableProbs;
+
+    //     console.log("updated");
+    // });
 
 
 
@@ -186,7 +242,7 @@
                 {#each filteredProbIds as probId}
                 <button class="banner-select" onclick={() => {
                     saveChanges();
-                    selectedProb = $editableProbs[probId];
+                    selectedProbId = probId;
                     }}>
                     <ProbBanner eprob={ $editableProbs[probId] } user={data.user as CorrectorsResponse} selected={ selectedProb?.prob.id == $editableProbs[probId].prob.id } />
                 </button>
@@ -201,12 +257,12 @@
     <div class="main-content">
         {#if selectedProb}
             <ContentEditor
-                probRecord={getEditedState(selectedProb)}
-                value_name={getEditedState(selectedProb).name}
-                value_text={getEditedState(selectedProb).text}
-                value_answer={getEditedState(selectedProb).answer}
-                value_code={getEditedState(selectedProb).code}
-                value_images={getEditedState(selectedProb).images}
+                probRecord={getProbEditedState(selectedProb)}
+                value_name={getProbEditedState(selectedProb).name}
+                value_text={getProbEditedState(selectedProb).text}
+                value_answer={getProbEditedState(selectedProb).answer}
+                value_code={getProbEditedState(selectedProb).code}
+                value_images={getProbEditedState(selectedProb).images}
                 on:name={(e) => {
                     editableProbs.update(currentProbs => {
                         if (selectedProb) {
@@ -244,6 +300,12 @@
                 }}
                 on:image-delete={(e) => {
                     deleteImages(e.detail.value);
+                }}
+                on:constant-add={(e) => {
+                    addConstant(e.detail.value);
+                }}
+                on:constant-delete={(e) => {
+                    deleteConstants(e.detail.value);
                 }}
             />
         {/if}

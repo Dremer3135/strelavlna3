@@ -1,21 +1,21 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import { currentUser } from '$lib/stores/auth';
-	import { pb } from '$lib/pocketbase'; // Correctly import the client-side instance
+	import { pocketbase } from '$lib/pocketbase'; // Correctly import the client-side instance
 
 	let { children, data } = $props();
 
 	$effect(() => {
 		// This syncs the client-side auth store with the cookie from the server
-		pb.authStore.loadFromCookie(document.cookie || '');
+		pocketbase.authStore.loadFromCookie(data.cookie || '');
 
 		// This sets the Svelte store with the user data passed from the server
 		currentUser.set(data.user);
 
 		// Optional: You can add a listener to keep the Svelte store updated
 		// if the auth state changes for any reason (e.g., manual login/logout).
-		const removeListener = pb.authStore.onChange(() => {
-			currentUser.set(pb.authStore.model as typeof data.user);
+		const removeListener = pocketbase.authStore.onChange(() => {
+			currentUser.set(pocketbase.authStore.model as typeof data.user);
 		});
 
 		// Cleanup the listener when the component is destroyed
