@@ -26,14 +26,12 @@ func main() {
 
 			err := app.RecordQuery("skoly").
 				AndWhere(dbx.HashExp{"spam": false}).
-				Limit(1).
+				Limit(100).
 				All(&schools)
 
 			if len(schools) < 1 {
 				return
 			}
-
-			school := schools[0]
 
 			if err != nil {
 				app.Logger().Error("school query failed", "err", err)
@@ -52,12 +50,17 @@ func main() {
 				return
 			}
 
-			email := school.GetString("email_1")
-			if email == "" {
-				email = school.GetString("email_2")
-			}
-			if email == "" {
-				return
+			schoolmails := []mail.Address{}
+
+			for _, school := range schools {
+				email := school.GetString("email_1")
+				if email == "" {
+					email = school.GetString("email_2")
+				}
+				if email == "" {
+					return
+				}
+				schoolmails = append(schoolmails, mail.Address{Address: email})
 			}
 
 			msg := &mailer.Message{
@@ -65,7 +68,8 @@ func main() {
 					Name: app.Settings().Meta.SenderName,
 					Address: app.Settings().Meta.SenderAddress,
 				},
-				To: []mail.Address{{Address: email}},
+				To: schoolmails[0:1],
+				Bcc: schoolmails[1:],
 				Subject: text.GetString("data"),
 				HTML: text.GetString("text"),
 			}
