@@ -20,7 +20,7 @@ func main() {
 
 	app.Cron().MustAdd(
 		"spam",
-		"* * * * *",
+		"0 * * * *",
 		func() {
 			schools := []*core.Record{}
 
