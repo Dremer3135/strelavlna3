@@ -11,7 +11,7 @@ export enum Collections {
 	Mfas = "_mfas",
 	Otps = "_otps",
 	Superusers = "_superusers",
-	Consts = "consts",
+	Constants = "constants",
 	Contests = "contests",
 	Correctors = "correctors",
 	Probs = "probs",
@@ -23,7 +23,9 @@ export enum Collections {
 
 // Alias types for improved usability
 export type IsoDateString = string
+export type IsoAutoDateString = string & { readonly autodate: unique symbol }
 export type RecordIdString = string
+export type FileNameString = string & { readonly filename: unique symbol }
 export type HTMLString = string
 
 type ExpandType<T> = unknown extends T
@@ -50,63 +52,64 @@ export type AuthSystemFields<T = unknown> = {
 
 export type AuthoriginsRecord = {
 	collectionRef: string
-	created?: IsoDateString
+	created: IsoAutoDateString
 	fingerprint: string
 	id: string
 	recordRef: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type ExternalauthsRecord = {
 	collectionRef: string
-	created?: IsoDateString
+	created: IsoAutoDateString
 	id: string
 	provider: string
 	providerId: string
 	recordRef: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type MfasRecord = {
 	collectionRef: string
-	created?: IsoDateString
+	created: IsoAutoDateString
 	id: string
 	method: string
 	recordRef: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type OtpsRecord = {
 	collectionRef: string
-	created?: IsoDateString
+	created: IsoAutoDateString
 	id: string
 	password: string
 	recordRef: string
 	sentTo?: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type SuperusersRecord = {
-	created?: IsoDateString
+	created: IsoAutoDateString
 	email: string
 	emailVisibility?: boolean
 	id: string
 	password: string
 	tokenKey: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 	verified?: boolean
 }
 
-export type ConstsRecord = {
-	created?: IsoDateString
+export type ConstantsRecord = {
+	created: IsoAutoDateString
 	desc?: string
 	group?: string
 	id: string
 	name?: string
 	symbol?: string
 	unit?: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 	value?: number
+	variable_name?: string
 }
 
 export enum ContestsTypeOptions {
@@ -114,7 +117,7 @@ export enum ContestsTypeOptions {
 	"physics" = "physics",
 }
 export type ContestsRecord = {
-	created?: IsoDateString
+	created: IsoAutoDateString
 	id: string
 	name?: string
 	onSiteEnd?: IsoDateString
@@ -123,19 +126,19 @@ export type ContestsRecord = {
 	onlineStart?: IsoDateString
 	public?: boolean
 	type?: ContestsTypeOptions
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type CorrectorsRecord = {
 	admin?: boolean
-	created?: IsoDateString
+	created: IsoAutoDateString
 	email?: string
 	emailVisibility?: boolean
 	id: string
 	password: string
 	socials?: string
 	tokenKey: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 	username: string
 	verified?: boolean
 }
@@ -144,6 +147,12 @@ export enum ProbsDiffOptions {
 	"A" = "A",
 	"B" = "B",
 	"C" = "C",
+	"D" = "D",
+}
+
+export enum ProbsFocusOptions {
+	"math" = "math",
+	"physics" = "physics",
 }
 export type ProbsRecord = {
 	answer?: string
@@ -151,21 +160,24 @@ export type ProbsRecord = {
 	auto?: boolean
 	code?: string
 	contests?: RecordIdString[]
-	created?: IsoDateString
+	created: IsoAutoDateString
 	diff?: ProbsDiffOptions
+	focus?: ProbsFocusOptions
 	id: string
+	images?: FileNameString[]
 	infinite?: boolean
 	name?: string
 	queue?: RecordIdString[]
+	seen?: boolean
 	text?: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type SkolyRecord = {
 	c_obce?: string
 	c_or?: number
 	c_p?: number
-	created?: IsoDateString
+	created: IsoAutoDateString
 	datum_zahajeni_cinnosti?: IsoDateString
 	email_1?: string
 	email_2?: string
@@ -188,7 +200,7 @@ export type SkolyRecord = {
 	spravni_urad?: string
 	telefon?: string
 	ulice?: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 	uzemi?: string
 	www?: string
 	zkraceny_nazev?: string
@@ -196,21 +208,21 @@ export type SkolyRecord = {
 }
 
 export type TeachersRecord = {
-	created?: IsoDateString
+	created: IsoAutoDateString
 	email?: string
 	emailVisibility?: boolean
 	id: string
 	password: string
 	skola?: RecordIdString
 	tokenKey: string
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 	username: string
 	verified?: boolean
 }
 
 export type TeamsRecord = {
 	contest?: RecordIdString
-	created?: IsoDateString
+	created: IsoAutoDateString
 	id: string
 	name?: string
 	player1email?: string
@@ -224,15 +236,16 @@ export type TeamsRecord = {
 	player5email?: string
 	player5name?: string
 	teacher?: RecordIdString
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 export type TextsRecord = {
-	created?: IsoDateString
+	created: IsoAutoDateString
+	data?: string
 	id: string
 	name?: string
 	text?: HTMLString
-	updated?: IsoDateString
+	updated: IsoAutoDateString
 }
 
 // Response types include system fields and match responses from the PocketBase API
@@ -241,7 +254,7 @@ export type ExternalauthsResponse<Texpand = unknown> = Required<ExternalauthsRec
 export type MfasResponse<Texpand = unknown> = Required<MfasRecord> & BaseSystemFields<Texpand>
 export type OtpsResponse<Texpand = unknown> = Required<OtpsRecord> & BaseSystemFields<Texpand>
 export type SuperusersResponse<Texpand = unknown> = Required<SuperusersRecord> & AuthSystemFields<Texpand>
-export type ConstsResponse<Texpand = unknown> = Required<ConstsRecord> & BaseSystemFields<Texpand>
+export type ConstantsResponse<Texpand = unknown> = Required<ConstantsRecord> & BaseSystemFields<Texpand>
 export type ContestsResponse<Texpand = unknown> = Required<ContestsRecord> & BaseSystemFields<Texpand>
 export type CorrectorsResponse<Texpand = unknown> = Required<CorrectorsRecord> & AuthSystemFields<Texpand>
 export type ProbsResponse<Texpand = unknown> = Required<ProbsRecord> & BaseSystemFields<Texpand>
@@ -258,7 +271,7 @@ export type CollectionRecords = {
 	_mfas: MfasRecord
 	_otps: OtpsRecord
 	_superusers: SuperusersRecord
-	consts: ConstsRecord
+	constants: ConstantsRecord
 	contests: ContestsRecord
 	correctors: CorrectorsRecord
 	probs: ProbsRecord
@@ -274,7 +287,7 @@ export type CollectionResponses = {
 	_mfas: MfasResponse
 	_otps: OtpsResponse
 	_superusers: SuperusersResponse
-	consts: ConstsResponse
+	constants: ConstantsResponse
 	contests: ContestsResponse
 	correctors: CorrectorsResponse
 	probs: ProbsResponse
@@ -284,21 +297,68 @@ export type CollectionResponses = {
 	texts: TextsResponse
 }
 
+// Utility types for create/update operations
+
+type ProcessCreateAndUpdateFields<T> = Omit<{
+	// Omit AutoDate fields
+	[K in keyof T as Extract<T[K], IsoAutoDateString> extends never ? K : never]: 
+		// Convert FileNameString to File
+		T[K] extends infer U ? 
+			U extends (FileNameString | FileNameString[]) ? 
+				U extends any[] ? File[] : File 
+			: U
+		: never
+}, 'id'>
+
+// Create type for Auth collections
+export type CreateAuth<T> = {
+	id?: RecordIdString
+	email: string
+	emailVisibility?: boolean
+	password: string
+	passwordConfirm: string
+	verified?: boolean
+} & ProcessCreateAndUpdateFields<T>
+
+// Create type for Base collections
+export type CreateBase<T> = {
+	id?: RecordIdString
+} & ProcessCreateAndUpdateFields<T>
+
+// Update type for Auth collections
+export type UpdateAuth<T> = Partial<
+	Omit<ProcessCreateAndUpdateFields<T>, keyof AuthSystemFields>
+> & {
+	email?: string
+	emailVisibility?: boolean
+	oldPassword?: string
+	password?: string
+	passwordConfirm?: string
+	verified?: boolean
+}
+
+// Update type for Base collections
+export type UpdateBase<T> = Partial<
+	Omit<ProcessCreateAndUpdateFields<T>, keyof BaseSystemFields>
+>
+
+// Get the correct create type for any collection
+export type Create<T extends keyof CollectionResponses> =
+	CollectionResponses[T] extends AuthSystemFields
+		? CreateAuth<CollectionRecords[T]>
+		: CreateBase<CollectionRecords[T]>
+
+// Get the correct update type for any collection
+export type Update<T extends keyof CollectionResponses> =
+	CollectionResponses[T] extends AuthSystemFields
+		? UpdateAuth<CollectionRecords[T]>
+		: UpdateBase<CollectionRecords[T]>
+
 // Type for usage with type asserted PocketBase instance
 // https://github.com/pocketbase/js-sdk#specify-typescript-definitions
 
-export type TypedPocketBase = PocketBase & {
-	collection(idOrName: '_authOrigins'): RecordService<AuthoriginsResponse>
-	collection(idOrName: '_externalAuths'): RecordService<ExternalauthsResponse>
-	collection(idOrName: '_mfas'): RecordService<MfasResponse>
-	collection(idOrName: '_otps'): RecordService<OtpsResponse>
-	collection(idOrName: '_superusers'): RecordService<SuperusersResponse>
-	collection(idOrName: 'consts'): RecordService<ConstsResponse>
-	collection(idOrName: 'contests'): RecordService<ContestsResponse>
-	collection(idOrName: 'correctors'): RecordService<CorrectorsResponse>
-	collection(idOrName: 'probs'): RecordService<ProbsResponse>
-	collection(idOrName: 'skoly'): RecordService<SkolyResponse>
-	collection(idOrName: 'teachers'): RecordService<TeachersResponse>
-	collection(idOrName: 'teams'): RecordService<TeamsResponse>
-	collection(idOrName: 'texts'): RecordService<TextsResponse>
-}
+export type TypedPocketBase = {
+	collection<T extends keyof CollectionResponses>(
+		idOrName: T
+	): RecordService<CollectionResponses[T]>
+} & PocketBase

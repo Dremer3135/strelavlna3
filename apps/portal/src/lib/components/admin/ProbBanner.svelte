@@ -1,12 +1,14 @@
 <script lang="ts">
-    import type { ProbsRecord } from "$lib/pocketbase-types";
+    import type { EditableProb } from "$lib/types";
+    import { getProbEditedState, isProbEdited } from "$lib/utils";
     import type { AppUser } from "../../../app";
-    let { prob, user, selected }: {prob: ProbsRecord, user: AppUser, selected: boolean} = $props();
+    let { eprob, user, selected }: {eprob: EditableProb, user: AppUser, selected: boolean} = $props();
 
 
     // 0 - free
     // 1 - someone has it
     // 2 current user has it
+    let prob = $derived(getProbEditedState(eprob));
     let authorType = $derived(prob.author == "" ? 0 : prob.author == user.id ? 2 : 1);
 
 
@@ -18,12 +20,13 @@
 
 </script>
 
+{#if (eprob)}
 <main class:free={authorType == 0} class:owned={authorType == 1} class:mine={authorType == 2} class:selected={selected}>
-    <div class="background"></div>
-    <h3 class="name">{prob.name}</h3>
+    <div class="background" class:edited={isProbEdited(eprob)}></div>
+    <h3 class="name">{ (isProbEdited(eprob) ? "" : "") + prob.name }</h3>
     <p class="diff">[{prob.diff}]</p>
 </main>
-
+{/if}
 <style lang="scss">
     main {
         position:relative;
@@ -60,6 +63,7 @@
     .selected .background {
         transform: translateX(0px);
     }
+
 
     main.free {
         border-color: lightgray;
@@ -111,6 +115,7 @@
 
     .diff {
         font-size: 20px;
+        padding-left: 10px;
     }
 
 </style>

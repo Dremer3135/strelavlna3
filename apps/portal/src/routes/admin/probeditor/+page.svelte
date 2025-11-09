@@ -1,95 +1,59 @@
 <script lang="ts">
+    import ContentEditor from "./ContentEditor.svelte";
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
-    import type { CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
+    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
     import { onMount } from "svelte";
-    import { probs } from "$lib/stores/probs.js";
-    import { pb } from "$lib/pocketbase";
+    import { editableProbs } from "$lib/stores/probs.js";
+    import { editableConstants } from "$lib/stores/consts";
+    import type { EditableConstant } from "$lib/types.js";
+    import { pocketbase } from "$lib/pocketbase";
+    import type { EditableProb } from "$lib/types.js";
+    import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited } from "$lib/utils.js";
+    import { getRequestEvent } from "$app/server";
     let { data, form } = $props();
 
 
-    let selectedProbId: string = $state("");
-    let selectedProb: ProbsResponse | undefined = $state();
-    let selectedProbName: string = $state("");
-    let selectedProbText: string = $state("");
-    let selectedProbAnswer: string = $state("");
 
+    let selectedProbId = $state<string | undefined>(undefined);
+    let selectedProb = $derived(selectedProbId ? $editableProbs[selectedProbId] : undefined);
 
-    $effect(() => {
-        selectedProb = $probs.find(prob => prob.id === selectedProbId);
-    });
-
-    $effect(() => {
-        selectedProbName = selectedProb?.name ?? "";
-        selectedProbText = selectedProb?.text ?? "";
-        selectedProbAnswer = selectedProb?.answer ?? "";
-    });
-
-    $effect(() => {
-        probs.update(currentProbs => currentProbs.map(prob => { 
-            if (prob.id !== selectedProbId) { return prob; }
-            else {
-                prob.name = selectedProbName;
-                return prob;
-            }
-        }));
-    });
-
-    $effect(() => {
-        probs.update(currentProbs => currentProbs.map(prob => { 
-            if (prob.id !== selectedProbId) { return prob; }
-            else {
-                prob.text = selectedProbText;
-                return prob;
-            }
-        }));
-    });
-
-    $effect(() => {
-        probs.update(currentProbs => currentProbs.map(prob => { 
-            if (prob.id !== selectedProbId) { return prob; }
-            else {
-                prob.answer = selectedProbAnswer;
-                return prob;
-            }
-        }));
-    });
 
 
     let filters = $state([
         [
-            {name: "all", function: (probs: ProbsResponse[]) => { return probs; }},
-            {name: "my", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.author == data.user?.id); }},
+            {name: "all", function: (probIds: string[]) => { return probIds; }},
+            {name: "my", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).author == data.user?.id )}},
+            {name: "free", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).author == "" )}}
         ],[
-            {name: "all", function: (probs: ProbsResponse[]) => { return probs; }},
-            {name: "[A]", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.diff == "A"); }},
-            {name: "[B]", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.diff == "B"); }},
-            {name: "[C]", function: (probs: ProbsResponse[]) => { return probs.filter(prob => prob.diff == "C"); }},
+            {name: "all", function: (probIds: string[]) => { return probIds; }},
+            {name: "[A]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "A"); }},
+            {name: "[B]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "B"); }},
+            {name: "[C]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "C"); }},
         ]
     ]);
 
     let filteresSelected = $state(Array(filters.length).fill(0));
-    let filteredProbs = $state($probs);
-
+    let filteredProbIds = $state(Object.keys($editableProbs));
 
     $effect(() => {
-        let temp = $probs;
+        let temp = Object.keys($editableProbs);
         for (let i = 0; i < filters.length; i++) {
             temp = filters[i][filteresSelected[i]].function(temp);
         }
-        filteredProbs = temp;
+        filteredProbIds = temp;
     });
 
     let filtersOpen = $state(false);
 
     async function addProb() {
-        let prob: ProbsResponse;
+        let probResponse: ProbsResponse;
 
         try {
-            prob = await pb.collection("probs").create({
+            probResponse = await pocketbase.collection("probs").create({
                 name: "Moje uloha",
                 diff: "A",
-                auto: false,
+                auto: false,    
                 infinite: false,
                 code: "",
                 text: "Tohle bude text ulohy",
@@ -100,31 +64,149 @@
             });
         } catch (err) {
             console.log(err);
+            return;
+        }
+
+        const newProb: EditableProb = {
+            prob: probResponse,
+            edit: {}
         }
         
-        probs.update(currentProbs => [prob, ...currentProbs])
+        editableProbs.update(currentProbs => {
+            currentProbs[newProb.prob.id] = newProb;
+            return currentProbs;
+        });
+
+        selectedProbId = newProb.prob.id;
     }
 
     async function deleteProb(id: string) {
-        await pb.collection("probs").delete(id);
-        probs.update(currentProbs => currentProbs.filter(prob => prob.id != id));
+        await pocketbase.collection("probs").delete(id);
+        editableProbs.update(currentProbs => {
+            delete currentProbs[id];
+            return currentProbs;
+        });
+
+        selectedProbId = undefined;
     }
 
     async function saveChanges() {
-        if (!selectedProb) return;
+        const updatePromises = [];
+        for (let probId of Object.keys($editableProbs)) {
+            if (isProbEdited($editableProbs[probId])) {
+                const promise = pocketbase.collection('probs').update(probId, {
+                    ...$editableProbs[probId].edit
+                });
+                updatePromises.push(promise);
+            }
+        }
+
+        for (let constId of Object.keys($editableConstants)) {
+            if (isConstantEdited($editableConstants[constId])) {
+                const promise = pocketbase.collection('constants').update(constId, {
+                    ...$editableConstants[constId].edit
+                });
+                updatePromises.push(promise);
+            }
+        }
 
         try {
-            await pb.collection('probs').update(selectedProb.id, {
-                name: selectedProbName,
-                text: selectedProbText,
-                answer: selectedProbAnswer
+            await Promise.all(updatePromises);
+
+            editableProbs.update(currentProbs => {
+                for (let probId of Object.keys(currentProbs)) {
+                    if (Object.keys(currentProbs[probId].edit).length > 0) {
+                        Object.assign(currentProbs[probId].prob, currentProbs[probId].edit);
+                        currentProbs[probId].edit = {};
+                    }
+                }
+                return currentProbs;
             });
-            // alert('Changes saved successfully!');
+
+            editableConstants.update(currentConstants => {
+                for (let constId of Object.keys(currentConstants)) {
+                    if (Object.keys(currentConstants[constId].edit).length > 0) {
+                        Object.assign(currentConstants[constId].constant, currentConstants[constId].edit);
+                        currentConstants[constId].edit = {};
+                    }
+                }
+                return currentConstants;
+            });
+
         } catch (err) {
             console.error('Failed to save changes:', err);
             alert('Failed to save changes.');
         }
     }
+
+    async function uploadImages(files: FileList) {
+        if (!selectedProb) { return; }
+        const imagesArray = Array.from(files);
+        const updatedProb = await pocketbase.collection("probs").update(selectedProb.prob.id, {
+            "images+": imagesArray
+        });
+
+        editableProbs.update(currentProbs => {
+            currentProbs[updatedProb.id].prob.images = updatedProb.images;
+            return currentProbs;
+        });
+
+        if (selectedProb && selectedProb.prob.id == updatedProb.id) {
+            selectedProb = $editableProbs[selectedProb.prob.id];
+        }
+    }
+
+    async function deleteImages(names: string[]) {
+        if (!selectedProb) { return; }
+
+        const updatedProb = await pocketbase.collection("probs").update(selectedProb.prob.id, {
+            "images-": names
+        });
+
+        editableProbs.update(currentProbs => {
+            currentProbs[updatedProb.id].prob.images = updatedProb.images;
+            return currentProbs;
+        });
+
+        if (selectedProb && selectedProb.prob.id == updatedProb.id) {
+            selectedProb = $editableProbs[selectedProb.prob.id];
+        }
+    }
+    
+    async function addConstant(values: Partial<ConstantsRecord>) {
+        let newConstant = await pocketbase.collection("constants").create(values);
+
+        editableConstants.update(currentConstants => {
+            currentConstants[newConstant.id] = {
+                constant: newConstant,
+                edit: {}
+            }
+            return currentConstants;
+        });
+    }
+
+    async function deleteConstants(ids: string[]) {
+        const promisses = [];
+        for (let id of ids) {
+            promisses.push(pocketbase.collection("constants").delete(id));
+        }
+
+        await Promise.all(promisses);
+
+        editableConstants.update(currentConstants => {
+            currentConstants = Object.fromEntries(Object.entries(currentConstants).filter(constant => !ids.includes(constant[1].constant.id))) 
+            return currentConstants;
+        });
+    }
+    
+    // $effect(() => {
+    //     $editableProbs;
+
+    //     console.log("updated");
+    // });
+
+
+
 </script>
 
 
@@ -157,35 +239,76 @@
         </div>
         <div class="banners-scrollview">
             <div class="banners-holder">
-                {#each filteredProbs as prob}
+                {#each filteredProbIds as probId}
                 <button class="banner-select" onclick={() => {
                     saveChanges();
-                    selectedProbId = prob.id;
+                    selectedProbId = probId;
                     }}>
-                    <ProbBanner prob={prob} user={data.user as CorrectorsResponse} selected={ selectedProbId == prob.id } />
+                    <ProbBanner eprob={ $editableProbs[probId] } user={data.user as CorrectorsResponse} selected={ selectedProb?.prob.id == $editableProbs[probId].prob.id } />
                 </button>
                 {/each}
             </div>
         </div>
         <div class="controls-wrapper">
             <button class="add" onclick={() => { addProb(); }}>Add</button>
-            <button class="remove" onclick={() => { if (selectedProbId) { deleteProb(selectedProbId); }}}>Remove</button>
+            <button class="remove" onclick={() => { if (selectedProb) { deleteProb(selectedProb.prob.id); }}}>Remove</button>
         </div>
     </div>
     <div class="main-content">
-        <div class="left">
-            <input type="text" class="title" placeholder="Title"
-            value={selectedProbName}
-            oninput={(event) => { selectedProbName = event.currentTarget.value; }}
-            >
-            <textarea name="text" id="prob-text" class="text"
-            oninput={(event) => { selectedProbText = event.currentTarget.value; }}
-            >{selectedProbText}</textarea>
-            <input type="text" class="answer" placeholder="Answer"
-            value={selectedProbAnswer}
-            oninput={(event) => { selectedProbAnswer = event.currentTarget.value; }}
-            >
-        </div>
+        {#if selectedProb}
+            <ContentEditor
+                probRecord={getProbEditedState(selectedProb)}
+                value_name={getProbEditedState(selectedProb).name}
+                value_text={getProbEditedState(selectedProb).text}
+                value_answer={getProbEditedState(selectedProb).answer}
+                value_code={getProbEditedState(selectedProb).code}
+                value_images={getProbEditedState(selectedProb).images}
+                on:name={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.name = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:text={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.text = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:answer={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.answer = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:code={(e) => {
+                    editableProbs.update(currentProbs => {
+                        if (selectedProb) {
+                            currentProbs[selectedProb.prob.id].edit.code = e.detail.value;
+                        }
+                        return currentProbs;
+                    });
+                }}
+                on:image-add={(e) => {
+                    uploadImages(e.detail.value);
+                }}
+                on:image-delete={(e) => {
+                    deleteImages(e.detail.value);
+                }}
+                on:constant-add={(e) => {
+                    addConstant(e.detail.value);
+                }}
+                on:constant-delete={(e) => {
+                    deleteConstants(e.detail.value);
+                }}
+            />
+        {/if}
     </div>
 
 </main>
@@ -200,7 +323,10 @@
     }
 
     .main-content {
-
+        display: flex;
+        flex-direction: row;
+        flex-grow: 1;
+        padding: 20px;
     }
     
 
