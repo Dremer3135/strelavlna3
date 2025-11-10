@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import type { EditableProb } from '$lib/types';
 import { pocketbase } from '$lib/pocketbase';
-import type { ProbsResponse } from '$lib/pocketbase-types';
+import type { ProbsResponse } from '$lib/types/pocketbase-types';
 
 /**
  * A writable Svelte store that holds a map of problem records, keyed by the problem ID.

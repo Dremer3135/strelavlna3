@@ -1,7 +1,7 @@
 <script lang="ts">
     import ContentEditor from "./ContentEditor.svelte";
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
-    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
+    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/types/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
     import { onMount } from "svelte";
     import { editableProbs } from "$lib/stores/probs.js";

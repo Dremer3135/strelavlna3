@@ -1,4 +1,4 @@
-import type { ConstantsResponse, CorrectorsResponse, ProbsResponse, TeachersResponse } from './pocketbase-types';
+import type { ConstantsResponse, CorrectorsResponse, ProbsResponse, TeachersResponse } from '$lib/types/pocketbase-types';
 import type { EditableConstant, EditableProb, LatexSegment } from './types';
 
 type AppUser = CorrectorsResponse | TeachersResponse;

@@ -2,7 +2,7 @@
     import CodeEditor from "$lib/components/admin/CodeEditor.svelte";
     import LoadingAnimation from "$lib/components/general/LoadingAnimation.svelte";
     import { pocketbase } from "$lib/pocketbase";
-    import type { ConstantsRecord, ProbsResponse } from "$lib/pocketbase-types";
+    import type { ConstantsRecord, ProbsResponse } from "$lib/types/pocketbase-types";
     import type { EditableConstant, LatexSegment } from "$lib/types";
     import { createEventDispatcher } from "svelte";
     import { editableConstants } from "$lib/stores/consts";

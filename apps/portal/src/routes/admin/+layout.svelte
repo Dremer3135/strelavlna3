@@ -1,7 +1,7 @@
 <script lang="ts">
     import Navbar from '$lib/components/admin/Navbar.svelte';
     let { data, children } = $props();
-    import type { CorrectorsResponse } from '$lib/pocketbase-types';
+    import type { CorrectorsResponse } from '$lib/types/pocketbase-types';
 </script>
 
 <div class="admin-layout-container">

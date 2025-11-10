@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { CorrectorsResponse } from "$lib/pocketbase-types";
+    import type { CorrectorsResponse } from "$lib/types/pocketbase-types";
     import logo from "$lib/assets/images/logo_small.svg";
     import logout_icon from "$lib/assets/images/icons/logout.svg"
     import Button from "../general/Button.svelte";

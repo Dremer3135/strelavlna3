@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ConstantsRecord, ConstantsResponse } from "$lib/pocketbase-types";
+    import type { ConstantsRecord, ConstantsResponse } from "$lib/types/pocketbase-types";
     import { editableConstants } from "$lib/stores/consts";
     import { createEventDispatcher } from "svelte";
     import ConstantGroupSelector from "./ConstantGroupSelector.svelte";

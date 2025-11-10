@@ -1,4 +1,4 @@
-import type { ConstantsRecord, ConstantsResponse, ProbsRecord, ProbsResponse } from "./pocketbase-types"
+import type { ConstantsRecord, ConstantsResponse, ProbsRecord, ProbsResponse } from "$lib/types/pocketbase-types"
 
 export type EditableProb = {
     prob: ProbsResponse,
