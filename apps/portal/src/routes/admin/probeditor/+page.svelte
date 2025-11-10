@@ -11,14 +11,14 @@
     import type { EditableProb } from "$lib/types.js";
     import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited } from "$lib/utils.js";
     import { getRequestEvent } from "$app/server";
+    import { PROB_DIFFICULTIES } from "$lib/constants";
+    import Sidebar from "./Sidebar.svelte";
     let { data, form } = $props();
 
 
 
     let selectedProbId = $state<string | undefined>(undefined);
     let selectedProb = $derived(selectedProbId ? $editableProbs[selectedProbId] : undefined);
-
-
 
     let filters = $state([
         [
@@ -27,9 +27,12 @@
             {name: "free", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).author == "" )}}
         ],[
             {name: "all", function: (probIds: string[]) => { return probIds; }},
-            {name: "[A]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "A"); }},
-            {name: "[B]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "B"); }},
-            {name: "[C]", function: (probIds: string[]) => { return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == "C"); }},
+            ...PROB_DIFFICULTIES.map(difficulty => ({
+                name: `[${difficulty}]`,
+                function: (probIds: string[]) => {
+                    return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == difficulty);
+                }
+            }))
         ]
     ]);
 
@@ -199,14 +202,6 @@
         });
     }
     
-    // $effect(() => {
-    //     $editableProbs;
-
-    //     console.log("updated");
-    // });
-
-
-
 </script>
 
 
@@ -308,6 +303,80 @@
                     deleteConstants(e.detail.value);
                 }}
             />
+            <Sidebar editableProb={ selectedProb } 
+            on:change-diff={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            diff: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
+            on:change-auto={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            auto: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
+            on:change-infinite={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            infinite: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
+            on:change-contests={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            contests: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
+            />
         {/if}
     </div>
 
@@ -327,6 +396,7 @@
         flex-direction: row;
         flex-grow: 1;
         padding: 20px;
+        gap: 20px;
     }
     
 

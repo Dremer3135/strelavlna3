@@ -7,6 +7,9 @@ export const handle = async ({ event, resolve }) => {
 	event.locals.pb = createPocketbaseInstance();
 	event.locals.pb.authStore.loadFromCookie(event.request.headers.get('cookie') || '');
 	
+  if (event.url.pathname === '/qr') {
+    throw redirect(302, '/');
+  }
 	
 	if (event.url.pathname === '/logout' && event.request.method === 'POST') {
 		const userIsCorrector = event.locals.pb.authStore.model?.collectionName === 'correctors';

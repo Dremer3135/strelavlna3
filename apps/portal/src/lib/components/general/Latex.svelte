@@ -1,6 +1,6 @@
 <script lang="ts">
 	import katex from 'katex';
-	import 'katex/dist/katex.min.css';
+	import 'katex/dist/katex.min.css'; // Re-enable the CSS
 	import { parseLatex } from '$lib/utils';
 	import type { LatexSegment } from '$lib/types';
 
@@ -21,12 +21,14 @@
 	}
 </script>
 
-<span>
+<span class="wrapper">
 	{#each segments as segment}
 		{#if segment.type === 'text'}
 			{segment.content}
 		{:else if segment.type === 'latex'}
-			{@html renderMath(segment.content)}
+			<div class="katex-container">
+				{@html renderMath(segment.content)}
+			</div>
 		{/if}
 	{/each}
 </span>
@@ -36,8 +38,12 @@
 		color: red;
 		font-family: monospace;
 	}
-    span {
+    .wrapper {
         font-family: 'Lexend';
     }
+	.katex-container {
+		display: inline-block;
+		position: relative;
+	}
 </style>
 

@@ -108,9 +108,6 @@
         selectedConstIds = [];
     });
 
-
-
-
 </script>
 
 <main>
@@ -317,16 +314,17 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        max-width: 750px;
+        // max-width: 750px;
         gap: 20px;
     }
     
     .content {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0px;
-        
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0px;
+            overflow: hidden;
+                    
         .content-text {
             display: flex;
             flex-direction: column;
@@ -526,6 +524,7 @@
             flex-direction: column;
             gap: 20px;
             min-height: 0px;
+            flex-grow: 1;
 
             .controls {
                 display: flex;
@@ -613,6 +612,7 @@
                 flex-direction: column;
                 align-items: center;
                 gap: 30px;
+                flex-grow: 1;
 
                 &::-webkit-scrollbar {
                     display: none;
@@ -712,14 +712,12 @@
             }
 
             .edit-dialog-wrapper {
+                display: none;
                 position: fixed;
                 top: 0px;
                 left: 0px;
-                width: 100vw;
-                height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
+                width: 100%;
+                height: 100%;
                 
                 background-color: #00000000;
                 backdrop-filter: blur(0.0px);
@@ -727,6 +725,9 @@
                 transition: background-color cubic-bezier(0.215, 0.610, 0.355, 1) 0.5s;
                     
                 &.active {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
                     background-color: #00000033;
                     backdrop-filter: blur(2.0px);
                     z-index: 100;

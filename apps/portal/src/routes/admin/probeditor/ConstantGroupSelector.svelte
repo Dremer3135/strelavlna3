@@ -13,7 +13,7 @@
 
 
 <main>
-    <input type="text" bind:value={value} onfocus={() => { isFocused = true; }} onblur={() => { setTimeout(() => {isFocused = false; }, 100); }}>
+    <input type="text" bind:value={value} onfocus={() => { isFocused = true; }} onblur={() => { setTimeout(() => {isFocused = false; }, 100); }} placeholder="Group">
     <!-- {#if isFocused} -->
     <div class="suggestions" class:collapsed={!isFocused} style="--wrapper-height: { suggestionsHeight }px;">
         <div class="wrapper" bind:clientHeight={ suggestionsHeight }>
