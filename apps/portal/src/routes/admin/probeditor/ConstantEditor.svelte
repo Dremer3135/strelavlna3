@@ -48,7 +48,11 @@
     </div>
     <div class="controls">
         <button class="discard" onclick={() => { discard(); }}>
-            <i class="fa-solid fa-rotate-left"></i>
+            {#if type == "add"}
+                <i class="fa-solid fa-xmark"></i>
+            {:else}
+                <i class="fa-solid fa-rotate-left"></i>
+            {/if}
             {type == "add" ? "Dont add" : "Dont apply"}
         </button>
         <button class="submit" onclick={() => { if (criteriaMet) { submit(); }}} class:disabled={!criteriaMet}>

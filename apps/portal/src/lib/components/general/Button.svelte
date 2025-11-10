@@ -1,9 +1,10 @@
 <script lang="ts">
   // We now also accept `children`, which is the Svelte 5 equivalent of a slot.
-  let { class: className = '', children, ...rest } = $props();
+  let { class: className = '', theme , children, ...rest }: { class: any, theme : "yellow" | "orange" | "purple" | "pink", children: any } = $props();
 </script>
 
 <button
+  style="--color-theme: var(--color-{theme});"
   class="base-button {className}"
   {...rest}
 >
@@ -11,25 +12,35 @@
   {@render children()}
 </button>
 
-<style>
-  .base-button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    background-color: #007bff;
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
+<style lang="scss">
+  button {
+    all: unset;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 3px var(--color-theme) solid;
+    border-radius: 3px;
+    width: fit-content;
     cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
+    padding: 5px 20px;
+    background-color: color-mix(in srgb, var(--color-theme) 5%, transparent 95%);
+    color: #333333;
+    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-theme) 20%, transparent 80%);
+      color: color-mix(in srgb, var(--color-theme) 20%, black 80%);
+    }
+
+    &.disbaled {
+      cursor: not-allowed;
+      color: #555555;
+      border-color: #AAAAAA;
+      background-color: color-mix(in srgb, #333333 5%, transparent 95%);
+    }
   }
 
-  .base-button:hover {
-    background-color: #0056b3;
-  }
 
-  .base-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
 </style>
