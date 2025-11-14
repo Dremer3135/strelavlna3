@@ -39,7 +39,7 @@
         src: url('/fonts/Fredoka-VF.ttf') format('truetype');
 
         font-style: normal;
-        font-weight: normal;
+        /* font-weight: normal; */
     }
 
     :root {
@@ -47,8 +47,8 @@
         --color-pink: #EB0072;
         --color-orange: #EB6E00;
         --color-yellow: #EBAD00;
-        --color-blue: #3118ba;
-        --color-lightblue:#4c33da;
+        --color-blue: #3c008b;
+        --color-lightblue:#003F88;
         --color-gray: #353538;
         --color-light-gray: #f8f7ff;
     }

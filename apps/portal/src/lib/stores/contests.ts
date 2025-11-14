@@ -4,7 +4,23 @@ import { pocketbase } from '$lib/pocketbase';
 import type { ContestsResponse } from '$lib/pocketbase-types';
 
 /**
- * A writable Svelte store that holds a map of contest records, keyed by the contest ID.
+ * A writable Svelte store that holds a list of contests for public display.
+ */
+export const contests = writable<ContestsResponse[]>([]);
+
+/**
+ * Fetches the full list of contests from PocketBase and updates the `contests` store.
+ */
+export const loadContests = async () => {
+    const contestsList = await pocketbase.collection('contests').getFullList<ContestsResponse>({
+        sort: '-created',
+    });
+    contests.set(contestsList);
+};
+
+
+/**
+ * A writable Svelte store that holds a map of contest records, keyed by the contest ID, for admin editing.
  * Its initial value is an empty object.
  */
 export const editableContests = writable<Record<string, EditableContest>>({});

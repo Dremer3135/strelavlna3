@@ -20,11 +20,11 @@ export const handle = async ({ event, resolve }) => {
 		// Clear the browser's cookie
 		event.cookies.delete('pb_auth', { path: '/' });
 
-		if (userIsCorrector) {
-			throw redirect(303, '/admin-login');
-		} else {
-			throw redirect(303, '/login');
-		}
+		// if (userIsCorrector) {
+		throw redirect(303, '/');
+		// } else {
+		// 	throw redirect(303, '/login');
+		// }
 	}
 
 	try {
@@ -36,6 +36,13 @@ export const handle = async ({ event, resolve }) => {
 	} catch (_) {
 		// clear the auth store on failed refresh
 		event.locals.pb.authStore.clear();
+	}
+
+	// event.locals.isAdminLogin = false;
+	if (event.url.pathname === '/login/admin') {
+		throw redirect(307, '/login?adminLogin=true');
+	} else if (event.url.pathname === '/login' && !event.url.searchParams.has('adminLogin')) {
+		event.url.searchParams.set('adminLogin', 'false');
 	}
 
 	const response = await resolve(event);

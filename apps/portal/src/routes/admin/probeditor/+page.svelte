@@ -3,7 +3,7 @@
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
     import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { editableProbs } from "$lib/stores/probs.js";
     import { editableConstants } from "$lib/stores/consts";
     import type { EditableConstant } from "$lib/types.js";
@@ -19,6 +19,22 @@
 
     let selectedProbId = $state<string | undefined>(undefined);
     let selectedProb = $derived(selectedProbId ? $editableProbs[selectedProbId] : undefined);
+    let changesSaved = $state(true);
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+        if (!changesSaved) {
+            event.preventDefault();
+            return "lalalalala";
+        }
+    }
+
+    onMount(() => {
+        window.addEventListener('beforeunload', handleBeforeUnload);
+    });
+
+    onDestroy(() => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+    });
 
     let filters = $state([
         [
@@ -48,6 +64,27 @@
     });
 
     let filtersOpen = $state(false);
+
+
+
+
+    $effect(() => {
+        for (let probId of Object.keys($editableProbs)) {
+            if (isProbEdited($editableProbs[probId])) {
+                changesSaved = false
+                return;
+            }
+        }
+
+        for (let constantId of Object.keys($editableConstants)) {
+            if (isConstantEdited($editableConstants[constantId])) {
+                changesSaved = false
+                return;
+            }
+        }
+
+        changesSaved = true;
+    })
 
     async function addProb() {
         let probResponse: ProbsResponse;
@@ -94,6 +131,7 @@
     }
 
     async function saveChanges() {
+        console.log("saving");
         const updatePromises = [];
         for (let probId of Object.keys($editableProbs)) {
             if (isProbEdited($editableProbs[probId])) {
@@ -236,7 +274,6 @@
             <div class="banners-holder">
                 {#each filteredProbIds as probId}
                 <button class="banner-select" onclick={() => {
-                    saveChanges();
                     selectedProbId = probId;
                     }}>
                     <ProbBanner eprob={ $editableProbs[probId] } user={data.user as CorrectorsResponse} selected={ selectedProb?.prob.id == $editableProbs[probId].prob.id } />
@@ -303,7 +340,7 @@
                     deleteConstants(e.detail.value);
                 }}
             />
-            <Sidebar editableProb={ selectedProb } 
+            <Sidebar editableProb={ selectedProb } changesSaved = { changesSaved }
             on:change-diff={(e) => { editableProbs.update(currentProbs => {
                 if (selectedProb) {
                     const probId = selectedProb.prob.id;
@@ -376,6 +413,7 @@
                 }
                 return currentProbs;
             }); }}
+            on:save-changes={(e) => { saveChanges(); }}
             />
         {/if}
     </div>
@@ -433,7 +471,8 @@
                     all: unset;
                     cursor: pointer;
                     font-family: 'Fredoka';
-                    font-weight: 700;
+                    font-weight: 600;
+                    color: #333333;
                     border: 2px lightgray solid;
                     border-radius: 3px;
                     padding: 2px 15px;
@@ -459,7 +498,7 @@
             width: 100%;
             padding: 5px 20px;
             box-sizing: border-box;
-            
+
             .left {
                 display: flex;
                 justify-content: flex-start;
@@ -483,7 +522,8 @@
             p {
                 font-family: 'Fredoka';
                 font-size: 16px;
-                font-weight: 700;
+                font-weight: 600;
+                color: #333333;
             }
         }
     }

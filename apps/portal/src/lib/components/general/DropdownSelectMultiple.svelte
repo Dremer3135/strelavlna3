@@ -60,7 +60,7 @@
             p {
                 font-family: 'Fredoka';
                 font-size: 16px;
-                font-weight: 700;
+                font-weight: 600;
                 margin: 0px;
             }
             

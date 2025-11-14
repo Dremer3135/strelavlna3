@@ -346,10 +346,6 @@ $effect(() => {
         <h3>Lehká úloha [A]</h3>
         <p class="f-18">Martin si chtěl namíchat ideální vodu se sirupem. Proto nejdříve do malé sklenice (200ml) nalil vodu a do panákové skleničky (60ml) nalil sirup. Poté do velké sklenice nalil tři čtvrtiny malé sklenice a pět dvanáctin panákové skleničky.V jakém poměru bude sirup a voda? (Napište zlomkem v základním tvaru)</p>
         </div>
-        <!-- <div class="blue-top main-c-element m-c3">
-        <h2>Těžká úloha (C)</h2>
-        <p class="f-18">Raketa váží 100 kg a její motor vyvíjí tah 5 kN po dobu 10 s. Určete, jak vysoko vyletí, než začne klesat (letí kolmo vzhůru). Jak dlouho bude ještě stoupat po vypnutí motoru? Gravitační zrychlení považujte za konstantní g = 9,81 m/s<sup>2</sup> a zanedbejte úbytek hmotnosti kvůli spalování paliva.</p>
-        </div> -->
         
     </div>
     <div class="task-button">
@@ -383,8 +379,9 @@ $effect(() => {
 
 
     .blue-background{
-        background-color: var(--color-blue);
-    }
+        background: linear-gradient(45deg, var(--color-lightblue) 30%, var(--color-blue) 60%);
+        /* background-color: var(--color-lightblue); */
+    }   
 .header1 {
     max-width: 700px;
     margin: 5%;

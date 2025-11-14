@@ -1,6 +1,7 @@
 <script lang="ts">
     import DropdownSelectMultiple from "$lib/components/general/DropdownSelectMultiple.svelte";
     import DropdownSelectSingle from "$lib/components/general/DropdownSelectSingle.svelte";
+    import SubmitButton from "$lib/components/general/SubmitButton.svelte";
     import Toggle from "$lib/components/general/Toggle.svelte";
 import { PROB_DIFFICULTIES, type ProbDifficulty } from "$lib/constants";
     import { currentUser } from "$lib/stores/auth";
@@ -10,7 +11,7 @@ import { PROB_DIFFICULTIES, type ProbDifficulty } from "$lib/constants";
     import { getContestEditedState, getProbEditedState } from "$lib/utils";
     import { createEventDispatcher } from "svelte";
 
-    let { editableProb }: { editableProb: EditableProb } = $props();
+    let { editableProb, changesSaved }: { editableProb: EditableProb, changesSaved: boolean } = $props();
 
     $effect(() => {
         console.log("correctors: ", $correctors[getProbEditedState(editableProb).author]);
@@ -20,11 +21,10 @@ import { PROB_DIFFICULTIES, type ProbDifficulty } from "$lib/constants";
         "change-diff": { value: ProbDifficulty },
         "change-auto": { value: boolean },
         "change-infinite": { value: boolean },
-        "change-contests": { value: string[] }
+        "change-contests": { value: string[] },
+        "save-changes": {}
     }>();
 
-
-    console.log("correctors: ", $correctors);
 
     let authorHovered: boolean = $state(false);
 
@@ -36,8 +36,13 @@ import { PROB_DIFFICULTIES, type ProbDifficulty } from "$lib/constants";
 
 <main>
     <div class="title">
-        <i class="fa-solid fa-gear"></i>
-        <h2>settings</h2>
+        <div class="left">
+            <i class="fa-solid fa-gear"></i>
+            <h2>settings</h2>
+        </div>
+        <div class="right">
+            <button class="save-changes" class:saved={ changesSaved } onclick={ () => { dispatch("save-changes", {}); } }>Save changes</button>
+        </div>
     </div>
     <div class="content">
         <div class="diff row">
@@ -97,23 +102,62 @@ import { PROB_DIFFICULTIES, type ProbDifficulty } from "$lib/constants";
         
         .title {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            
-            h2 {
-                font-size: 20px;
-                font-family: 'Fredoka';
-                font-weight: 600;
-                color: #333333;
-                margin: 0px;
+            justify-content: space-between;
+            width: 100%;
+
+            .left {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                h2 {
+                    font-size: 20px;
+                    font-family: 'Fredoka';
+                    font-weight: 600;
+                    color: #333333;
+                    margin: 0px;
+                }
+    
+                i {
+                    font-size: 25px;
+                    color: #444444;
+                    transform: translateY(3px);
+                }
+
             }
 
-            i {
-                font-size: 25px;
-                color: #444444;
-                transform: translateY(3px);
+            .right {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                button.save-changes {
+                    all: unset;
+                    cursor: pointer;
+                    padding: 7px 15px;
+                    font-family: 'Fredoka';
+                    font-size: 16px;
+                    font-weight: 500;
+                    background-color: #F0F0F0;
+                    border-radius: 4px;
+                    color: black;
+                    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.4s;
+
+                    &:hover {
+                        background-color: black;
+                        color: white;
+                        transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.15s;
+                        // transition: all 0s;
+                    }
+
+                    &.saved {
+                        color: #888888;
+                        background-color: #F0F0F0;
+                    }
+                }
+
             }
+            
         }
 
         .content {

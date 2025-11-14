@@ -1,6 +1,6 @@
 
 <script>
-    import Navbar from '$lib/components/general/navbar.svelte';
+    import Navbar from '$lib/components/general/Navbar.svelte';
     import Footer from '$lib/components/general/footer.svelte';
     let { children } = $props();
 </script>
@@ -11,3 +11,8 @@
 </main>
 <Footer />
 
+<style lang="scss">
+    main {
+        position: relative;
+    }
+</style>
