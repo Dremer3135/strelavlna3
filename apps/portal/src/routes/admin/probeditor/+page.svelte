@@ -10,7 +10,7 @@
     import { pocketbase } from "$lib/pocketbase";
     import type { EditableProb } from "$lib/types.js";
     import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited } from "$lib/utils.js";
-    import { getRequestEvent } from "$app/server";
+    import { browser } from "$app/environment";
     import { PROB_DIFFICULTIES } from "$lib/constants";
     import Sidebar from "./Sidebar.svelte";
     let { data, form } = $props();
@@ -28,13 +28,15 @@
         }
     }
 
-    onMount(() => {
-        window.addEventListener('beforeunload', handleBeforeUnload);
-    });
+    if (browser) {
+        onMount(() => {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        });
 
-    onDestroy(() => {
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-    });
+        onDestroy(() => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        });
+    }
 
     let filters = $state([
         [
