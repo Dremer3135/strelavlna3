@@ -10,5 +10,11 @@ export default defineConfig({
 		monaco({
 			// languageWorkers: ['css', 'html', 'json', 'ts'] // Temporarily commented out for diagnosis
 		})
-	]
+	],
+	optimizeDeps: {
+		exclude: ['shared']
+	},
+	ssr: {
+		noExternal: ['shared']
+	}
 });

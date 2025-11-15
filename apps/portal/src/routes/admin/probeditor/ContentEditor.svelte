@@ -3,14 +3,14 @@
     import LoadingAnimation from "$lib/components/general/LoadingAnimation.svelte";
     import { pocketbase } from "$lib/pocketbase";
     import type { ConstantsRecord, ProbsResponse } from "$lib/pocketbase-types";
-    import type { EditableConstant, LatexSegment } from "$lib/types";
     import { createEventDispatcher } from "svelte";
     import { editableConstants } from "$lib/stores/consts";
-    import { getConstantEditedState, parseLatex } from "$lib/utils";
-    import Latex from "$lib/components/general/Latex.svelte";
+    import { getConstantEditedState } from "$lib/utils";
     import ConstantEditor from "./ConstantEditor.svelte";
+    import { ProbContent, Latex, type ProbContentType } from 'shared'
+    import SubmitButton from "$lib/components/general/SubmitButton.svelte";
 
-    let { probRecord, value_name, value_text, value_answer, value_code, value_images }: { probRecord: ProbsResponse, value_name: string, value_text: string, value_answer: string, value_code: string, value_images: string[] } = $props();
+    let { probRecord, value_name, value_text, value_answer, value_code, value_images, changesSaved }: { probRecord: ProbsResponse, value_name: string, value_text: string, value_answer: string, value_code: string, value_images: string[], changesSaved: boolean } = $props();
 
     const dispatch = createEventDispatcher<{ 
         "name": { value: string };
@@ -57,6 +57,13 @@
             dispatch("image-add", { value: imageInput.files });
         }
     }
+
+    let revisionContent: ProbContentType = $state({});
+    $effect(() => {
+        probRecord;
+        revisionContent = {};
+    });
+    let isRevisionLoading = $state(false);
 
     let selectedImages: number[] = $state([]);
     let imagesLoaded: Record<string, boolean> = $state({});
@@ -108,6 +115,30 @@
         selectedConstIds = [];
     });
 
+    async function reloadRevision() {
+        isRevisionLoading = true;
+        let response;
+        try {
+           response = await pocketbase.send("/api/code", { body: { id: probRecord.id }, method: 'post'});
+            
+            revisionContent = {
+                name: response.name,
+                text: response.text,
+                answer: response.answer,
+                images: response.images,
+                diff: response.diff,
+                id: response.id
+            }
+
+        } catch (err: any) {
+            console.warn(err);
+            console.log(response);
+        } finally {
+            isRevisionLoading = false;
+        }
+        
+    }
+
 </script>
 
 <main>
@@ -127,6 +158,10 @@
         <button class="item" class:selected={ selectedTool == 3 } onclick={() => { selectedTool = 3; }}>
             <i class="fa-solid fa-table-list"></i>
             <p>constants</p>
+        </button>
+        <button class="item" class:selected={ selectedTool == 4 } onclick={() => { selectedTool = 4; }}>
+            <i class="fa-solid fa-circle-check"></i>
+            <p>revision</p>
         </button>
     </div>
     <div class="content">
@@ -175,7 +210,7 @@
                             <LoadingAnimation />
                         {/if}
                         <img 
-                            src={pocketbase.files.getURL(probRecord, image)} 
+                            src={pocketbase.files.getURL(probRecord, image)}
                             alt={`Image ${i + 1}`}
                             class:hidden={!imagesLoaded[image]}
                             onload={() => imagesLoaded[image] = true}
@@ -267,6 +302,20 @@
                 {/each} 
             </div>
         </div>
+        {:else if selectedTool == 4}
+        <div class="content-revision">
+            <div class="controls">
+                <button class="reload" onclick={() => { reloadRevision(); }} class:reloading={isRevisionLoading}>
+                    Reload
+                </button>
+                {#if !changesSaved}
+                <p>Unsaved changes will not apply!</p>
+                {/if}
+            </div>
+            <div class="content">
+                <ProbContent content={revisionContent}/>
+            </div>
+        </div>
         {/if}
     </div>
 </main>
@@ -290,6 +339,7 @@
             color: #555555;
             border-radius: 5px;
             background-color: transparent;
+            box-sizing: border-box;
 
             &.selected {
                 color: color-mix(in srgb, var(--color-pink) 40%, black 60%);
@@ -734,6 +784,63 @@
                     
                 }
             }
+        }
+
+        .content-revision {
+            display: flex;
+            flex-direction: column;
+            // gap: 20px;
+            min-height: 0px;
+            flex-grow: 1;
+            
+            .controls {
+                width: 100px;
+                align-self: flex-end;
+                // padding-right: 50px;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                position: relative;
+
+                .reload {
+                    all: unset;
+                    background-color: #444444;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    padding: 7px 15px;
+                    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
+                    font-family: 'Fredoka';
+                    font-size: 15px;
+                    font-weight: 600;
+                    text-align: center;
+                    color: white;
+                    width: 100%;
+                    box-sizing: border-box;
+                    
+                    &:hover {
+                        background-color: black;
+                    }
+
+                    &.reloading {
+                        background-color: #F0F0F0;
+                    }
+                }
+
+                p {
+                    position: absolute;
+                    top: 40px;
+                    margin: 0px;
+                    font-size: 14px;
+                    font-family: 'Fredoka';
+                    color: var(--color-orange);
+                    // width: fit-content;
+                    // text-wrap: nowrap;
+                }
+
+                // box-sizing: border-box;
+            }
+
         }
     }
 </style>

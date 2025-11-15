@@ -15,7 +15,7 @@ export const actions: Actions = {
             await locals.pb.collection(adminLogin ? 'correctors' : 'teachers').authWithPassword(email, password);
         } catch (err) {
             console.error(err);
-            return fail(400, { error: 'Zadané údaje nesedí.' });
+            return fail(400, { errorType: 'invalid_credentials' });
         }
 
         if (redirectTo) {

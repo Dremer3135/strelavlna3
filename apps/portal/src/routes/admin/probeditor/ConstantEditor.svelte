@@ -204,7 +204,8 @@
             button {
                 all: unset;
                 font-family: 'Fredoka';
-                font-weight: 600;
+                font-weight: 500;
+                color: #333333;
                 font-size: 16px;
                 padding: 4px 12px;
                 transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;

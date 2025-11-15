@@ -19,7 +19,7 @@
 
         .block {
             background-color: var(--main-color);
-            border-radius: 10%;
+            border-radius: 15%;
             position: absolute;
             animation: animation 1s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
             width: 40%;

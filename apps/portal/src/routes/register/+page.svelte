@@ -1,9 +1,11 @@
 <script lang="ts">
   import LoadingAnimation from "$lib/components/general/LoadingAnimation.svelte";
-    import SubmitButton from "$lib/components/general/SubmitButton.svelte";
-import { pocketbase } from "$lib/pocketbase";
-    import type { SkolyResponse } from "$lib/pocketbase-types.js";
+  import SubmitButton from "$lib/components/general/SubmitButton.svelte";
+  import { pocketbase } from "$lib/pocketbase";
+  import type { SkolyResponse } from "$lib/pocketbase-types.js";
   import { createEventDispatcher } from "svelte";
+  import { enhance, applyAction } from "$app/forms";
+  
   let { data, form } = $props();
 
 
@@ -14,6 +16,7 @@ import { pocketbase } from "$lib/pocketbase";
   let passwordConfirm = "";
   let school = "";
   let error = "";
+  let isLoading = $state(false);
 
   let schoolsLoading: boolean = $state(false);
   // let { type = "login" }: { type: "login" | "register" } = $props()
@@ -108,7 +111,13 @@ import { pocketbase } from "$lib/pocketbase";
 
 <div class="auth-modal-backdrop" on:click={() => dispatch("close")}>
   <div class="auth-modal-content" on:click|stopPropagation>
-      <form method="POST">
+      <form method="POST" use:enhance={() => {
+        isLoading = true;
+        return async ({ result }) => {
+          await applyAction(result);
+          isLoading = false;
+        }
+      }}>
         <input type="hidden" name="redirectTo" value={data.redirectTo} />
         <h2>Registrovat se</h2>
         <input type="email" bind:value={email} 
@@ -168,7 +177,7 @@ import { pocketbase } from "$lib/pocketbase";
             {/each}
           </select>
         {/if}
-        <SubmitButton type="submit">Registrovat</SubmitButton>
+        <SubmitButton type="submit" isLoading={isLoading}>Registrovat</SubmitButton>
         <!-- <button class="submit" type="submit">Registrovat</button> -->
       </form>
     {#if form?.error}

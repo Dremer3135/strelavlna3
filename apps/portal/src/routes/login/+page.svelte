@@ -1,38 +1,20 @@
-<!-- <h1>Admin Login</h1>
-
-<form method="POST">
-    <input type="hidden" name="redirectTo" value={data.redirectTo} />
-
-    <label>
-        Email
-        <input name="email" type="email" required>
-    </label>
-    <label>
-        Password
-        <input name="password" type="password" required>
-    </label>
-
-    {#if form?.error}
-        <p style="color: red;">{form.error}</p>
-    {/if}
-
-    <button>Login</button>
-</form> -->
-
 <script lang="ts">
+  import { enhance, applyAction } from "$app/forms";
   import SubmitButton from "$lib/components/general/SubmitButton.svelte";
 import { pocketbase } from "$lib/pocketbase";
+    import { Exception } from "sass";
   import { createEventDispatcher } from "svelte";
   let { data, form } = $props();
 
 
   const dispatch = createEventDispatcher();
 
-  let email = "";
+  let email = $state("");
   let password = "";
   let passwordConfirm = "";
   let school = "";
   let error = "";
+  let isLoading = $state(false);
   // let { type = "login" }: { type: "login" | "register" } = $props()
 
   let selectedKraj = "";
@@ -73,54 +55,32 @@ import { pocketbase } from "$lib/pocketbase";
     }
   }
 
-  async function handleLoginSubmit() {
-    error = "";
+  let resetPasswordError = $state("");
+  let resetPasswordSuccess = $state(false);
+
+  async function resetPassword() {
     try {
-      await pocketbase.collection("teachers").authWithPassword(email, password);
-      // Auth is successful, authStore will update, App.svelte will react.
-      dispatch("close");
+      await pocketbase.collection(data.adminLogin ? "correctors": "teachers").requestPasswordReset(email);
+      resetPasswordSuccess = true;
     } catch (err: any) {
-      if (err.status === 400) {
-        error = "Zadané údaje nesedí";
-      } else if (err.status === 403) {
-        error = "Váš účet zatím není ověřený, ale pracujeme na tom :)";
-      }
-      else {
-        error = "Failed to authenticate. Please check your credentials.";
-      }
+      resetPasswordError = err;
     }
+
+
   }
 
-  async function handleRegisterSubmit() {
-    error = "";
-    if (password !== passwordConfirm) {
-      error = "Passwords do not match.";
-      return;
-    }
-
-    try {
-      console.log("Registering with school ID:", school);
-      await pocketbase.collection("teachers").create({
-        email,
-        password,
-        passwordConfirm,
-        skola: school,
-      });
-
-      // After creating, log them in
-      await pocketbase.collection("teachers").authWithPassword(email, password);
-      dispatch("close");
-    } catch (err: any) {
-      console.error("Registration Error:", err);
-      error = "Failed to register. Please try again.";
-    }
-  }
 </script>
 
 <div class="auth-modal-backdrop" on:click={() => dispatch("close")}>
   <div class="auth-modal-content" on:click|stopPropagation>
     <!-- {#if type === "login"} -->
-      <form method="POST">
+      <form method="POST" use:enhance={() => {
+        isLoading = true;
+        return async ({ result }) => {
+          await applyAction(result);
+          isLoading = false;
+        };
+      }}>
         <input type="hidden" name="redirectTo" value={data.redirectTo} />
         <input type="hidden" name="adminLogin" value={data.adminLogin} />
         {#if data.adminLogin}
@@ -137,61 +97,23 @@ import { pocketbase } from "$lib/pocketbase";
           required
           class="password"
         />
-        <SubmitButton type="submit">Pokracovat</SubmitButton>
+        <SubmitButton isLoading={isLoading} type="submit">Pokracovat</SubmitButton>
         <!-- <button class="submit" type="submit">Pokračovat</button> -->
       </form>
-    <!-- {:else if type === "register"}
-      <form on:submit|preventDefault={handleRegisterSubmit}>
-        <h2>Registrovat se</h2>
-        <input type="email" bind:value={email} 
-          placeholder="email"
-          class="email"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Heslo"
-          bind:value={password}
-          required
-          class="password"
-        />
-        <input
-          type="password"
-          placeholder="Potvrďte heslo"
-          bind:value={passwordConfirm}
-          required
-          class="password-again"
-        />
-        <select bind:value={selectedKraj} class="school" on:change={() => {selectedOkres = ""}}>
-          <option value="">Vyberte kraj</option>
-          {#each kraje as kraj}
-            <option value={kraj.name}>{kraj.name}</option>
-          {/each}
-        </select>
-        <select bind:value={selectedOkres} class="school" on:change={fetchSchools} disabled={!selectedKraj}>
-          <option value="">Vyberte okres</option>
-          {#if selectedKraj}
-            {#each kraje.find(k => k.name === selectedKraj)?.okresy ?? [] as okres}
-              <option value={okres}>{okres}</option>
-            {/each}
-          {/if}
-        </select>
-        <select bind:value={school} class="school" disabled={!selectedOkres || schools.length === 0}>
-          <option value="">Vyberte školu</option>
-          {#each schools as s}
-            <option value={s.id}>{s.plny_nazev}</option>
-          {/each}
-        </select>
-        <button type="submit">Registrovat</button>
-      </form>
-    {/if} -->
-    {#if form?.error}
-      <p class="error">{form?.error}</p>
+    {#if form?.errorType === "invalid_credentials" }
+      <p class="error">Zadané údaje nesedí</p>
+      <p class="password-reset">Zapoměli jste heslo? <button on:click|stopPropagation={resetPassword}>Resetujte si ho zde</button></p>
+    {/if}
+    {#if resetPasswordError && !resetPasswordSuccess}
+    <p class="password-reset-error">{resetPasswordError}</p>
+    {/if}
+    {#if resetPasswordSuccess}
+    <p class="password-reset-success">Poslali jsme Vám resetovací odkaz na <span class="bold">{email}</span></p>
     {/if}
   </div>
 </div>
 
-<style>
+<style lang="scss">
   .auth-modal-backdrop {
     all: unset;
     position: fixed;
@@ -226,10 +148,47 @@ import { pocketbase } from "$lib/pocketbase";
     padding: 20px 10px;
   }
   .error {
-    color: red;
+    color: var(--color-pink);
     font-family: 'Fredoka';
     margin: 0px;
   }
+
+  p.password-reset {
+    font-family: 'Fredoka';
+    font-size: 14px;
+    color: #777777;
+    margin: 0px;
+    margin-top: 10px;
+
+    button {
+      all: unset;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  }
+
+  .password-reset-error {
+    color: var(--color-pink);
+    font-family: 'Fredoka';
+    margin: 0px;
+    margin-top: 10px;
+  }
+
+  .password-reset-success {
+    font-family: 'Fredoka';
+    font-size: 15px;
+    color: #777777;
+    margin: 0px;
+    margin-top: 20px;
+    font-weight: 500;
+
+    .bold {
+      font-weight: 500;
+      color: #333333;
+      font-size: 18px;
+    }
+  }
+
 
   form input {
     all: unset;

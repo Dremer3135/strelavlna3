@@ -1,6 +1,6 @@
 // src/lib/constants.ts
 
-import { ProbsDiffOptions } from "./pocketbase-types";
+import { ProbsDiffOptions, ProbsFocusOptions } from "./pocketbase-types";
 
 /**
  * This file contains shared constants and inferred types that are used
@@ -11,9 +11,11 @@ import { ProbsDiffOptions } from "./pocketbase-types";
 
 // The runtime array of possible difficulty values, derived directly from the PocketBase schema.
 export const PROB_DIFFICULTIES = Object.values(ProbsDiffOptions);
+export const PROB_FOCUSES = Object.values(ProbsFocusOptions);
 
 // The compile-time TypeScript type, also derived from the PocketBase schema.
 export type ProbDifficulty = ProbsDiffOptions;
+export type ProbFocus = ProbsFocusOptions;
 
 
 // --- Add other shared constants below ---
