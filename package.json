@@ -1,0 +1,9 @@
+{
+    "name": "strelavlna3",
+    "private": "true",
+    "workspaces": [
+        "apps/arena",
+        "apps/portal",
+        "apps/shared"
+    ]
+}
