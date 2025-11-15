@@ -90,7 +90,7 @@ class AttrDict:
         if name == "__d": return self.__d
         return self.__d[name]
 
-def _worker_run(code: str, text: str, answer: str, consts: dict[str, float],conn, timeout: int, mem_mb: int):
+def _worker_run(code: str, text: str, answer: str, consts, conn, timeout: int, mem_mb: int):
     """
     Worker function executed in a child process.
     It sets resource limits (if available), executes code under RestrictedPython,
