@@ -167,7 +167,7 @@ func main() {
 			oimages := rec.GetStringSlice("images")
 			nimages := make([]string, len(oimages))
 			for i, img := range oimages {
-				nimages[i] = rec.BaseFilesPath() + "/" + img
+				nimages[i] = "https://strela-vlna.gchd.cz/api/files/probs/" + rec.Id + "/" + img
 			}
 			return e.JSON(200, struct{
 				Text string `json:"text"`

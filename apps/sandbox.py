@@ -143,6 +143,12 @@ def _worker_run(code: str, text: str, answer: str, consts, conn, timeout: int, m
 
         print(byte_code)
 
+        if len(byte_code.errors) > 0:
+            conn.send({"ok": False, "error": f"{byte_code.errors}"})
+            conn.close()
+            return
+
+
         # 4) execute
         exec(byte_code.code, restricted_globals, restricted_locals)
 
