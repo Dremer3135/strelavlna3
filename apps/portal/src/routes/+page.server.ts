@@ -1,3 +1,3 @@
 import { redirect } from "@sveltejs/kit";
 
-redirect(307, "/home");
+throw redirect(303, "/home");
