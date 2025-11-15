@@ -206,7 +206,7 @@ class SandboxHandler(BaseHTTPRequestHandler):
             return
 
         if not isinstance(code, str) or not code.strip():
-            self._send_json({"success": True, "text": text, "answer": answer}, status=400)
+            self._send_json({"success": True, "text": text, "answer": answer}, status=200)
             return
 
         parent_conn, child_conn = Pipe()
