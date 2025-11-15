@@ -6,7 +6,7 @@ import { POCKETBASE_SUPERUSER_EMAIL, POCKETBASE_SUPERUSER_PASSWORD } from '$env/
 
 export const load = async ({ locals, url }) => {
     if (!locals.user) {
-        throw redirect(303, `/admin-login?redirectTo=${url.pathname}`);
+        throw redirect(303, `/login?redirectTo=${url.pathname}&adminLogin=true`);
     }
 
     if (locals.user.collectionName !== 'correctors') {
