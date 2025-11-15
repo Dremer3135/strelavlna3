@@ -138,7 +138,7 @@ func main() {
 			if err != nil {
 				return e.Error(500, "atp idk bro", err)
 			}
-			resp, err := http.DefaultClient.Post("localhost:8000", "application/json", bytes.NewBuffer(jbody))
+			resp, err := http.DefaultClient.Post("http://localhost:8000", "application/json", bytes.NewBuffer(jbody))
 			if err != nil {
 				return e.Error(500, "atp idk bro", err)
 			}
