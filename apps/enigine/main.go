@@ -5,28 +5,33 @@ import (
 	"net/http"
 
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 var ctx = context.Background()
 
-func wsHandler(ws *websocket.Conn) {
-	// websocket.Message.Receive()
+var upgrader = websocket.Upgrader{}
+
+func NewRdbConn() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr: "localhost:",
+	})
 }
 
 func main() {
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		Password: "",
-		DB: 0,
+	rdb := NewRdbConn()
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		id, err := rdb.Get(ctx, "playtoken:" + token).Result()
+		if err != nil {
+			http.Error(w, "invalid token", 400)
+			return
+		}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
 	})
-
-	teams, err := rdb.SMembers(ctx, "teams").Result()
-	if err != nil { panic(err) }
-
-
-
-	http.Handle("/ws", websocket.Handler(wsHandler))
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic([]any{"ListenAndServe:", err})
 	}

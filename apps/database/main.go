@@ -98,7 +98,7 @@ func main() {
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
-		e.Router.POST("/code", func(e *core.RequestEvent) error {
+		e.Router.POST("/api/code", func(e *core.RequestEvent) error {
 			data := struct{
 				Id string `json:"id"`
 			}{}
@@ -167,7 +167,11 @@ func main() {
 			return e.JSON(200, struct{
 				Text string `json:"text"`
 				Answer string `json:"answer"`
-			}{text, answer})
+				Images []string `json:"images"`
+				Diff string `json:"diff"`
+				Name string `json:"name"`
+				Id string `json:"id"`
+			}{text, answer, rec.GetStringSlice("images"), rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
@@ -200,7 +204,7 @@ func main() {
 		// })
 
 		e.Router.POST(
-			"/sql",
+			"/api/sql",
 			func(e *core.RequestEvent) error {
 				data, err := io.ReadAll(e.Request.Body)
 				if err != nil { return err }
