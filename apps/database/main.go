@@ -112,7 +112,7 @@ func main() {
 				return e.Error(400, "invalid prob id", err)
 			}
 			consts := []*core.Record{}
-			err = e.App.RecordQuery("consts").All(&consts)
+			err = e.App.RecordQuery("constants").All(&consts)
 			if err != nil {
 				return e.Error(500, "idk", err)
 			}
@@ -164,6 +164,11 @@ func main() {
 			if !ok {
 				return e.Error(500, "atp idk bro", err)
 			}
+			oimages := rec.GetStringSlice("images")
+			nimages := make([]string, len(oimages))
+			for i, img := range oimages {
+				nimages[i] = rec.BaseFilesPath() + "/" + img
+			}
 			return e.JSON(200, struct{
 				Text string `json:"text"`
 				Answer string `json:"answer"`
@@ -171,7 +176,7 @@ func main() {
 				Diff string `json:"diff"`
 				Name string `json:"name"`
 				Id string `json:"id"`
-			}{text, answer, rec.GetStringSlice("images"), rec.GetString("diff"), rec.GetString("name"), rec.Id})
+			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
