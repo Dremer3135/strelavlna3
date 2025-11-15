@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/mail"
+	"slices"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -247,9 +248,22 @@ func main() {
 		err := e.App.RecordQuery("correctors").All(&correctors)
 		if err != nil { return err }
 
-		corrids := make([]string, len(correctors))
+		author := e.Record.GetString("author")
+
+		corrids := make([]string, len(correctors)-1)
 		for i, corr := range correctors {
 			corrids[i] = corr.GetString("id")
+		}
+
+		if slices.Contains(corrids, author) {
+			ncorrids := make([]string, 1, len(corrids))
+			ncorrids[0] = author
+			for _, corr := range corrids {
+				if corr != author {
+					ncorrids = append(ncorrids, corr)
+				}
+			}
+			corrids = ncorrids
 		}
 
 		rand.Shuffle(len(corrids), func(i, j int) {

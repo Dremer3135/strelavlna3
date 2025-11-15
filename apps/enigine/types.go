@@ -298,7 +298,7 @@ type CorrectorJoinedReqMsg struct {
 	Conn *websocket.Conn
 }
 
-func getProbCorrector(conn *redis.Client, probid string) (string, error) {
+func getProbCorrector(conn *redis.Client, teamid string, probid string) (string, error) {
 	return conn.Get(ctx, "probcorr:" + probid).Result()
 }
 

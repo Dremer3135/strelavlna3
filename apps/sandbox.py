@@ -152,8 +152,13 @@ def _worker_run(code: str, text: str, answer: str, consts, conn, timeout: int, m
         # 4) execute
         exec(byte_code.code, restricted_globals, restricted_locals)
 
-        ntext = text.format_map(restricted_locals)
-        nans = answer.format_map(restricted_locals)
+        ntext = text
+        for k, v in restricted_locals.items():
+            ntext = ntext.replace("`" + f"{k}" + "`", f"{v}")
+
+        nans = answer
+        for k, v in restricted_locals.items():
+            nans = nans.replace("`" + f"{k}" + "`", f"{v}")
 
         # 5) gather locals and send back
         conn.send({"ok": True, "text": ntext, "answer": nans})
@@ -201,7 +206,7 @@ class SandboxHandler(BaseHTTPRequestHandler):
             return
 
         if not isinstance(code, str) or not code.strip():
-            self._send_json({"success": False, "error": "no code provided"}, status=400)
+            self._send_json({"success": True, "text": text, "answer": answer}, status=400)
             return
 
         parent_conn, child_conn = Pipe()
