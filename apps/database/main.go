@@ -118,7 +118,7 @@ func main() {
 			}
 			constsMap := map[string]float64{}
 			for _, cnst := range consts {
-				constsMap[cnst.GetString("var")] = cnst.GetFloat("value")
+				constsMap[cnst.GetString("variable_name")] = cnst.GetFloat("value")
 			}
 			jbody, err := json.Marshal(struct{
 				Code string `json:"code"`
