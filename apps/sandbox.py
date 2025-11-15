@@ -84,7 +84,7 @@ def _prune_locals_for_transport(d):
     return out
 
 class AttrDict:
-    def __init__(self, d: dict[str, float]) -> None:
+    def __init__(self, d) -> None:
         self.__d = d
     def __getattr__(self, name: str) -> Any:
         if name == "__d": return self.__d
