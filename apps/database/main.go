@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/mail"
+	"strings"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -20,13 +21,14 @@ func main() {
 
 	app.Cron().MustAdd(
 		"spam",
-		"0 * * * *",
+		"* * * * *",
 		func() {
 			schools := []*core.Record{}
 
 			err := app.RecordQuery("skoly").
 				AndWhere(dbx.HashExp{"spam": false}).
-				Limit(100).
+				OrderBy("created").
+				Limit(1).
 				All(&schools)
 
 			if len(schools) < 1 {
@@ -60,7 +62,9 @@ func main() {
 				if email == "" {
 					return
 				}
-				schoolmails = append(schoolmails, mail.Address{Address: email})
+				addr, err := mail.ParseAddress(email)
+				if err != nil { continue }
+				schoolmails = append(schoolmails, *addr)
 			}
 
 			msg := &mailer.Message{
@@ -79,6 +83,16 @@ func main() {
 			if err != nil {
 				app.Logger().Error("mail send failed", "err", err)
 			}
+
+			for _, school := range schools {
+				// school.Set("spam", true)
+				// err := app.Save(school)
+				err := app.DB().Update("skoly", dbx.Params{"spam": true}, dbx.HashExp{"id": school.Id})
+				if err != nil {
+					app.Logger().Error("app.Save failed", "err", err)
+				}
+			}
+
 		},
 	)
 

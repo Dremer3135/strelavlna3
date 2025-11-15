@@ -10,6 +10,10 @@ export const handle = async ({ event, resolve }) => {
   if (event.url.pathname === '/qr') {
     throw redirect(302, '/');
   }
+
+  if (event.url.pathname === '/logins') {
+    throw redirect(302, '/home/register');
+  }
 	
 	if (event.url.pathname === '/logout' && event.request.method === 'POST') {
 		const userIsCorrector = event.locals.pb.authStore.model?.collectionName === 'correctors';
