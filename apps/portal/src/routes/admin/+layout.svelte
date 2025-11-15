@@ -1,9 +1,5 @@
 <script lang="ts">
     import Navbar from '$lib/components/admin/Navbar.svelte';
-<<<<<<< HEAD
-    let { data, children } = $props();
-    import type { CorrectorsResponse } from '$lib/types/pocketbase-types';
-=======
     import type { CorrectorsResponse } from '$lib/pocketbase-types';
     import { subscribeToConstants } from '$lib/stores/consts.js';
     import { subscribeToContests } from '$lib/stores/contests.js';
@@ -56,7 +52,6 @@
     });
 
 
->>>>>>> 611dff672c0713e762451f75c117fd7a93ae168c
 </script>
 
 <div class="admin-layout-container">

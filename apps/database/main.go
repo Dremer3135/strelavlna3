@@ -8,10 +8,10 @@ import (
 	"math/rand"
 	"net/http"
 	"net/mail"
-	"strings"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 )
@@ -168,7 +168,7 @@ func main() {
 				Text string `json:"text"`
 				Answer string `json:"answer"`
 			}{text, answer})
-		})
+		}).Bind(apis.RequireAuth("correctors"))
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
 		//
@@ -199,35 +199,35 @@ func main() {
 		// 	return e.String(200, "ok")
 		// })
 
-		// e.Router.POST(
-		// 	"/sql",
-		// 	func(e *core.RequestEvent) error {
-		// 		data, err := io.ReadAll(e.Request.Body)
-		// 		if err != nil { return err }
-		// 		body := string(data)
-		//
-		// 		e.Request.Body.Close()
-		//
-		// 		rows, err := app.DB().NewQuery(body).Rows()
-		// 		if err != nil { return err }
-		//
-		// 		res := []map[string]string{}
-		//
-		// 		for rows.Next() {
-		// 			row := dbx.NullStringMap{}
-		// 			err := rows.ScanMap(row)
-		// 			if err != nil { return err }
-		// 			rrow := map[string]string{}
-		// 			for k, v := range row {
-		// 				if !v.Valid { continue }
-		// 				rrow[k] = v.String
-		// 			}
-		// 			res = append(res, rrow)
-		// 		}
-		//
-		// 		return e.JSON(200, res)
-		// 	},
-		// )
+		e.Router.POST(
+			"/sql",
+			func(e *core.RequestEvent) error {
+				data, err := io.ReadAll(e.Request.Body)
+				if err != nil { return err }
+				body := string(data)
+
+				e.Request.Body.Close()
+
+				rows, err := app.DB().NewQuery(body).Rows()
+				if err != nil { return err }
+
+				res := []map[string]string{}
+
+				for rows.Next() {
+					row := dbx.NullStringMap{}
+					err := rows.ScanMap(row)
+					if err != nil { return err }
+					rrow := map[string]string{}
+					for k, v := range row {
+						if !v.Valid { continue }
+						rrow[k] = v.String
+					}
+					res = append(res, rrow)
+				}
+
+				return e.JSON(200, res)
+			},
+		).Bind(apis.RequireSuperuserAuth())
 
 		return e.Next()
 	})
