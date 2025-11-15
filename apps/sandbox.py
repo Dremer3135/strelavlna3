@@ -23,6 +23,8 @@ import multiprocessing
 import os
 import time
 from typing import Any
+import random
+import math
 
 # UNIX-only resource limiting:
 try:
@@ -131,6 +133,8 @@ def _worker_run(code: str, text: str, answer: str, consts, conn, timeout: int, m
             "_getattr_": safer_getattr,
             "_inplacevar_": _inplacevar_,
             "CONSTS": AttrDict(consts),
+            "random": random,
+            "math": math,
         }
         restricted_locals = {}
 
