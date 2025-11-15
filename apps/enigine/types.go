@@ -208,6 +208,7 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 
 		case WriteMsg:
 		  admins <- msg
+			
 
 		}
 	}
@@ -340,6 +341,12 @@ func adminManager(self chan Msg) {
 			team <- Msg{PlayerJoinRequest, "", self, data.Conn}
 
 		case WriteMsg:
+			data, ok := msg.data.(WriteMsgMsg)
+			if !ok { break }
+		  corrector, err := 
+
+		  
+		  
 
 		}
 	}

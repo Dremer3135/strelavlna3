@@ -100,28 +100,28 @@ def _worker_run(code: str, text: str, answer: str, consts, conn, timeout: int, m
     """
     try:
         # 1) Apply resource limits (Unix)
-        if resource is not None:
-            # limit CPU time (seconds)
-            try:
-                # RLIMIT_CPU limits CPU-seconds. When exceeded, SIGXCPU is delivered.
-                resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
-            except Exception as e:
-                # continue but note we couldn't set
-                pass
-
-            # limit address space (virtual memory) in bytes
-            mem_bytes = int(mem_mb) * 1024 * 1024
-            try:
-                resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
-            except Exception:
-                # not fatal; continue
-                pass
-
-            # try to prevent forking many processes (best-effort)
-            try:
-                resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
-            except Exception:
-                pass
+        # if resource is not None:
+        #     # limit CPU time (seconds)
+        #     try:
+        #         # RLIMIT_CPU limits CPU-seconds. When exceeded, SIGXCPU is delivered.
+        #         resource.setrlimit(resource.RLIMIT_CPU, (timeout, timeout))
+        #     except Exception as e:
+        #         # continue but note we couldn't set
+        #         pass
+        #
+        #     # limit address space (virtual memory) in bytes
+        #     mem_bytes = int(mem_mb) * 1024 * 1024
+        #     try:
+        #         resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        #     except Exception:
+        #         # not fatal; continue
+        #         pass
+        #
+        #     # try to prevent forking many processes (best-effort)
+        #     try:
+        #         resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
+        #     except Exception:
+        #         pass
 
         # 2) Prepare RestrictedPython environment
         restricted_globals = {
