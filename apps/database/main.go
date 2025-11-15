@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -155,7 +156,7 @@ func main() {
 			}
 			succ, ok := presp["success"].(bool)
 			if !ok || !succ {
-				return e.Error(400, "error", presp["error"])
+				return e.String(400, fmt.Sprint(presp["error"]))
 			}
 			text, ok := presp["text"].(string)
 			if !ok {
