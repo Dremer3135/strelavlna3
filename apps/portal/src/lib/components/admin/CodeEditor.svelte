@@ -10,7 +10,7 @@
 	import { onMount } from 'svelte';
 	import type * as Monaco from 'monaco-editor';
 	import { createEventDispatcher } from "svelte";
-	import LoadingAnimation from '$lib/components/general/LoadingAnimation.svelte';
+	import LoadingAnimationColor from '$lib/components/general/LoadingAnimationColor.svelte';
 
 	let isLoading = $state(true);
 
@@ -69,6 +69,7 @@
 					value = currentValue;
 					dispatch("code", { value: value });
 					isUpdatingFromParent = false;
+					console.log("changing context or whatever");
 				}
 			});
 
@@ -91,6 +92,7 @@
 		const currentEditor = editor;
 		if (currentEditor && value !== currentEditor.getValue() && !isUpdatingFromParent) {  
 			currentEditor.setValue(value);
+			console.log("setting value");
 		}	
 	});
 </script>
@@ -98,7 +100,7 @@
 <div class="editor-container">
     {#if isLoading}
         <div class="loading-overlay">
-            <LoadingAnimation />
+            <LoadingAnimationColor />
         </div>
     {/if}
     <div class="monaco-editor-wrapper" bind:this={editorEl}></div>

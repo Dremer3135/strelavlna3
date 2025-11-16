@@ -17,7 +17,7 @@
         <img class="image" src={image} alt="problem">
     {/each}
     {#if content.answer}
-    <p class="answer">{content.answer}</p>
+    <p class="answer"><Latex text={content.answer}/></p>
     {/if}
 </main>
 

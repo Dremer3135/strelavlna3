@@ -24,7 +24,7 @@
 <span class="wrapper">
 	{#each segments as segment}
 		{#if segment.type === 'text'}
-			{segment.content}
+			{@html segment.content}
 		{:else if segment.type === 'latex'}
 			<div class="katex-container">
 				{@html renderMath(segment.content)}
