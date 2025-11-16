@@ -170,21 +170,27 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 			}
 			money, err := getMoney(conn, id)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+
 			price, err := getPrice(conn, BuyCost, diff)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+
 		  if price > money { msg.callback <- Msg{NotEnoughMoney, id, self, price}; break }
+
 			probid, err := popProb(conn, id, diff)
 		  if err != nil { msg.callback <- Msg{NotAvaiable, id, self, err}; break }
+
 			_, err = pushBoughtProb(conn, id, probid)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
+
 			err = setMoney(conn, id, money - price)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
+			
 		  info, err := getProbInfo(conn, probid)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
+
 		  msg.callback <- Msg{BoughtProb, id, self, info}
 
 		case WriteMsg:
-			fmt.Println(msg)
 		  admins <- msg
 			
 
