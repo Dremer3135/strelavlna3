@@ -1,7 +1,7 @@
 <script lang="ts">
     import ContentEditor from "./ContentEditor.svelte";
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
-    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/types/pocketbase-types";
+    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
     import { onDestroy, onMount } from "svelte";
     import { editableProbs } from "$lib/stores/probs.js";
@@ -39,7 +39,7 @@
         });
     }
 
-    let filters = $state([
+    let filters = $derived([
         [
             {name: "all", function: (probIds: string[]) => { return probIds; }},
             {name: "my", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).author == data.user?.id )}},

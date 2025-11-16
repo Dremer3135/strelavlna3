@@ -11,6 +11,11 @@ export default defineConfig({
 			// languageWorkers: ['css', 'html', 'json', 'ts'] // Temporarily commented out for diagnosis
 		})
 	],
+	server: {
+		watch: {
+			paths: ['../../shared/src/lib']
+		}
+	},
 	optimizeDeps: {
 		exclude: ['shared']
 	},
