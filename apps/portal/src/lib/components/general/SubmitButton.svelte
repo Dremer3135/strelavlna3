@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { LoadingAnimation } from "shared";
     let { isLoading = false, children, ...rest }: { isLoading: boolean, children: any } = $props();
 
     // let { class: className = '', theme  }: { class: any, theme : "yellow" | "orange" | "purple" | "pink", children: any } = $props();
@@ -12,7 +13,9 @@
 <button style="--children-width: {childrenWidth}px" class:loading={isLoading}>
     <span bind:clientWidth={childrenWidth}>{@render children()}</span>
     <i class="fa-solid fa-angle-right arrow"></i>
-    <i class="fa-solid fa-rotate loading"></i>
+    <div class="animation-wrapper">
+        <LoadingAnimation color="white" />
+    </div>
 </button>
 
 <style lang="scss">
@@ -31,8 +34,6 @@
         align-items: center;
         justify-content: center;
 
-        
-    
         span {
             font-family: 'Lexend';
             font-size: 17px;
@@ -53,21 +54,38 @@
             transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
         }
 
-        .loading {
-            font-size: 20px;
+        .animation-wrapper {
             position: absolute;
+            height: 25px;
+            width: 25px;
             top: 50%;
-            left: 20px;
             transform: translateY(-50%);
-            animation: loading-animation 1s linear infinite;
+            right: 10px;
             opacity: 0;
         }
 
         &.loading {
-            .loading {
+            .animation-wrapper {
                 opacity: 1;
             }
         }
+
+        // .loading {
+        //     font-size: 20px;
+        //     position: absolute;
+        //     top: 50%;
+        //     left: 20px;
+        //     transform: translateY(-50%);
+        //     animation: loading-animation 1s linear infinite;
+        //     opacity: 0;
+
+        // }
+
+        // &.loading {
+        //     .loading {
+        //         opacity: 1;
+        //     }
+        // }
 
         &:hover {
             span {

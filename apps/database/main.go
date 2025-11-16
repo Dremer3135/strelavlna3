@@ -156,7 +156,9 @@ func main() {
 			}
 			succ, ok := presp["success"].(bool)
 			if !ok || !succ {
-				return e.String(400, fmt.Sprint(presp["error"]))
+				return e.JSON(400, struct{
+					Data string `json:"data"`
+				}{Data: fmt.Sprint(presp["error"])})
 			}
 			text, ok := presp["text"].(string)
 			if !ok {

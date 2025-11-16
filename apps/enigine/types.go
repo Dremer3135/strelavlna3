@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -145,7 +146,7 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 			delete(players, msg.from)
 
 		case PlayerJoinRequest:
-			data, ok := msg.data.(PlayerJoinReqMsg)
+			data, ok := msg.data.(*websocket.Conn)
 		  if !ok {
 				msg.callback <- Msg{InvalidMessage, id, self, "join"}
 				break
@@ -156,57 +157,34 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 			}
 			plid := strconv.Itoa(len(players))
 		  plchan := make(chan Msg, 10)
-		  go playerManager(data.Conn, plchan, self, plid)
+		  go playerManager(data, plchan, self, plid)
 		  players[plid] = plchan
 			// TODO: initload
 
 		case BuyProb:
 			diff, ok := msg.data.(string)
-		  if !ok {
-				msg.callback <- Msg{InvalidMessage, id, self, "buy"}
-				break
-			}
+		  if !ok { msg.callback <- Msg{InvalidMessage, id, self, "buy"}; break }
 			if !isRunning(conn) {
-				msg.callback <- Msg{NotRunning, id, self, "buy"}
+				msg.callback <- Msg{NotRunning, id, self, "buy"};
 				break
 			}
 			money, err := getMoney(conn, id)
-		  if err != nil {
-				msg.callback <- Msg{ServerError, id, self, err}
-				break
-			}
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
 			price, err := getPrice(conn, BuyCost, diff)
-		  if err != nil {
-				msg.callback <- Msg{ServerError, id, self, err}
-				break
-			}
-		  if price > money {
-				msg.callback <- Msg{NotEnoughMoney, id, self, price}
-				break
-			}
-			probid, err := popProb(conn, msg.from, diff)
-		  if err != nil {
-				msg.callback <- Msg{NotAvaiable, id, self, nil}
-				break
-			}
-			_, err = pushBoughtProb(conn, msg.from, probid)
-		  if err != nil {
-				msg.callback <- Msg{ServerError, id, self, nil}
-				break
-			}
-			err = setMoney(conn, msg.from, money - price)
-		  if err != nil {
-				msg.callback <- Msg{ServerError, id, self, nil}
-				break
-			}
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+		  if price > money { msg.callback <- Msg{NotEnoughMoney, id, self, price}; break }
+			probid, err := popProb(conn, id, diff)
+		  if err != nil { msg.callback <- Msg{NotAvaiable, id, self, err}; break }
+			_, err = pushBoughtProb(conn, id, probid)
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
+			err = setMoney(conn, id, money - price)
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
 		  info, err := getProbInfo(conn, probid)
-		  if err != nil {
-				msg.callback <- Msg{ServerError, id, self, nil}
-				break
-			}
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
 		  msg.callback <- Msg{BoughtProb, id, self, info}
 
 		case WriteMsg:
+			fmt.Println(msg)
 		  admins <- msg
 			
 
@@ -263,6 +241,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string) 
 	}()
 	chanloop: for {
 		msg, ok := <- self
+		fmt.Printf("client: %#v\n", msg)
 		if !ok {
 			ws.Close()
 			team <- Msg{PlayerLeft, id, self, errors.New("chan closed")}
@@ -341,9 +320,9 @@ func adminManager(self chan Msg) {
 			team <- Msg{PlayerJoinRequest, "", self, data.Conn}
 
 		case WriteMsg:
-			data, ok := msg.data.(WriteMsgMsg)
-			if !ok { break }
-		  corrector, err := 
+			// data, ok := msg.data.(WriteMsgMsg)
+			// if !ok { break }
+		  // corrector, err := 
 
 		  
 		  

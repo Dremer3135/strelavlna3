@@ -241,12 +241,17 @@
             return currentConstants;
         });
     }
-    
+
 </script>
 
 
 
-<main>
+<main onkeydown={(e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key == "s") {
+        e.preventDefault();
+        saveChanges();
+    }
+}}>
     <div class="banners-wrapper">
         <div class="filters-wrapper">
             <button class="dropdow-button" onclick={() => {filtersOpen = !filtersOpen}}>
@@ -297,6 +302,7 @@
                 value_answer={getProbEditedState(selectedProb).answer}
                 value_code={getProbEditedState(selectedProb).code}
                 value_images={getProbEditedState(selectedProb).images}
+                changesSaved={changesSaved}
                 on:name={(e) => {
                     editableProbs.update(currentProbs => {
                         if (selectedProb) {
@@ -361,6 +367,24 @@
                 }
                 return currentProbs;
             }); }}
+            on:change-focus={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            focus: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
             on:change-auto={(e) => { editableProbs.update(currentProbs => {
                 if (selectedProb) {
                     const probId = selectedProb.prob.id;
@@ -415,6 +439,24 @@
                 }
                 return currentProbs;
             }); }}
+            on:change-author={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            author: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
             on:save-changes={(e) => { saveChanges(); }}
             />
         {/if}
@@ -437,6 +479,7 @@
         flex-grow: 1;
         padding: 20px;
         gap: 20px;
+        box-sizing: border-box;
     }
     
 

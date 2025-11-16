@@ -15,11 +15,6 @@ export type EditableContest = {
     edit: Partial<ContestsRecord>
 }
 
-export type LatexSegment = {
-    type: 'text' | 'latex';
-    content: string
-};
-
 export type DropdownItem = {
     id: string,
     value: string
