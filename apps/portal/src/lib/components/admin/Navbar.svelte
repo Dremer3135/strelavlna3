@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { CorrectorsResponse } from "$lib/types/pocketbase-types";
+    import type { CorrectorsResponse } from "$lib/pocketbase-types";
     import logo from "$lib/assets/images/logo_small.svg";
     import logout_icon from "$lib/assets/images/icons/logout.svg"
     import Button from "../general/Button.svelte";
@@ -20,14 +20,12 @@
             {/if}
         </div>
         {#if user}
-            <form method="POST" action="/logout">
-                <button class="logout" type="submit">Logout</button>
-            </form>
+            <a href="/logout" class="logout" data-sveltekit-reload>Logout</a>
         {/if}
     </div>
 </header>
 
-<style>
+<style lang="scss">
     .background {
         position: absolute;
         width: 100%;
@@ -77,7 +75,7 @@
     }
 
 
-    button.logout {
+    a.logout {
         all: unset;
         max-height: 30px;
         font-family: 'Lexend';
@@ -89,11 +87,11 @@
         background-color: white;
         border-radius: 2px;
         text-align: center;
-    }
 
-    button.logout:hover {
-        outline: 1px #AAAAAA solid;
-        outline-offset: 5px;
-    }
+        &:hover {
+            outline: 1px #AAAAAA solid;
+            outline-offset: 5px;
 
+        }
+    }
 </style>

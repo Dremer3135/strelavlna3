@@ -36,12 +36,10 @@
     <a href="/home/rules" class="nav-element nav5">Pravidla</a>
     <div class="right-section">
         {#if $currentUser}
-        <form method="POST" action="/logout">
-            <button class="logout" type="submit">
-                <p>Odhlásit se</p>
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-            </button>
-        </form>
+        <a href="/logout" class="logout" data-sveltekit-reload>
+            <p>Odhlásit se</p>
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </a>
         {:else}
             <img src={for_teachers} alt="For Teachers">
             <div class="button-holder">
@@ -137,7 +135,7 @@
         gap: 10px;
     }
 
-    button.logout {
+    a.logout {
         position: relative;
         all: unset;
         cursor: pointer;
