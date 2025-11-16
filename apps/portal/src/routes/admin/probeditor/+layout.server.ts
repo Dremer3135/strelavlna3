@@ -6,10 +6,16 @@ import { POCKETBASE_SUPERUSER_EMAIL, POCKETBASE_SUPERUSER_PASSWORD } from '$env/
 
 
 export const load = async ({ locals }) => {
+	console.log("loading with: ", locals.pb.authStore);
+	
 	try {
+		console.log("- - - - - - - - - - - - - - - - - - - - - - -");
 		const probs = await locals.pb.collection('probs').getFullList();
+		console.log("heheheha");
 		const constants = await locals.pb.collection('constants').getFullList();
-
+		console.log("lalalalalalala");
+		
+		// console.log(constants);
 		return {
 			probs: probs,
 			constants: constants
