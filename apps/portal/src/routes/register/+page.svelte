@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LoadingAnimation from "$lib/components/general/LoadingAnimation.svelte";
+  import LoadingAnimation from "$lib/components/general/LoadingAnimationColor.svelte";
   import SubmitButton from "$lib/components/general/SubmitButton.svelte";
   import { pocketbase } from "$lib/pocketbase";
   import type { SkolyResponse } from "$lib/pocketbase-types.js";

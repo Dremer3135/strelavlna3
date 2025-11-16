@@ -1,6 +1,6 @@
 <script lang="ts">
     import CodeEditor from "$lib/components/admin/CodeEditor.svelte";
-    import LoadingAnimation from "$lib/components/general/LoadingAnimation.svelte";
+    import LoadingAnimationColor from "$lib/components/general/LoadingAnimationColor.svelte";
     import { pocketbase } from "$lib/pocketbase";
     import type { ConstantsRecord, ProbsResponse } from "$lib/types/pocketbase-types";
     import { createEventDispatcher } from "svelte";
@@ -9,6 +9,7 @@
     import ConstantEditor from "./ConstantEditor.svelte";
     import { ProbContent, Latex, type ProbContentType } from 'shared'
     import SubmitButton from "$lib/components/general/SubmitButton.svelte";
+    import { LoadingAnimation}  from "shared";
 
     let { probRecord, value_name, value_text, value_answer, value_code, value_images, changesSaved }: { probRecord: ProbsResponse, value_name: string, value_text: string, value_answer: string, value_code: string, value_images: string[], changesSaved: boolean } = $props();
 
@@ -58,7 +59,7 @@
         }
     }
 
-    let revisionContent: ProbContentType = $state({});
+    let revisionContent: Partial<ProbContentType> = $state({});
     $effect(() => {
         probRecord;
         revisionContent = {};
@@ -116,6 +117,7 @@
     });
 
     async function reloadRevision() {
+        if (isRevisionLoading) return;
         isRevisionLoading = true;
         let response;
         try {
@@ -131,7 +133,7 @@
             }
 
         } catch (err: any) {
-            console.warn(err);
+            console.warn(err.response);
             console.log(response);
         } finally {
             isRevisionLoading = false;
@@ -207,7 +209,7 @@
                         }}
                     >
                         {#if !imagesLoaded[image]}
-                            <LoadingAnimation />
+                            <LoadingAnimationColor />
                         {/if}
                         <img 
                             src={pocketbase.files.getURL(probRecord, image)}
@@ -306,10 +308,13 @@
         <div class="content-revision">
             <div class="controls">
                 <button class="reload" onclick={() => { reloadRevision(); }} class:reloading={isRevisionLoading}>
-                    Reload
+                    <p>Reload</p>
+                    <div class="loading-wrapper">
+                        <LoadingAnimation color="white" />
+                    </div>
                 </button>
                 {#if !changesSaved}
-                <p>Unsaved changes will not apply!</p>
+                <p class="unsaved-changes">Unsaved changes will not apply!</p>
                 {/if}
             </div>
             <div class="content">
@@ -794,7 +799,7 @@
             flex-grow: 1;
             
             .controls {
-                width: 100px;
+                width: 150px;
                 align-self: flex-end;
                 // padding-right: 50px;
                 box-sizing: border-box;
@@ -810,24 +815,50 @@
                     border-radius: 4px;
                     padding: 7px 15px;
                     transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
-                    font-family: 'Fredoka';
-                    font-size: 15px;
-                    font-weight: 600;
-                    text-align: center;
-                    color: white;
                     width: 100%;
                     box-sizing: border-box;
+                    position: relative;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    // height: fit-content;
+                    
+                    p {
+                        margin: 0px;
+                        font-family: 'Fredoka';
+                        font-size: 15px;
+                        font-weight: 600;
+                        text-align: center;
+                        color: white;
+                    }
+
+                    .loading-wrapper {
+                        opacity: 0;
+                        position: absolute;
+                        top: 50%;
+                        right: 5px;
+                        width: 23px;
+                        height: 23px;
+                        transform: translateY(-50%);
+                    }
+
+
                     
                     &:hover {
                         background-color: black;
                     }
 
                     &.reloading {
-                        background-color: #F0F0F0;
+                        background-color: #666666;
+                        cursor: not-allowed;
+
+                        .loading-wrapper {
+                            opacity: 1;
+                        }
                     }
                 }
 
-                p {
+                p.unsaved-changes {
                     position: absolute;
                     top: 40px;
                     margin: 0px;

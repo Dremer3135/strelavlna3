@@ -9,9 +9,10 @@
     import type { EditableConstant } from "$lib/types.js";
     import { pocketbase } from "$lib/pocketbase";
     import type { EditableProb } from "$lib/types.js";
-    import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited } from "$lib/utils.js";
+    import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited, getContestEditedState } from "$lib/utils.js";
     import { browser } from "$app/environment";
-    import { PROB_DIFFICULTIES } from "$lib/constants";
+    import { PROB_DIFFICULTIES, PROB_FOCUSES } from "$lib/constants";
+    import { editableContests } from "$lib/stores/contests";
     import Sidebar from "./Sidebar.svelte";
     let { data, form } = $props();
 
@@ -49,6 +50,22 @@
                 name: `[${difficulty}]`,
                 function: (probIds: string[]) => {
                     return probIds.filter(probId => getProbEditedState($editableProbs[probId]).diff == difficulty);
+                }
+            }))
+        ],[
+            {name: "all", function: (probIds: string[]) => { return probIds; }},
+            ...PROB_FOCUSES.map(focus => ({
+                name: `${focus}`,
+                function: (probIds: string[]) => {
+                    return probIds.filter(probId => getProbEditedState($editableProbs[probId]).focus == focus);
+                }
+            }))
+        ],[
+            {name: "all", function: (probIds: string[]) => { return probIds; }},
+            ...Object.entries($editableContests).map(contest => ({
+                name: `${getContestEditedState(contest[1]).name}`,
+                function: (probIds: string[]) => {
+                    return probIds.filter(probId => getProbEditedState($editableProbs[probId]).contests.includes(getContestEditedState(contest[1]).id));
                 }
             }))
         ]
@@ -500,6 +517,7 @@
             overflow: hidden;
             padding-top: 0px;
             padding-bottom: 0px;
+            max-width: 350px;
             
             &.open {
                 height: fit-content;
@@ -511,6 +529,12 @@
                 justify-content: flex-start;
                 align-items: center;
                 gap: 10px;
+                max-width: 100%;
+                overflow-x: auto;
+
+                &::-webkit-scrollbar {
+                    display: none;
+                }
             
                 .filter-button {
                     all: unset;
@@ -523,6 +547,7 @@
                     padding: 2px 15px;
                     background-color: transparent;                 
                     transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;   
+                    text-wrap: nowrap;
                     
                     &.selected {
                         border-color: var(--color-pink);
