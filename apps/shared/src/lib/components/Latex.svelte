@@ -1,8 +1,8 @@
 <script lang="ts">
 	import katex from 'katex';
 	import 'katex/dist/katex.min.css'; // Re-enable the CSS
-	import { parseLatex } from '../utils.ts';
-	import type { LatexSegment } from '../types.ts';
+	import { parseLatex } from '../utils';
+	import type { LatexSegment } from '../types';
 
 	let { text = '' }: { text: string } = $props();
 
