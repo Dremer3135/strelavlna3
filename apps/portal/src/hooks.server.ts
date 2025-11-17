@@ -8,8 +8,10 @@ export const handle = async ({ event, resolve }) => {
 	event.locals.pb.authStore.loadFromCookie(event.request.headers.get('cookie') || '');
 
 	event.locals.pb.beforeSend = (url, options) => {
+		console.log(`[PocketBase Hook] Sending request to ${url}. Origin: ${event.url.origin}`);
 		options.headers = Object.assign({}, options.headers, {
 			'Origin': event.url.origin,
+			'Referer': event.url.origin,
 		});
 
 		return { url, options };

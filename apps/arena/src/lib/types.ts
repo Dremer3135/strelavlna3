@@ -1,0 +1,1 @@
+export type ContestState = "waiting" | "running" | "ended";
