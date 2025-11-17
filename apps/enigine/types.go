@@ -77,10 +77,18 @@ type Msg struct {
 	data any
 }
 
-func isRunning(conn *redis.Client) bool {
-	res, err := conn.Get(ctx, "run").Result()
-	if err != nil { return false }
-	return res == "on"
+func getState(conn *redis.Client) (string, error) {
+	return conn.Get(ctx, "state").Result()
+}
+
+func getStartTime(conn *redis.Client) (time.Duration, error) {
+	stime, err := conn.Get(ctx, "starttime").Int()
+	return time.Duration(stime), err
+}
+
+func getEndTime(conn *redis.Client) (time.Duration, error) {
+	stime, err := conn.Get(ctx, "endtime").Int()
+	return time.Duration(stime), err
 }
 
 func getMoney(conn *redis.Client, id string) (int, error) {
@@ -91,6 +99,10 @@ const (
 	BuyCost = "buy"
 	SellCost = "sell"
 	SolveCost = "solve"
+
+	StateBefore = "before"
+	StateRunning = "running"
+	StateAfter = "after"
 )
 
 func getPrice(conn *redis.Client, costType string, diff string) (int, error) {
@@ -159,15 +171,21 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 		  plchan := make(chan Msg, 10)
 		  go playerManager(data, plchan, self, plid)
 		  players[plid] = plchan
-			// TODO: initload
+
+			state, err := getState(conn)
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+
+			if state == StateBefore {}
 
 		case BuyProb:
 			diff, ok := msg.data.(string)
 		  if !ok { msg.callback <- Msg{InvalidMessage, id, self, "buy"}; break }
-			if !isRunning(conn) {
-				msg.callback <- Msg{NotRunning, id, self, "buy"};
-				break
-			}
+
+			state, err := getState(conn)
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+
+			if state != StateRunning { msg.callback <- Msg{NotRunning, id, self, nil}; break }
+
 			money, err := getMoney(conn, id)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
 

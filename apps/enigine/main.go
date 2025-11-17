@@ -51,6 +51,25 @@ func main() {
 		fmt.Println(teamid)
 		achan <- Msg{PlayerJoinRequest, "", mchan, PlayerJoinReqMsg{teamid, conn}}
 	})
+
+	http.HandleFunc("/state", func(w http.ResponseWriter, r *http.Request) {
+		state, err := getState(rdb)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		stime, err := getStartTime(rdb)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		etime, err := getEndTime(rdb)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	})
+
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic([]any{"ListenAndServe:", err})
 	}

@@ -16,6 +16,8 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -158,6 +160,7 @@ func main() {
 			if !ok || !succ {
 				return e.JSON(400, struct{
 					Data string `json:"data"`
+
 				}{Data: fmt.Sprint(presp["error"])})
 			}
 			text, ok := presp["text"].(string)
@@ -239,6 +242,31 @@ func main() {
 				}
 
 				return e.JSON(200, res)
+			},
+		).Bind(apis.RequireSuperuserAuth())
+
+		e.Router.POST(
+			"/api/rdb",
+			func(e *core.RequestEvent) error {
+
+				id := e.Request.URL.Query().Get("id")
+
+				contest, err := e.App.FindRecordById("contests", id)
+				if err != nil { return err }
+
+				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
+				if err != nil { return err }
+
+				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
+				if err != nil { return err }
+
+				rdb := redis.NewClient(&redis.Options{
+					Addr: "localhost:6379",
+				})
+
+				
+
+				return e.String(200, "ok")
 			},
 		).Bind(apis.RequireSuperuserAuth())
 

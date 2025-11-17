@@ -135,6 +135,10 @@ def _worker_run(code: str, text: str, answer: str, consts, conn, timeout: int, m
             "CONSTS": AttrDict(consts),
             "random": random,
             "math": math,
+            "range": range,
+            "enumerate": enumerate,
+            "list": list,
+
         }
         restricted_locals = {}
 
