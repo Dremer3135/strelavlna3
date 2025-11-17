@@ -274,9 +274,9 @@ func main() {
 	})
 
 	app.OnRecordUpdate("probs").BindFunc(func(e *core.RecordEvent) error {
-		if len(e.Record.GetStringSlice("queue")) > 0 {
-			return e.Next()
-		}
+		// if len(e.Record.GetStringSlice("queue")) > 0 {
+		// 	return e.Next()
+		// }
 		correctors := []*core.Record{}
 
 		err := e.App.RecordQuery("correctors").All(&correctors)
@@ -289,6 +289,10 @@ func main() {
 			corrids[i] = corr.GetString("id")
 		}
 
+		rand.Shuffle(len(corrids), func(i, j int) {
+			corrids[i], corrids[j] = corrids[j], corrids[i]
+		})
+
 		if slices.Contains(corrids, author) {
 			ncorrids := make([]string, 1, len(corrids))
 			ncorrids[0] = author
@@ -299,10 +303,6 @@ func main() {
 			}
 			corrids = ncorrids
 		}
-
-		rand.Shuffle(len(corrids), func(i, j int) {
-			corrids[i], corrids[j] = corrids[j], corrids[i]
-		})
 
 		e.Record.Set("queue", corrids)
 
