@@ -28,6 +28,7 @@ const (
 	BuyProb // string (diff)
 	SellProb // string (probid)
 	BoughtProb // BoughtProbMsg
+	SolvedProb // string (probid)
 
 	WriteMsg // WriteMsgMsg
 
@@ -52,7 +53,10 @@ type BoughtProbMsg struct {
 
 type WriteMsgMsg struct {
 	probid string
+	teamid string
+	mtype string
 	msg string
+	admin bool
 }
 
 type PlayerJoinedMsg struct {
@@ -81,14 +85,14 @@ func getState(conn *redis.Client) (string, error) {
 	return conn.Get(ctx, "state").Result()
 }
 
-func getStartTime(conn *redis.Client) (time.Duration, error) {
+func getStartTime(conn *redis.Client) (time.Time, error) {
 	stime, err := conn.Get(ctx, "starttime").Int()
-	return time.Duration(stime), err
+	return time.UnixMilli(int64(stime)), err
 }
 
-func getEndTime(conn *redis.Client) (time.Duration, error) {
+func getEndTime(conn *redis.Client) (time.Time, error) {
 	stime, err := conn.Get(ctx, "endtime").Int()
-	return time.Duration(stime), err
+	return time.UnixMilli(int64(stime)), err
 }
 
 func getMoney(conn *redis.Client, id string) (int, error) {
@@ -103,6 +107,10 @@ const (
 	StateBefore = "before"
 	StateRunning = "running"
 	StateAfter = "after"
+
+	MTypeText = "text"
+	MTypeSolve = "solve"
+	MTypeGrade = "grade"
 )
 
 func getPrice(conn *redis.Client, costType string, diff string) (int, error) {
@@ -115,6 +123,18 @@ func popProb(conn *redis.Client, team string, diff string) (string, error) {
 
 func pushBoughtProb(conn *redis.Client, team string, id string) (int64, error) {
 	return conn.SAdd(ctx, "boughtprobs:" + team, id).Result()
+}
+
+func storeMsg(conn *redis.Client, msg WriteMsgMsg) error {
+	incr, err := conn.Incr(ctx, "msglen:" + msg.teamid + ":" + msg.probid).Result()
+	if err != nil { return err }
+	err = conn.Set(ctx, "msg:" + msg.teamid + ":" + msg.probid + ":" + strconv.Itoa(int(incr)-1) + ":admin", msg.admin, 0).Err()
+	if err != nil { return err }
+	err = conn.Set(ctx, "msg:" + msg.teamid + ":" + msg.probid + ":" + strconv.Itoa(int(incr)-1) + ":mtype", msg.mtype, 0).Err()
+	if err != nil { return err }
+	err = conn.Set(ctx, "msg:" + msg.teamid + ":" + msg.probid + ":" + strconv.Itoa(int(incr)-1) + ":msg", msg.msg, 0).Err()
+	if err != nil { return err }
+	return nil
 }
 
 func getProbInfo(conn *redis.Client, id string) (BoughtProbMsg, error) {
@@ -203,15 +223,29 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 			err = setMoney(conn, id, money - price)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
 			
+
 		  info, err := getProbInfo(conn, probid)
 		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
 
 		  msg.callback <- Msg{BoughtProb, id, self, info}
 
 		case WriteMsg:
-		  admins <- msg
-			
 
+			data, ok := msg.data.(WriteMsgMsg)
+		  if !ok { msg.callback <- Msg{InvalidMessage, id, self, "write"}; break }
+
+			err := storeMsg(conn, data)
+		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
+
+			if data.admin {
+				if data.mtype == MTypeGrade {
+					for _, pl := range players {
+						pl <- Msg{SolvedProb, id, self, data.probid}
+					}
+				}
+			} else {
+				admins <- msg
+			}
 		}
 	}
 }
@@ -249,16 +283,21 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string) 
 					self <- Msg{InvalidMessage, id, self, "write"}
 					break
 				}
-				msg, ok := msg.Data["msg"]
+				msgd, ok := msg.Data["msg"]
 				if !ok {
 					self <- Msg{InvalidMessage, id, self, "write"}
 					break
 				}
-				if len(msg) > 50 {
+				mtype, ok := msg.Data["mtype"]
+				if !ok {
 					self <- Msg{InvalidMessage, id, self, "write"}
 					break
 				}
-				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid: probid, msg: msg}}
+				if len(msgd) > 50 {
+					self <- Msg{InvalidMessage, id, self, "write"}
+					break
+				}
+				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid: probid, msg: msgd, mtype: mtype, admin: false}}
 
 			}
 		}

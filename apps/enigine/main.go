@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	// "encoding/json"
 	"fmt"
 	"net/http"
+	// "time"
 
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
@@ -21,8 +23,6 @@ func NewRdbConn() *redis.Client {
 
 func main() {
 	rdb := NewRdbConn()
-
-	fmt.Println(rdb.Get(ctx, "a").String())
 
 	achan := make(chan Msg, 10)
 	go adminManager(achan)
@@ -52,23 +52,60 @@ func main() {
 		achan <- Msg{PlayerJoinRequest, "", mchan, PlayerJoinReqMsg{teamid, conn}}
 	})
 
-	http.HandleFunc("/state", func(w http.ResponseWriter, r *http.Request) {
-		state, err := getState(rdb)
+	http.HandleFunc("/corr/ws", func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		corrid, err := rdb.Get(ctx, "corrtoken:" + token).Result()
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, "invalid token", 400)
 			return
 		}
-		stime, err := getStartTime(rdb)
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			return
 		}
-		etime, err := getEndTime(rdb)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
+
+		fmt.Println(corrid)
+		achan <- Msg{CorrectorJoined, "", mchan, CorrectorJoinedReqMsg{corrid, conn}}
 	})
+
+	// http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+	// 	token := r.URL.Query().Get("token")
+	// 	_, err := rdb.Get(ctx, "playtoken:" + token).Result()
+	// 	if err != nil {
+	// 		http.Error(w, "invalid token", 400)
+	// 		return
+	// 	}
+	// 	w.WriteHeader(200)
+	// })
+	//
+	// http.HandleFunc("/state", func(w http.ResponseWriter, r *http.Request) {
+	// 	state, err := getState(rdb)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), 500)
+	// 		return
+	// 	}
+	// 	stime, err := getStartTime(rdb)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), 500)
+	// 		return
+	// 	}
+	// 	etime, err := getEndTime(rdb)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), 500)
+	// 		return
+	// 	}
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	w.WriteHeader(200)
+	// 	json.NewEncoder(w).Encode(struct{
+	// 		State string `json:"state"`
+	// 		StartTime int `json:"starttime"`
+	// 		EndTime int `json:"endtime"`
+	// 	}{
+	// 		State: state,
+	// 		StartTime: int(stime.Sub(time.Now()).Milliseconds()),
+	// 		EndTime: int(etime.Sub(time.Now()).Milliseconds()),
+	// 	})
+	// })
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic([]any{"ListenAndServe:", err})
