@@ -6,6 +6,14 @@ import type { AppUser } from './app';
 export const handle = async ({ event, resolve }) => {
 	event.locals.pb = createPocketbaseInstance();
 	event.locals.pb.authStore.loadFromCookie(event.request.headers.get('cookie') || '');
+
+	event.locals.pb.beforeSend = (url, options) => {
+		options.headers = Object.assign({}, options.headers, {
+			'Origin': event.url.origin,
+		});
+
+		return { url, options };
+	};
 	
   if (event.url.pathname === '/qr') {
     throw redirect(302, '/');
