@@ -273,7 +273,10 @@ func main() {
 		return e.Next()
 	})
 
-	app.OnRecordCreate("probs").BindFunc(func(e *core.RecordEvent) error {
+	app.OnRecordUpdate("probs").BindFunc(func(e *core.RecordEvent) error {
+		if len(e.Record.GetStringSlice("queue")) > 0 {
+			return e.Next()
+		}
 		correctors := []*core.Record{}
 
 		err := e.App.RecordQuery("correctors").All(&correctors)
@@ -281,7 +284,7 @@ func main() {
 
 		author := e.Record.GetString("author")
 
-		corrids := make([]string, len(correctors)-1)
+		corrids := make([]string, len(correctors))
 		for i, corr := range correctors {
 			corrids[i] = corr.GetString("id")
 		}
