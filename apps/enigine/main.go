@@ -107,7 +107,7 @@ func main() {
 	// 	})
 	// })
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":7777", nil); err != nil {
 		panic([]any{"ListenAndServe:", err})
 	}
 }
