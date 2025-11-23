@@ -17,7 +17,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 
-	// "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -245,30 +245,81 @@ func main() {
 			},
 		).Bind(apis.RequireSuperuserAuth())
 
-		// e.Router.POST(
-		// 	"/api/rdb",
-		// 	func(e *core.RequestEvent) error {
-		//
-		// 		id := e.Request.URL.Query().Get("id")
-		//
-		// 		contest, err := e.App.FindRecordById("contests", id)
-		// 		if err != nil { return err }
-		//
-		// 		teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
-		// 		if err != nil { return err }
-		//
-		// 		probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
-		// 		if err != nil { return err }
-		//
-		// 		rdb := redis.NewClient(&redis.Options{
-		// 			Addr: "localhost:6379",
-		// 		})
-		//
-		//
-		//
-		// 		return e.String(200, "ok")
-		// 	},
-		// ).Bind(apis.RequireSuperuserAuth())
+		e.Router.POST(
+			"/api/rdb",
+			func(e *core.RequestEvent) error {
+
+				id := e.Request.URL.Query().Get("id")
+
+				rdb := redis.NewClient(&redis.Options{
+					Addr: "localhost:6379",
+				})
+
+				contest, err := e.App.FindRecordById("contests", id)
+				if err != nil { return err }
+
+				sconfig := contest.GetString("config")
+				config := struct{
+					Buy map[string]int
+					Sell map[string]int
+					Solve map[string]int
+				}{}
+				err = json.Unmarshal([]byte(sconfig), &config)
+				if err != nil { return err }
+
+				for d, c := range config.Buy {
+					setPrice(rdb, PriceBuy, d, c)
+				}
+				for d, c := range config.Sell {
+					setPrice(rdb, PriceSell, d, c)
+				}
+				for d, c := range config.Solve {
+					setPrice(rdb, PriceSolve, d, c)
+				}
+
+				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
+				if err != nil { return err }
+
+				for _, team := range teams {
+					setMoney(rdb, team.Id, 100)
+					setPlayToken(rdb, team.Id, team.Id)
+					setTeamName(rdb, team.Id, team.GetString("name"))
+				}
+
+				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
+				if err != nil { return err }
+
+				for _, prob := range probs {
+					setProb(rdb, Prob{
+						Id: prob.Id,
+						Name: prob.GetString("name"),
+						Diff: prob.GetString("diff"),
+						Text: prob.GetString("text"),
+						Answer: prob.GetString("answer"),
+						Code: prob.GetString("code"),
+						Auto: prob.GetBool("auto"),
+						Infinite: prob.GetBool("infinite"),
+						Queue: prob.GetStringSlice("queue"),
+					})
+				}
+
+				corectors, err := e.App.FindAllRecords("correctors")
+				if err != nil { return err }
+
+				for _, corr := range corectors {
+					setCorrToken(rdb, corr.Id, corr.Id)
+				}
+
+				setState(rdb, StateBefore)
+
+				setStart(rdb, contest.GetDateTime("onlineStart").Time())
+				setEnd(rdb, contest.GetDateTime("onlineEnd").Time())
+
+				rdb.Save(ctx).Result()
+
+				return e.String(200, "ok")
+			},
+		).Bind(apis.RequireSuperuserAuth())
 
 		return e.Next()
 	})

@@ -1,17 +1,12 @@
 package main
 
 import (
-	"context"
-	// "encoding/json"
 	"fmt"
 	"net/http"
-	// "time"
 
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
-
-var ctx = context.Background()
 
 var upgrader = websocket.Upgrader{}
 

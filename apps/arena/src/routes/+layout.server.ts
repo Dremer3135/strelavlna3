@@ -1,7 +1,7 @@
 import type { ContestState } from "$lib/types";
 import { redirect } from "@sveltejs/kit";
 
-export const load = async () => {
+export const load = async ({ params, url }) => {
     let state: ContestState = "waiting";
 
     if (state == "waiting") {
@@ -9,4 +9,7 @@ export const load = async () => {
     } else if (state == "ended") {
         throw redirect(303, "/results");
     }
+
+    let token = url.searchParams.get('token');
+    return { token };
 }

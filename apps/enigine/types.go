@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/redis/go-redis/v9"
 )
 
 type MessageType int
@@ -23,33 +23,40 @@ const (
 
 	PlayerLeft // error
 	PlayerJoined
+	PlayerInitLoaded
 
 
 	BuyProb // string (diff)
 	SellProb // string (probid)
 	BoughtProb // BoughtProbMsg
 	SolvedProb // string (probid)
+	SoldProb
 
 	WriteMsg // WriteMsgMsg
+	PlayerMsg
+	AdminMsg
+	GradeProb
+	GradedProb
 
 	NotEnoughMoney // required money (int)
 	NotAvaiable // nil
 	NotRunning // nil
 
+	PlayerError // error
 	TeamChanError
 	ServerError // error
 
 	TooManyPlayers
 )
 
-type BoughtProbMsg struct {
-	Id string `json:"id"`
-	Diff string `json:"diff"`
-	Name string `json:"name"`
-	Text string `json:"text"`
-	Imgs []string `json:"images"`
-	Answer *string `json:"answer"`
-}
+// type BoughtProbMsg struct {
+// 	Id string `json:"id"`
+// 	Diff string `json:"diff"`
+// 	Name string `json:"name"`
+// 	Text string `json:"text"`
+// 	Imgs []string `json:"images"`
+// 	Answer *string `json:"answer"`
+// }
 
 type WriteMsgMsg struct {
 	probid string
@@ -81,86 +88,9 @@ type Msg struct {
 	data any
 }
 
-func getState(conn *redis.Client) (string, error) {
-	return conn.Get(ctx, "state").Result()
-}
-
-func getStartTime(conn *redis.Client) (time.Time, error) {
-	stime, err := conn.Get(ctx, "starttime").Int()
-	return time.UnixMilli(int64(stime)), err
-}
-
-func getEndTime(conn *redis.Client) (time.Time, error) {
-	stime, err := conn.Get(ctx, "endtime").Int()
-	return time.UnixMilli(int64(stime)), err
-}
-
-func getMoney(conn *redis.Client, id string) (int, error) {
-	return conn.Get(ctx, "money:" + id).Int()
-}
-
-const (
-	BuyCost = "buy"
-	SellCost = "sell"
-	SolveCost = "solve"
-
-	StateBefore = "before"
-	StateRunning = "running"
-	StateAfter = "after"
-
-	MTypeText = "text"
-	MTypeSolve = "solve"
-	MTypeGrade = "grade"
-)
-
-func getPrice(conn *redis.Client, costType string, diff string) (int, error) {
-	return conn.Get(ctx, "cost:" + costType + ":" + diff).Int()
-}
-
-func popProb(conn *redis.Client, team string, diff string) (string, error) {
-	return conn.SPop(ctx, "freeprobs:" + team + ":" + diff).Result()
-}
-
-func pushBoughtProb(conn *redis.Client, team string, id string) (int64, error) {
-	return conn.SAdd(ctx, "boughtprobs:" + team, id).Result()
-}
-
-func storeMsg(conn *redis.Client, msg WriteMsgMsg) error {
-	incr, err := conn.Incr(ctx, "msglen:" + msg.teamid + ":" + msg.probid).Result()
-	if err != nil { return err }
-	err = conn.Set(ctx, "msg:" + msg.teamid + ":" + msg.probid + ":" + strconv.Itoa(int(incr)-1) + ":admin", msg.admin, 0).Err()
-	if err != nil { return err }
-	err = conn.Set(ctx, "msg:" + msg.teamid + ":" + msg.probid + ":" + strconv.Itoa(int(incr)-1) + ":mtype", msg.mtype, 0).Err()
-	if err != nil { return err }
-	err = conn.Set(ctx, "msg:" + msg.teamid + ":" + msg.probid + ":" + strconv.Itoa(int(incr)-1) + ":msg", msg.msg, 0).Err()
-	if err != nil { return err }
-	return nil
-}
-
-func getProbInfo(conn *redis.Client, id string) (BoughtProbMsg, error) {
-	res := BoughtProbMsg{}
-	res.Id = id
-	diff, err := conn.Get(ctx, "prob:" + id + ":diff").Result()
-	if err != nil { return res, err }
-	res.Diff = diff
-	name, err := conn.Get(ctx, "prob:" + id + ":name").Result()
-	if err != nil { return res, err }
-	res.Name = name
-	text, err := conn.Get(ctx, "prob:" + id + ":text").Result()
-	if err != nil { return res, err }
-	res.Text = text
-	imgs, err := conn.SMembers(ctx, "prob:" + id + ":images").Result()
-	if err != nil { return res, err }
-	res.Imgs = imgs
-	ans, err := conn.Get(ctx, "prob:" + id + ":ans").Result()
-	if err != nil { return res, err }
-	res.Answer = &ans
-
-	return res, nil
-}
-
-func setMoney(conn *redis.Client, id string, money int) error {
-  return conn.Set(ctx, "money:" + id, money, time.Duration(0)).Err()
+type ProbBoughtAdminMsg struct {
+	team string
+  prob string
 }
 
 func teamManager(self chan Msg, admins chan Msg, id string) {
@@ -180,11 +110,11 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 		case PlayerJoinRequest:
 			data, ok := msg.data.(*websocket.Conn)
 		  if !ok {
-				msg.callback <- Msg{InvalidMessage, id, self, "join"}
+				msg.callback <- Msg{PlayerError, id, self, "join"}
 				break
 			}
 			if len(players) >= 5 {
-				msg.callback <- Msg{TooManyPlayers, id, self, "join"}
+				msg.callback <- Msg{PlayerError, id, self, "join"}
 				break
 			}
 			plid := strconv.Itoa(len(players))
@@ -192,60 +122,45 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 		  go playerManager(data, plchan, self, plid)
 		  players[plid] = plchan
 
-			state, err := getState(conn)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
-
-			if state == StateBefore {}
-
+			iload := initLoad(conn, id, plid)
+		  plchan <- Msg{PlayerInitLoaded, id, self, iload}
+		
 		case BuyProb:
 			diff, ok := msg.data.(string)
-		  if !ok { msg.callback <- Msg{InvalidMessage, id, self, "buy"}; break }
+		  if !ok { msg.callback <- Msg{PlayerError, id, self, "buy"}; break }
 
-			state, err := getState(conn)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+			prob, err := buyProb(conn, id, diff)
+			if err != nil { msg.callback <- Msg{PlayerError, id, self, err } }
 
-			if state != StateRunning { msg.callback <- Msg{NotRunning, id, self, nil}; break }
+		  msg.callback <- Msg{BoughtProb, id, self, prob}
 
-			money, err := getMoney(conn, id)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+			admins <- Msg{BoughtProb, id, self, prob}
+		
 
-			price, err := getPrice(conn, BuyCost, diff)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, err}; break }
+		case SellProb:
+			probid, ok := msg.data.(string)
+		  if !ok { msg.callback <- Msg{PlayerError, id, self, "sell"}; break }
 
-		  if price > money { msg.callback <- Msg{NotEnoughMoney, id, self, price}; break }
+			err := sellProb(conn, id, probid)
+			if err != nil { msg.callback <- Msg{PlayerError, id, self, err } }
 
-			probid, err := popProb(conn, id, diff)
-		  if err != nil { msg.callback <- Msg{NotAvaiable, id, self, err}; break }
+			// getTCorr
 
-			_, err = pushBoughtProb(conn, id, probid)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
-
-			err = setMoney(conn, id, money - price)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
-			
-
-		  info, err := getProbInfo(conn, probid)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
-
-		  msg.callback <- Msg{BoughtProb, id, self, info}
+		  msg.callback <- Msg{SoldProb, id, self, probid}
 
 		case WriteMsg:
 
 			data, ok := msg.data.(WriteMsgMsg)
 		  if !ok { msg.callback <- Msg{InvalidMessage, id, self, "write"}; break }
 
-			err := storeMsg(conn, data)
-		  if err != nil { msg.callback <- Msg{ServerError, id, self, nil}; break }
+			pushTLine(conn, msg.from, data.probid, TLineAtom{MSidePlayer, MTypeText, data.msg, time.Now()})
 
-			if data.admin {
-				if data.mtype == MTypeGrade {
-					for _, pl := range players {
-						pl <- Msg{SolvedProb, id, self, data.probid}
-					}
+			if data.mtype == MTypeGrade {
+				for _, pl := range players {
+					pl <- Msg{SolvedProb, id, self, data.probid}
 				}
-			} else {
-				admins <- msg
 			}
+			admins <- Msg{PlayerMsg, id, self, msg.data}
 		}
 	}
 }
@@ -320,7 +235,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string) 
 			break chanloop
 
 		case BoughtProb:
-			data, ok := msg.data.(BoughtProbMsg)
+			data, ok := msg.data.(Prob)
 			if !ok { break }
 			err := ws.WriteJSON(OutWsMsg{Name: "bought", Data: data})
 			if err != nil {
@@ -340,13 +255,10 @@ type CorrectorJoinedReqMsg struct {
 	Conn *websocket.Conn
 }
 
-func getProbCorrector(conn *redis.Client, teamid string, probid string) (string, error) {
-	return conn.Get(ctx, "probcorr:" + probid).Result()
-}
-
 func adminManager(self chan Msg) {
 	teams := map[string]chan Msg{}
 	correctors := map[string]chan Msg{}
+	conn := NewRdbConn()
 	for {
 		msg := <- self
 		switch msg.tp {
@@ -374,6 +286,26 @@ func adminManager(self chan Msg) {
 			_, ok := msg.data.(error)
 		  if !ok { break }
 		  delete(correctors, msg.from)
+			tickets := getCorrTickets(conn, msg.from)
+		  for _, t := range tickets {
+				ts := strings.Split(t, ":")
+				prob := getProb(conn, ts[1])
+				adminid := ""
+				for _, a := range prob.Queue {
+					_, ok := correctors[a]
+					if ok {
+						adminid = a
+						break
+					}
+				} 
+				if adminid == "" { break }
+				corr := correctors[adminid]
+				corr <- Msg{BoughtProb, "", self, prob}
+				setTCorr(conn, msg.from, prob.Id, adminid)
+				addCorrTicket(conn, adminid, msg.from, prob.Id)
+			}
+		
+		
 
 		case PlayerJoinRequest:
 			data, ok := msg.data.(PlayerJoinReqMsg)
@@ -382,14 +314,48 @@ func adminManager(self chan Msg) {
 			if !ok { break }
 			team <- Msg{PlayerJoinRequest, "", self, data.Conn}
 
-		case WriteMsg:
-			// data, ok := msg.data.(WriteMsgMsg)
-			// if !ok { break }
-		  // corrector, err := 
+		case BoughtProb:
+			prob, ok := msg.data.(Prob)
+			if !ok { break }
+		  adminid := ""
+			for _, a := range prob.Queue {
+				_, ok := correctors[a]
+				if ok {
+					adminid = a
+					break
+				}
+			} 
+			if adminid == "" { break }
+		  corr := correctors[adminid]
+			corr <- Msg{BoughtProb, "", self, prob}
+			setTCorr(conn, msg.from, prob.Id, adminid)
+		  addCorrTicket(conn, adminid, msg.from, prob.Id)
 
-		  
-		  
+		case SoldProb:
+			probid, ok := msg.data.(string)
+			if !ok { break }
+			corrid := getTCorr(conn, msg.from, probid)
+		  correctors[corrid] <- Msg{SoldProb, "", self, probid}
 
+		case SolvedProb:
+			probid, ok := msg.data.(string)
+			if !ok { break }
+			corrid := getTCorr(conn, msg.from, probid)
+		  correctors[corrid] <- Msg{SolvedProb, "", self, probid}
+
+		case PlayerMsg:
+			data, ok := msg.data.(WriteMsgMsg)
+			if !ok { break }
+			corrid := getTCorr(conn, msg.from, data.probid)
+		  correctors[corrid] <- Msg{PlayerMsg, "", self, data}
+
+		case GradeProb:
+			data, ok := msg.data.(ProbBoughtAdminMsg)
+			if !ok { break }
+			teams[data.team] <- Msg{GradeProb, "", self, data.prob}
+			msg.callback <- Msg{GradedProb, "", self, data}
+
+		
 		}
 	}
 }
