@@ -245,7 +245,7 @@ func main() {
 			},
 		).Bind(apis.RequireSuperuserAuth())
 
-		e.Router.POST(
+		e.Router.GET(
 			"/api/rdb",
 			func(e *core.RequestEvent) error {
 
