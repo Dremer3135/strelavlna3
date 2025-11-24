@@ -413,8 +413,8 @@ func main() {
 
 				fmt.Println(len(probs))
 
-				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
-				if err != nil { return err }
+				// teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
+				// if err != nil { return err }
 
 				consts, err := e.App.FindAllRecords("constants")
 				if err != nil { return err }
@@ -464,12 +464,12 @@ func main() {
 				}
 
 				npprobs := make([]PaperProb, 0)
-				for _, tm := range teams {
+				// for _, tm := range teams {
 					for _, pr := range gprobs {
-						pr.TeamName = tm.GetString("name")
+						// pr.TeamName = tm.GetString("name")
 						npprobs = append(npprobs, pr)
 					}
-				}
+				// }
 
 				for _, cnst := range consts {
 					gconsts = append(gconsts, PaperConstant{
