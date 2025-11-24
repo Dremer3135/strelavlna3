@@ -572,7 +572,7 @@ func main() {
 					setTeamName(rdb, team.Id, team.GetString("name"))
 				}
 
-				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
+				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", id))
 				if err != nil { return err }
 
 				for _, prob := range probs {
