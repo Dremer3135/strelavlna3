@@ -408,7 +408,7 @@ func main() {
 				err = json.Unmarshal([]byte(sconfig), &config)
 				if err != nil { return err }
 
-				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
+				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", id))
 				if err != nil { return err }
 
 				fmt.Println(len(probs))
