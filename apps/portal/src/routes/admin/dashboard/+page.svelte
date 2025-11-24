@@ -9,7 +9,7 @@
 
     let sql = $state("");
     async function sendSql() {
-      await pocketbase.send("/api/sql", {body: sql})
+      await pocketbase.send("/api/sql", {body: sql, method: "POST"})
     }
 </script>
 

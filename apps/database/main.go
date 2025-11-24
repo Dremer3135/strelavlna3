@@ -20,6 +20,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/hook"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 
 	"github.com/redis/go-redis/v9"
@@ -54,6 +55,32 @@ type PaperConstant struct {
   Unit string
   Desc string
   Group string
+}
+
+func RequireAuth() *hook.Handler[*core.RequestEvent] {
+	return &hook.Handler[*core.RequestEvent]{
+		Id:   "adminauth",
+		Func: requireAdminAuth("correctors"),
+	}
+}
+
+func requireAdminAuth(optCollectionNames ...string) func(*core.RequestEvent) error {
+	return func(e *core.RequestEvent) error {
+		if e.Auth == nil {
+			return e.UnauthorizedError("The request requires valid record authorization token.", nil)
+		}
+
+		// check record collection name
+		if len(optCollectionNames) > 0 && !slices.Contains(optCollectionNames, e.Auth.Collection().Name) {
+			return e.ForbiddenError("The authorized record is not allowed to perform this action.", nil)
+		}
+
+		if !e.Auth.GetBool("admin") {
+			return e.ForbiddenError("not admin", nil)
+		}
+
+		return e.Next()
+	}
 }
 
 func genProb(app core.App, id string) (string, string, error) {
@@ -303,7 +330,7 @@ func main() {
 				Name string `json:"name"`
 				Id string `json:"id"`
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
-		}).Bind(apis.RequireAuth("correctors"))
+		}).Bind(RequireAuth())
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
 		//
@@ -362,7 +389,7 @@ func main() {
 
 				return e.JSON(200, res)
 			},
-		).Bind(apis.RequireSuperuserAuth())
+		).Bind(RequireAuth())
 
 		e.Router.GET(
 			"/api/papers",
@@ -383,6 +410,8 @@ func main() {
 
 				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
 				if err != nil { return err }
+
+				fmt.Println(len(probs))
 
 				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
 				if err != nil { return err }
@@ -432,12 +461,13 @@ func main() {
 					gsols = append(gsols, sres)
 					i++
 
-					npprobs := make([]PaperProb, 0)
-					for _, tm := range teams {
-						for _, pr := range gprobs {
-							pr.TeamName = tm.GetString("name")
-							npprobs = append(npprobs, pr)
-						}
+				}
+
+				npprobs := make([]PaperProb, 0)
+				for _, tm := range teams {
+					for _, pr := range gprobs {
+						pr.TeamName = tm.GetString("name")
+						npprobs = append(npprobs, pr)
 					}
 				}
 
@@ -463,7 +493,7 @@ func main() {
 				if err != nil { return err }
 
 				renbuf := bytes.Buffer{}
-				err = tmpl.Execute(&renbuf, gprobs)
+				err = tmpl.Execute(&renbuf, npprobs)
 				if err != nil { return err }
 
 				papers := renbuf.String()
@@ -499,7 +529,7 @@ func main() {
 
 				return e.String(200, papers + "\n\n\n" + sol_papers + "\n\n\n" + const_papers + "\n\n\n" + strings.Join(imgsurls, " "))
 			},
-		)
+		).Bind(RequireAuth())
 
 		e.Router.GET(
 			"/api/rdb",
@@ -575,7 +605,7 @@ func main() {
 
 				return e.String(200, "ok")
 			},
-		).Bind(apis.RequireSuperuserAuth())
+		).Bind(RequireAuth())
 
 		return e.Next()
 	})
