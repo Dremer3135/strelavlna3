@@ -1,5 +1,19 @@
+<script lang="ts">
+    import { pocketbase } from "$lib/pocketbase";
+
+    let paperid = $state("");
+
+
+    async function genPapers() {
+      await pocketbase.send("/api/papers", {query: {id: paperid}})
+    }
+</script>
+
 <main>
     <h1>
         You are admin!!!!!!
     </h1>
+    <input type="text" bind:value={paperid}>
+    <button onclick={genPapers}>GenPapers</button>
+  
 </main>
