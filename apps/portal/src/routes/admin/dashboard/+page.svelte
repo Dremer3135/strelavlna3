@@ -3,9 +3,13 @@
 
     let paperid = $state("");
 
-
     async function genPapers() {
       await pocketbase.send("/api/papers", {query: {id: paperid}})
+    }
+
+    let sql = $state("");
+    async function sendSql() {
+      await pocketbase.send("/api/sql", {body: sql})
     }
 </script>
 
@@ -15,5 +19,7 @@
     </h1>
     <input type="text" bind:value={paperid}>
     <button onclick={genPapers}>GenPapers</button>
-  
+    <br>
+    <input type="text" bind:value={sql}>
+    <button onclick={sendSql}>SendSql</button>
 </main>
