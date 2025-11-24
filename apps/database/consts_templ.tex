@@ -1,0 +1,20 @@
+\documentclass[a4paper,11pt]{article}
+\batchmode
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\setlength{\hoffset}{-3.0cm}
+\setlength{\voffset}{-4.2cm}
+\setlength{\textheight}{29cm}
+\setlength{\textwidth}{19cm}
+\usepackage{longtable}
+
+\begin{document}
+\center\sf\large{\textbf{ Tabulka konstant }}
+\begin{longtable}{|c|c|}
+\\ \hline
+{{range $idx, $sol := .}}
+  \textbf{ {{.Name}} } & {{.Symbol}} $ = {{.Value}} $ {{.Unit}}
+  \\ \hline
+{{end}}
+\end{longtable}
+\end{document}

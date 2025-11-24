@@ -3,13 +3,18 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"html"
+	"html/template"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/mail"
+	"os"
 	"slices"
+	"strings"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -19,6 +24,120 @@ import (
 
 	"github.com/redis/go-redis/v9"
 )
+
+type PaperProb struct {
+  Diff string
+  Name string
+  Index int
+  Text string
+  Img []string
+  Buy int
+  Sell int
+  Solve int
+  TeamName string
+  Id string
+  AuthorName string
+  AuthorSocials string
+}
+
+type PaperSol struct {
+  Name string
+  Index int
+  Solution string
+}
+
+type PaperConstant struct {
+  Id string
+  Value float64
+  Name string
+  Symbol string
+  Unit string
+  Desc string
+  Group string
+}
+
+func genProb(app core.App, id string) (string, string, error) {
+	rec := core.Record{}
+	err := app.RecordQuery("probs").AndWhere(dbx.HashExp{"id": id}).Limit(1).One(&rec)
+	if err != nil {
+		return "", "", err
+	}
+	consts := []*core.Record{}
+	err = app.RecordQuery("constants").All(&consts)
+	if err != nil {
+		return "", "", err
+	}
+	constsMap := map[string]float64{}
+	for _, cnst := range consts {
+		constsMap[cnst.GetString("variable_name")] = cnst.GetFloat("value")
+	}
+	jbody, err := json.Marshal(struct{
+		Code string `json:"code"`
+		Text string `json:"text"`
+		Answer string `json:"answer"`
+		Consts map[string]float64 `json:"consts"`
+		Timeout float32 `json:"timeout"`
+		MemMB int `json:"mem_mb"`
+	}{
+		rec.GetString("code"),
+		rec.GetString("text"),
+		rec.GetString("answer"),
+		constsMap,
+		1,
+		32,
+	})
+	if err != nil {
+		return "", "", err
+	}
+	resp, err := http.DefaultClient.Post("http://localhost:8000/run", "application/json", bytes.NewBuffer(jbody))
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+	prespb, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", err
+	}
+	presp := map[string]any{}
+	err = json.Unmarshal(prespb, &presp)
+	if err != nil {
+		return "", "", err
+	}
+	succ, ok := presp["success"].(bool)
+	if !ok || !succ {
+		return "", "", errors.New(fmt.Sprint(presp["error"]))
+	}
+	text, ok := presp["text"].(string)
+	if !ok {
+		return "", "", errors.New("idk")
+	}
+	answer, ok := presp["answer"].(string)
+	if !ok {
+		return "", "", errors.New("idk")
+	}
+	return text, answer, nil
+}
+
+func latexEscapeComment(s string) string {
+  res := s
+  res = strings.ReplaceAll(res, `%`, `\%`)
+  res = strings.ReplaceAll(res, `<br>`, `\n`)
+  return res
+}
+
+func latexEscape(s string) string {
+  res := s
+  res = strings.ReplaceAll(res, `%`, `\%`)
+  res = strings.ReplaceAll(res, `{`, `\{`)
+  res = strings.ReplaceAll(res, `}`, `\}`)
+  res = strings.ReplaceAll(res, `&`, `\&`)
+  res = strings.ReplaceAll(res, `^`, `\^`)
+  res = strings.ReplaceAll(res, `#`, `\#`)
+  res = strings.ReplaceAll(res, `_`, `\_`)
+  res = strings.ReplaceAll(res, `$`, `\$`)
+  res = strings.ReplaceAll(res, `<br>`, `\n`)
+  return res
+}
 
 func main() {
 	app := pocketbase.New()
@@ -244,6 +363,143 @@ func main() {
 				return e.JSON(200, res)
 			},
 		).Bind(apis.RequireSuperuserAuth())
+
+		e.Router.GET(
+			"/api/papers",
+			func(e *core.RequestEvent) error {
+				id := e.Request.URL.Query().Get("id")
+
+				contest, err := e.App.FindRecordById("contests", id)
+				if err != nil { return err }
+
+				sconfig := contest.GetString("config")
+				config := struct{
+					Buy map[string]int
+					Sell map[string]int
+					Solve map[string]int
+				}{}
+				err = json.Unmarshal([]byte(sconfig), &config)
+				if err != nil { return err }
+
+				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", "%" + id + "%"))
+				if err != nil { return err }
+
+				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
+				if err != nil { return err }
+
+				consts, err := e.App.FindAllRecords("constants")
+				if err != nil { return err }
+
+				gprobs := make([]PaperProb, 0)
+				gsols := make([]PaperSol, 0)
+				gconsts := make([]PaperConstant, 0)
+
+				imgsurls := make([]string, 0)
+
+				i := 1
+				for _, prob := range probs {
+					for _, img := range prob.GetStringSlice("images") {
+						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/" + prob.Id + "/" + img)
+					}
+					res := PaperProb{
+						Diff: prob.GetString("diff"),
+						Name: latexEscape(prob.GetString("name")),
+						Index: i,
+						Text: latexEscapeComment(prob.GetString("text")),
+						Img: prob.GetStringSlice("images"),
+						Buy: config.Buy[prob.GetString("diff")],
+						Sell: config.Sell[prob.GetString("diff")],
+						Solve: config.Solve[prob.GetString("diff")],
+						TeamName: "",
+						Id: prob.Id,
+						AuthorName: "",
+						AuthorSocials: "",
+					}
+					sres := PaperSol{
+						Name: prob.GetString("name"),
+						Index: i,
+						Solution: prob.GetString("answer"),
+					}
+
+					if prob.GetBool("auto") {
+						text, ans, err := genProb(e.App, prob.Id)
+						if err != nil { return err }
+						res.Text = text
+						sres.Solution = ans
+					}
+
+					gprobs = append(gprobs, res)
+					gsols = append(gsols, sres)
+					i++
+
+					npprobs := make([]PaperProb, 0)
+					for _, tm := range teams {
+						for _, pr := range gprobs {
+							pr.TeamName = tm.GetString("name")
+							npprobs = append(npprobs, pr)
+						}
+					}
+				}
+
+				for _, cnst := range consts {
+					gconsts = append(gconsts, PaperConstant{
+						Id: cnst.Id,
+						Value: cnst.GetFloat("value"),
+						Name: cnst.GetString("name"),
+						Symbol: cnst.GetString("symbol"),
+						Unit: cnst.GetString("unit"),
+						Desc: cnst.GetString("desc"),
+						Group: cnst.GetString("group"),
+					})
+				}
+
+				funcsmap := template.FuncMap{ "iseven": func(i int) bool { return i % 2 == 0 } }
+
+
+				bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_templ.tex")
+				if err != nil { return err }
+
+				tmpl, err := template.New("probs_papers").Funcs(funcsmap).Parse(string(bts))
+				if err != nil { return err }
+
+				renbuf := bytes.Buffer{}
+				err = tmpl.Execute(&renbuf, gprobs)
+				if err != nil { return err }
+
+				papers := renbuf.String()
+				papers = html.UnescapeString(papers)
+
+
+				sol_bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_sol_templ.tex")
+				if err != nil { return err }
+
+				sol_tmpl, err := template.New("probs_sol_papers").Funcs(funcsmap).Parse(string(sol_bts))
+				if err != nil { return err }
+
+				sol_renbuf := bytes.Buffer{}
+				err = sol_tmpl.Execute(&sol_renbuf, gsols)
+				if err != nil { return err }
+
+				sol_papers := sol_renbuf.String()
+				sol_papers = html.UnescapeString(sol_papers)
+
+
+				const_bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/consts_templ.tex")
+				if err != nil { return err }
+
+				const_tmpl, err := template.New("const_papers").Funcs(funcsmap).Parse(string(const_bts))
+				if err != nil { return err }
+
+				const_renbuf := bytes.Buffer{}
+				err = const_tmpl.Execute(&const_renbuf, gconsts)
+				if err != nil { return err }
+
+				const_papers := const_renbuf.String()
+				const_papers = html.UnescapeString(const_papers)
+
+				return e.String(200, papers + "\n\n\n" + sol_papers + "\n\n\n" + const_papers + "\n\n\n" + strings.Join(imgsurls, " "))
+			},
+		)
 
 		e.Router.GET(
 			"/api/rdb",

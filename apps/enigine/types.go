@@ -29,6 +29,7 @@ const (
 	BuyProb // string (diff)
 	SellProb // string (probid)
 	BoughtProb // BoughtProbMsg
+	SolveProb // string (probid)
 	SolvedProb // string (probid)
 	SoldProb
 
@@ -91,6 +92,11 @@ type Msg struct {
 type ProbBoughtAdminMsg struct {
 	team string
   prob string
+}
+
+type SolveProbMsg struct {
+	probid string
+	text string
 }
 
 func teamManager(self chan Msg, admins chan Msg, id string) {
@@ -191,6 +197,19 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string) 
 					break
 				}
 				team <- Msg{SellProb, id, self, probid}
+
+			case "solve":
+				probid, ok := msg.Data["probid"]
+				if !ok {
+					self <- Msg{InvalidMessage, id, self, "sell"}
+					break
+				}
+				solution, ok := msg.Data["solution"]
+				if !ok {
+					self <- Msg{InvalidMessage, id, self, "solve"}
+					break
+				}
+				team <- Msg{SolvedProb, id, self, SolveProbMsg{probid, solution}}
 
 			case "write":
 				probid, ok := msg.Data["probid"]
