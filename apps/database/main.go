@@ -248,6 +248,126 @@ func main() {
 		},
 	)
 
+	app.Cron().MustAdd(
+		"final_mail",
+		"* * * * *",
+		func() {
+			teams := []*core.Record{}
+
+			err := app.RecordQuery("teams").
+				AndWhere(dbx.HashExp{"finalEmail": false}).
+				OrderBy("created").
+				Limit(1).
+				All(&teams)
+
+			if len(teams) < 1 {
+				return
+			}
+
+			team := teams[0]
+
+			if err != nil {
+				app.Logger().Error("team query failed", "err", err)
+				return
+			}
+
+			text := core.Record{}
+
+			err = app.RecordQuery("texts").
+				AndWhere(dbx.HashExp{"name": "reg_confirm"}).
+				Limit(1).
+				One(&text)
+
+			if err != nil {
+				app.Logger().Error("text query failed", "err", err)
+				return
+			}
+
+			contest, err := app.FindRecordById("contests", team.GetString("contest"))
+			if err != nil {
+				app.Logger().Error("texttempl query failed", "err", err)
+				return
+			}
+
+			var renbuf bytes.Buffer
+			tmpl, err := template.New("reg_confirm").Parse(text.GetString("text"))
+			if err != nil {
+				app.Logger().Error("texttempl query failed", "err", err)
+				return
+			}
+			err = tmpl.Execute(&renbuf, struct{
+				Code,
+				CompSubject,
+				CompName,
+				TeamName,
+				Email,
+				Player1,
+				Player2,
+				Player3,
+				Player4,
+				Player5,
+				OnlineRound,
+				FinalRound,
+				RegistrationStart,
+				RegistrationEnd string
+			}{
+				team.Id,
+				contest.GetString("subject"),
+				contest.GetString("name"),
+				team.GetString("name"),
+				team.GetString("email"),
+				team.GetString("player1"),
+				team.GetString("player2"),
+				team.GetString("player3"),
+				team.GetString("player4"),
+				team.GetString("player5"),
+				contest.GetDateTime("onlineStart").Time().Format("2. 1. 2006 15:04:05"),
+				contest.GetDateTime("onSiteStart").Time().Format("2. 1. 2006 15:04:05"),
+				contest.GetDateTime("registration_start").Time().Format("2. 1. 2006 15:04:05"),
+				contest.GetDateTime("registration_end").Time().Format("2. 1. 2006 15:04:05"),
+			})
+			if err != nil {
+				app.Logger().Error("templ failed", "err", err)
+				return
+			}
+
+			teacher, err := app.FindRecordById("teachers", team.GetString("teacher"))
+			if err != nil {
+				app.Logger().Error("teacher failed", "err", err)
+				return
+			}
+
+			msg := renbuf.String()
+
+			err = app.NewMailClient().Send(&mailer.Message{
+				From: mail.Address{
+					Address: "strela-vlna@gchd.cz",
+					Name: "Střela Vlna",
+				},
+				To: []mail.Address{ {Address: teacher.GetString("email")}, },
+				Cc: []mail.Address{
+					{Address: team.GetString("player1email")},
+					{Address: team.GetString("player2email")},
+					{Address: team.GetString("player3email")},
+					{Address: team.GetString("player4email")},
+					{Address: team.GetString("player5email")},
+				},
+				Subject: "Potvrzení registrace do soutěže" + contest.GetString("name"),
+				HTML: msg,
+			})
+			if err != nil {
+				app.Logger().Error("mail failed", "err", err)
+				return
+			}
+
+			team.Set("finalEmail", true)
+			err = app.Save(team)
+			if err != nil {
+				app.Logger().Error("team save failed", "err", err)
+			}
+		},
+	)
+
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
 		e.Router.POST("/api/code", func(e *core.RequestEvent) error {

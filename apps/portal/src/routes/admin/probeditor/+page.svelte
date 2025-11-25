@@ -438,6 +438,24 @@
                 }
                 return currentProbs;
             }); }}
+            on:change-online={(e) => { editableProbs.update(currentProbs => {
+                if (selectedProb) {
+                    const probId = selectedProb.prob.id;
+                    const updatedProb = {
+                        ...currentProbs[probId],
+                        edit: {
+                            ...currentProbs[probId].edit,
+                            online: e.detail.value
+                        }
+                    };
+                    // Return a new top-level object for the store
+                    return {
+                        ...currentProbs,
+                        [probId]: updatedProb
+                    };
+                }
+                return currentProbs;
+            }); }}
             on:change-contests={(e) => { editableProbs.update(currentProbs => {
                 if (selectedProb) {
                     const probId = selectedProb.prob.id;
