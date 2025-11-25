@@ -23,6 +23,7 @@
         "change-focus": { value: ProbFocus },
         "change-auto": { value: boolean },
         "change-infinite": { value: boolean },
+        "change-online": { value: boolean },
         "change-contests": { value: string[] },
         "change-author": { value: string },
         "save-changes": {}
@@ -75,6 +76,10 @@
         <div class="infinite row">
             <p class="text">Infinite:</p>
             <Toggle value={ getProbEditedState(editableProb).infinite } onChangeFunction={(value) => { dispatch("change-infinite", { value: value }); }} />
+        </div>
+        <div class="online row">
+            <p class="text">Online:</p>
+            <Toggle value={ getProbEditedState(editableProb).online } onChangeFunction={(value) => { dispatch("change-online", { value: value }); }} />
         </div>
         <div class="contests row">
             <p class="text">Constests:</p>

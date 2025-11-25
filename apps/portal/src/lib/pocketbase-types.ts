@@ -166,6 +166,7 @@ export type ProbsRecord = {
 	id: string
 	images?: FileNameString[]
 	infinite?: boolean
+	online?: boolean
 	name?: string
 	queue?: RecordIdString[]
 	seen?: boolean
