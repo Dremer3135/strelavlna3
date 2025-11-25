@@ -18,7 +18,9 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
+
 	// "github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/hook"
 	"github.com/pocketbase/pocketbase/tools/mailer"
@@ -340,7 +342,7 @@ func main() {
 				Name string `json:"name"`
 				Id string `json:"id"`
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
-		}).Bind(RequireAuth())
+		}).Bind(apis.RequireAuth("correctors"))
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
 		//
