@@ -19,6 +19,13 @@ const (
 	StateAfter = "after"
 )
 
+func parseTicketId(tid string) (teamid string, probid string) {
+	parts := strings.SplitN(tid, ":", 1)
+	teamid = parts[0]
+	probid = parts[1]
+	return
+}
+
 func getState(conn *redis.Client) string {
 	res, err := conn.Get(ctx, "state").Result()
 	if err != nil { panic(err) }
@@ -266,6 +273,7 @@ func readTLine(conn *redis.Client, teamid, probid string) []TLineAtom {
 	return res
 }
 
+// Owned
 func getTState(conn *redis.Client, teamid, probid string) string {
 	res, err := conn.Get(ctx, "tstate:" + teamid + ":" + probid).Result()
 	if err != nil { panic(err) }

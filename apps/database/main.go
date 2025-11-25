@@ -261,6 +261,21 @@ func main() {
 			if err != nil {
 				return e.Error(400, "invalid prob id", err)
 			}
+			oimages := rec.GetStringSlice("images")
+			nimages := make([]string, len(oimages))
+			for i, img := range oimages {
+				nimages[i] = "https://strela-vlna.gchd.cz/api/files/probs/" + rec.Id + "/" + img
+			}
+			if !rec.GetBool("auto") {
+				return e.JSON(200, struct{
+					Text string `json:"text"`
+					Answer string `json:"answer"`
+					Images []string `json:"images"`
+					Diff string `json:"diff"`
+					Name string `json:"name"`
+					Id string `json:"id"`
+				}{rec.GetString("text"), rec.GetString("answer"), nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
+			}
 			consts := []*core.Record{}
 			err = e.App.RecordQuery("constants").All(&consts)
 			if err != nil {
@@ -316,11 +331,6 @@ func main() {
 			answer, ok := presp["answer"].(string)
 			if !ok {
 				return e.Error(500, "atp idk bro", err)
-			}
-			oimages := rec.GetStringSlice("images")
-			nimages := make([]string, len(oimages))
-			for i, img := range oimages {
-				nimages[i] = "https://strela-vlna.gchd.cz/api/files/probs/" + rec.Id + "/" + img
 			}
 			return e.JSON(200, struct{
 				Text string `json:"text"`

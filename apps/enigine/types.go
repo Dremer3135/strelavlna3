@@ -25,6 +25,8 @@ const (
 	PlayerJoined
 	PlayerInitLoaded
 
+	CorrectorInitLoaded
+
 
 	BuyProb // string (diff)
 	SellProb // string (probid)
@@ -34,8 +36,7 @@ const (
 	SoldProb
 
 	WriteMsg // WriteMsgMsg
-	PlayerMsg
-	AdminMsg
+	RecMsg
 	GradeProb
 	GradedProb
 
@@ -161,12 +162,20 @@ func teamManager(self chan Msg, admins chan Msg, id string) {
 
 			pushTLine(conn, msg.from, data.probid, TLineAtom{MSidePlayer, MTypeText, data.msg, time.Now()})
 
+			for _, pl := range players {
+				pl <- Msg{RecMsg, id, self, data.probid}
+			}
+			admins <- Msg{RecMsg, id, self, msg.data}
+
 			if data.mtype == MTypeGrade {
+				err := solveProb(conn, data.teamid, data.probid)
+				if err != nil { msg.callback <- Msg{PlayerError, id, self, err}; break }
+
 				for _, pl := range players {
 					pl <- Msg{SolvedProb, id, self, data.probid}
 				}
+				admins <- Msg{SolvedProb, id, self, msg.data}
 			}
-			admins <- Msg{PlayerMsg, id, self, msg.data}
 		}
 	}
 }
@@ -231,6 +240,10 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string) 
 					self <- Msg{InvalidMessage, id, self, "write"}
 					break
 				}
+				if mtype != MTypeText && mtype != MTypeSolve && mtype != MTypeGif {
+					self <- Msg{InvalidMessage, id, self, "write"}
+					break
+				}
 				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid: probid, msg: msgd, mtype: mtype, admin: false}}
 
 			}
@@ -260,6 +273,15 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string) 
 			if err != nil {
 				self <- Msg{WsError, id, self, err}
 			}
+
+		case PlayerInitLoaded:
+		  data, ok := msg.data.(InitLoad)
+			if !ok { break }
+			err := ws.WriteJSON(OutWsMsg{Name: "bought", Data: data})
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
+
 		}
 	}
 }
@@ -300,6 +322,7 @@ func adminManager(self chan Msg) {
 			cchan := make(chan Msg, 10)
 		  go correctorManager(data.Conn, cchan, self, data.Id)
 		  correctors[data.Id] = cchan
+			cchan <- Msg{CorrectorInitLoaded, "", self, corrInitLoad(conn, data.Id)}
 
 		case CorrectorLeft:
 			_, ok := msg.data.(error)

@@ -166,3 +166,54 @@ func autoGrade(conn *redis.Client, teamid, probid, answer string) (bool, error) 
 	}
 	return false, nil
 }
+
+type CorrInitLoad struct {
+	BoughtTickets map[string]CorrTicket `json:"bought_tickets"`
+	SolvedTickets map[string]CorrTicket `json:"solved_tickets"`
+	SoldTickets map[string]CorrTicket `json:"sold_tickets"`
+	TLines map[string][]TLineAtom `json:"tlines"`
+}
+
+type CorrTicket struct {
+	TeamId string `json:"team_id"`
+	TeamName string `json:"team_name"`
+	Prob Prob `json:"prob"`
+}
+
+func corrInitLoad(conn *redis.Client, id string) CorrInitLoad {
+	tickets := getCorrTickets(conn, id)
+	res := CorrInitLoad{
+		BoughtTickets: make(map[string]CorrTicket),
+		SolvedTickets: make(map[string]CorrTicket),
+		SoldTickets: make(map[string]CorrTicket),
+	}
+	
+	for _, tickid := range tickets {
+		teamid, probid := parseTicketId(tickid)
+		tstate := getTState(conn, teamid, probid)
+		res.TLines[tickid] = readTLine(conn, teamid, probid)
+		if tstate == OwnedBought {
+			res.BoughtTickets[tickid] = CorrTicket{
+				TeamId: teamid,
+				TeamName: getTeamName(conn, teamid),
+				Prob: getProb(conn, probid),
+			}
+		}
+		if tstate == OwnedSolved {
+			res.SolvedTickets[tickid] = CorrTicket{
+				TeamId: teamid,
+				TeamName: getTeamName(conn, teamid),
+				Prob: getProb(conn, probid),
+			}
+		}
+		if tstate == OwnedSold {
+			res.SoldTickets[tickid] = CorrTicket{
+				TeamId: teamid,
+				TeamName: getTeamName(conn, teamid),
+				Prob: getProb(conn, probid),
+			}
+		}
+	}
+
+	return res
+}
