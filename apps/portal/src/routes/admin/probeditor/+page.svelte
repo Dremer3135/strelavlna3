@@ -1,7 +1,7 @@
 <script lang="ts">
     import ContentEditor from "./ContentEditor.svelte";
     import ProbBanner from "$lib/components/admin/ProbBanner.svelte";
-    import type { ConstantsRecord, CorrectorsResponse, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
+    import type { ConstantsRecord, CorrectorsResponse, ProbsDiffOptions, ProbsResponse, TypedPocketBase } from "$lib/pocketbase-types";
     // import { createPocketbaseInstance } from "$lib/server/pocketbase.js";
     import { onDestroy, onMount } from "svelte";
     import { editableProbs } from "$lib/stores/probs.js";
@@ -9,7 +9,7 @@
     import type { EditableConstant } from "$lib/types.js";
     import { pocketbase } from "$lib/pocketbase";
     import type { EditableProb } from "$lib/types.js";
-    import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited, getContestEditedState } from "$lib/utils.js";
+    import { filterRecord, getProbEditedState, isProbEdited, isConstantEdited, getContestEditedState, removeDiacritics } from "$lib/utils.js";
     import { browser } from "$app/environment";
     import { PROB_DIFFICULTIES, PROB_FOCUSES } from "$lib/constants";
     import { editableContests } from "$lib/stores/contests";
@@ -73,13 +73,57 @@
 
     let filteresSelected = $state(Array(filters.length).fill(0));
     let filteredProbIds = $state(Object.keys($editableProbs));
+    let search_filter: String = $state("");
 
     $effect(() => {
+        // console.log("rerunning effect: ", search_filter);
         let temp = Object.keys($editableProbs);
         for (let i = 0; i < filters.length; i++) {
             temp = filters[i][filteresSelected[i]].function(temp);
         }
-        filteredProbIds = temp;
+
+        let cues: string[] = search_filter.split(" ");
+        // console.log(cues.filter(cue => cue.length >= 3));
+
+        let newFilteredProbIds: string[];
+        if (cues.filter(cue => cue.length >= 3).length > 0) {
+            const uniqueProbIds = new Set<string>();
+            temp.forEach(probId => {
+                let name: string = removeDiacritics(getProbEditedState($editableProbs[probId]).name);
+                let valid = true;
+                cues.forEach(cue => {
+                    if (!name.includes(removeDiacritics(cue))) {
+                        valid = false;
+                    }
+                });
+                if (valid) uniqueProbIds.add(probId);
+            });
+            temp.forEach(probId => {
+                let name: string = removeDiacritics(getProbEditedState($editableProbs[probId]).text);
+                let valid = true;
+                cues.forEach(cue => {
+                    if (!name.includes(removeDiacritics(cue))) {
+                        valid = false;
+                    }
+                });
+                if (valid) uniqueProbIds.add(probId);
+            });
+            temp.forEach(probId => {
+                let name: string = removeDiacritics(getProbEditedState($editableProbs[probId]).id);
+                let valid = true;
+                cues.forEach(cue => {
+                    if (!name.includes(removeDiacritics(cue))) {
+                        valid = false;
+                    }
+                });
+                if (valid) uniqueProbIds.add(probId);
+            });
+
+            newFilteredProbIds = Array.from(uniqueProbIds);
+        } else {
+            newFilteredProbIds = temp;
+        }
+        filteredProbIds = newFilteredProbIds;
     });
 
     let filtersOpen = $state(false);
@@ -112,7 +156,7 @@
             probResponse = await pocketbase.collection("probs").create({
                 name: "Moje uloha",
                 diff: "A",
-                auto: false,    
+                auto: false,
                 infinite: false,
                 code: "",
                 text: "Tohle bude text ulohy",
@@ -130,7 +174,7 @@
             prob: probResponse,
             edit: {}
         }
-        
+
         editableProbs.update(currentProbs => {
             currentProbs[newProb.prob.id] = newProb;
             return currentProbs;
@@ -232,7 +276,7 @@
             selectedProb = $editableProbs[selectedProb.prob.id];
         }
     }
-    
+
     async function addConstant(values: Partial<ConstantsRecord>) {
         let newConstant = await pocketbase.collection("constants").create(values);
 
@@ -254,7 +298,7 @@
         await Promise.all(promisses);
 
         editableConstants.update(currentConstants => {
-            currentConstants = Object.fromEntries(Object.entries(currentConstants).filter(constant => !ids.includes(constant[1].constant.id))) 
+            currentConstants = Object.fromEntries(Object.entries(currentConstants).filter(constant => !ids.includes(constant[1].constant.id)))
             return currentConstants;
         });
     }
@@ -292,6 +336,7 @@
                         {/each}
                     </div>
                 {/each}
+                <input type="text" class="search-filter" bind:value={search_filter}>
             </div>
         </div>
         <div class="banners-scrollview">
@@ -516,12 +561,12 @@
         gap: 20px;
         box-sizing: border-box;
     }
-    
 
-    
+
+
     .filters-wrapper {
         border-bottom: 1px color-mix(in srgb, var(--color-purple) 20%, transparent 80%) solid;
-        
+
         .content {
             display: flex;
             justify-content: flex-start;
@@ -536,12 +581,12 @@
             padding-top: 0px;
             padding-bottom: 0px;
             max-width: 350px;
-            
+
             &.open {
                 height: fit-content;
                 padding-bottom: 20px;
             }
-        
+
             .filter-row {
                 display: flex;
                 justify-content: flex-start;
@@ -553,7 +598,7 @@
                 &::-webkit-scrollbar {
                     display: none;
                 }
-            
+
                 .filter-button {
                     all: unset;
                     cursor: pointer;
@@ -563,16 +608,16 @@
                     border: 2px lightgray solid;
                     border-radius: 3px;
                     padding: 2px 15px;
-                    background-color: transparent;                 
-                    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;   
+                    background-color: transparent;
+                    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
                     text-wrap: nowrap;
-                    
+
                     &.selected {
                         border-color: var(--color-pink);
                         background-color: color-mix(in srgb, var(--color-pink) 20%, transparent 80%);
                     }
                 }
-                
+
             }
         }
 
@@ -592,7 +637,7 @@
                 justify-content: flex-start;
                 align-items: center;
                 gap: 10px;
-                
+
                 i {
                     font-size: 20px;
                 }
@@ -612,6 +657,24 @@
                 font-size: 16px;
                 font-weight: 600;
                 color: #333333;
+            }
+        }
+
+        .search-filter {
+            all: unset;
+            width: 100%;
+            padding: 5px 10px;
+            background-color: #FAFAFA88;
+            border: 2px var(--color-pink) solid;
+            border-color: #AAAAAA;
+            box-sizing: border-box;
+            border-radius: 3px;
+            font-family: 'Fredoka';
+            font-weight: 500;
+            font-size: 18px;
+
+            &:focus {
+                border-color: var(--color-pink);
             }
         }
     }
@@ -636,12 +699,12 @@
         padding: 20px;
         box-sizing: border-box;
         min-height: 0;
-        
+
     }
     .banners-scrollview::-webkit-scrollbar {
         display: none;
     }
-    
+
     .banners-holder {
         display: flex;
         justify-content: flex-start;
