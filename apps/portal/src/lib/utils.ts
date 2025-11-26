@@ -53,3 +53,10 @@ export function filterRecord<T>(
             return acc;
         }, {} as Record<string, T>);
 }
+
+export function removeDiacritics(text: string): string {
+   return text
+    .normalize('NFD') // Decompose combined characters into base character + diacritical mark
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (Unicode range)
+    .toLowerCase(); // Convert the entire string to lowercase
+   }
