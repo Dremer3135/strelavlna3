@@ -26,9 +26,9 @@
   {{range $jdx, $img := .Img}}
     \includegraphics[width=0.49\textwidth]{ {{$img}} }  \\ 
   {{end}}
-  {{if not (eq .AuthorSocials "")}}
-  \vfill \center{ Autor úlohy: {{.AuthorName}} {{.AuthorSocials}} \hfill \\ }
-  {{end}}
+  % {{if not (eq .AuthorSocials "")}}
+  \vfill \center{ Autor úlohy: {{.AuthorName}} \hfill \\ }
+  % {{end}}
   \vfill \center{ {{.TeamName}} \hfill {{.Id}} \\ } }
   {{if iseven $idx}}
     \\ \hline
