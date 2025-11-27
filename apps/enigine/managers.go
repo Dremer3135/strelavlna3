@@ -371,7 +371,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			err := ws.WriteJSON(map[string]any{
 				"name": "written",
 				"probid": data.probid,
-				"text": data.probid,
+				"text": data.msg,
 				"type": mtype,
 				"solve": false,
 			})

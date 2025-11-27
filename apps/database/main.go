@@ -357,7 +357,7 @@ func main() {
 					{Address: team.GetString("player4email")},
 					{Address: team.GetString("player5email")},
 				},
-				Subject: "Potvrzení registrace do soutěže" + contest.GetString("name"),
+				Subject: "Potvrzení registrace do soutěže " + contest.GetString("name"),
 				HTML: msg,
 			})
 			if err != nil {
@@ -706,7 +706,7 @@ func main() {
 
 				for _, team := range teams {
 					setMoney(rdb, team.Id, 100)
-					setPlayToken(rdb, team.Id, team.Id)
+					setPlayToken(rdb, team.Id, team.GetString("token"))
 					setTeamName(rdb, team.Id, team.GetString("name"))
 				}
 
@@ -714,6 +714,10 @@ func main() {
 				if err != nil { return err }
 
 				for _, prob := range probs {
+					imgs := []string{}
+					for _, img := range prob.GetStringSlice("images") {
+						imgs = append(imgs, "https://strela-vlna.gchd.cz/api/files/probs/" + prob.Id + "/" + img)
+					}
 					setProb(rdb, Prob{
 						Id: prob.Id,
 						Name: prob.GetString("name"),
@@ -724,6 +728,7 @@ func main() {
 						Auto: prob.GetBool("auto"),
 						Infinite: prob.GetBool("infinite"),
 						Queue: prob.GetStringSlice("queue"),
+						Images: imgs,
 					})
 				}
 

@@ -3,7 +3,8 @@ export type ContestState = "waiting" | "running" | "ended";
 
 export type Prob = ProbContentType & {
     focusedBy: string[],
-    chat: MessageType[]
+    chat: MessageType[],
+    owned: "bought" | "solved" | "sold",
 };
 
 export type CurrentState = {

@@ -15,12 +15,14 @@
 		buy,
 		sell,
 		focus,
-		chat
+		chat,
+    solve,
 	}: {
 		buy: (diff: string) => void;
 		sell: (id: string) => void;
 		focus: (id: string) => void;
 		chat: (probId: string, message: Omit<MessageType, 'sentTime'>) => void;
+    solve: (probId: string, answer: string) => void;
 	} = $props();
 
 	let isWindowFocused = $state(true);
@@ -182,11 +184,12 @@
 					submitAnswer={(answer: string) => {
 						if (!$focusedProb) return;
 
-						chat($focusedProb.id, {
-							type: 'answer',
-							value: answer,
-							origin: 'sent'
-						});
+            solve($focusedProb.id, answer);
+						// chat($focusedProb.id, {
+						// 	type: 'answer',
+						// 	value: answer,
+						// 	origin: 'sent'
+						// });
 					}}
 					onPaste={(text: string) => {
 						if (!$focusedProb) return;
