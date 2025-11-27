@@ -8,152 +8,64 @@
 	import { ProbContent } from 'shared';
 	import AnswerInput from '$lib/assets/components/AnswerInput.svelte';
 	import Chat from '$lib/assets/components/Chat.svelte';
-	import { getProbLastAnswer, isProbSolved, isProbUngraded } from '$lib/utils';
-    import { untrack } from 'svelte';
+	import { getProbLastAnswer, hasProbChat, isProbSolved, isProbUngraded } from '$lib/utils';
+    import ProbSelectCorrector from '$lib/assets/components/ProbSelectCorrector.svelte';
+    import Grader from '$lib/assets/components/Grader.svelte';
 
 	let {
-		buy,
-		sell,
 		focus,
 		chat
 	}: {
-		buy: (diff: string) => void;
-		sell: (id: string) => void;
 		focus: (id: string) => void;
 		chat: (probId: string, message: Omit<MessageType, 'sentTime'>) => void;
 	} = $props();
 
-	let isWindowFocused = $state(true);
-
-	function handleVisibilityChange() {
-		isWindowFocused = !document.hidden;
-	}
-
-	function handleWindowBlur() {
-		isWindowFocused = false;
-	}
-
-	function handleWindowFocus() {
-		if (!document.hidden) {
-			isWindowFocused = true;
-		}
-	}
-
 	const difficulties = ['A', 'B', 'C'];
 
-	let buySelectOpened: boolean = $state(false);
-
-	$effect(() => {
-        let fProb = untrack(() => $focusedProb);
-        if (fProb) {
-            if (isWindowFocused) {
-                chat(fProb.id, {
-                    origin: "sent",
-                    type: "window-focus",
-                    value: "focused " + untrack(() => $currentState.myId)
-                });
-            } else {
-                chat(fProb.id, {
-                    origin: "sent",
-                    type: "window-focus",
-                    value: "blured " + untrack(() => $currentState.myId)
-                });
-            }
-        }
-	});
-
-	let buyHovered = $state(Array(difficulties.length).fill(false));
-	let sellHovered = $state(false);
 </script>
-
-<!-- Combines both methods for the most robust detection -->
-<svelte:document on:visibilitychange={handleVisibilityChange} />
-<svelte:window on:blur={handleWindowBlur} on:focus={handleWindowFocus} />
 
 <main>
 	<div class="left-panel">
-		<div class="team-stats">
+		<!-- <div class="team-stats">
 			<h2 class="name">{$currentState.teamName}</h2>
 			<h3 class="money">{$currentState.money} DC</h3>
-		</div>
+		</div> -->
 		<div class="prob-selector">
-			{#each Object.values($probs).filter((prob) => !isProbSolved(prob)) as prob}
-				<ProbSelect
+			{#each Object.values($probs).filter((prob) => isProbUngraded(prob)) as prob}  <!--  Ungraded  -->
+				<ProbSelectCorrector
 					prob={prob}
 					onSelect={() => {
 						focus(prob.id);
 					}}
 				/>
 			{/each}
-            <div class="separator"></div>
-			{#each Object.values($probs).filter((prob) => isProbSolved(prob)) as prob}
-				<ProbSelect
+			<div class="separator"></div>
+			{#each Object.values($probs).filter((prob) => hasProbChat(prob) && !isProbUngraded(prob)) as prob}  <!--  Chat started  -->
+				<ProbSelectCorrector
 					prob={prob}
 					onSelect={() => {
 						focus(prob.id);
 					}}
 				/>
 			{/each}
-		</div>
-
-		<div class="controls">
-			<div class="buy">
-				{#each difficulties as diff, i}
-					<Button
-						disabled={$currentState.pricesBuy[i] > $currentState.money ||
-							$currentState.probsRemaining[i] == 0}
-						theme={['yellow', 'orange', 'pink', 'purple'][i % 4] as
-							| 'yellow'
-							| 'orange'
-							| 'pink'
-							| 'purple'}
-						onclick={() => {
-							if ($currentState.pricesBuy[i] > $currentState.money || $currentState.probsRemaining[i] == 0)
-								return;
-							buySelectOpened = !buySelectOpened;
-							buy(diff);
-						}}
-						onmouseenter={() => {
-							buyHovered[i] = true;
-						}}
-						onmouseleave={() => {
-							buyHovered[i] = false;
-						}}
-					>
-						<p>Koupit [{diff}]</p>
-						<span class="anchor">
-							<p class="tooltip" class:visible={buyHovered[i]}>
-								Zbývá: {$currentState.probsRemaining[i] == -1 ? '∞' : $currentState.probsRemaining[i]}
-							</p>
-						</span>
-					</Button>
-				{/each}
-			</div>
-			<div class="sell">
-				<Button
-					disabled={!$focusedProb}
-					theme="pink"
-					onmouseenter={() => {
-						sellHovered = true;
+			<div class="separator"></div>
+			{#each Object.values($probs).filter((prob) => !isProbSolved(prob) && !hasProbChat(prob) && !isProbUngraded(prob)) as prob}  <!--  Newly buyed  -->
+				<ProbSelectCorrector
+					prob={prob}
+					onSelect={() => {
+						focus(prob.id);
 					}}
-					onmouseleave={() => {
-						sellHovered = false;
+				/>
+			{/each}
+			<div class="separator"></div>
+			{#each Object.values($probs).filter((prob) => isProbSolved(prob)) as prob}  <!--  Solved  -->
+				<ProbSelectCorrector
+					prob={prob}
+					onSelect={() => {
+						focus(prob.id);
 					}}
-					onclick={() => {
-						if ($focusedProb) {
-							sell($focusedProb.id);
-						}
-					}}
-				>
-					<i class="fa-solid fa-trash-can" />
-					<p>Prodat</p>
-					<span class="anchor">
-						<p class="tooltip" class:visible={$focusedProb && sellHovered}>
-							Prodat úlohu <span class="bold">{$focusedProb?.name}</span>
-						</p>
-					</span>
-				</Button>
-			</div>
+				/>
+			{/each}
 		</div>
 	</div>
 
@@ -174,34 +86,25 @@
 						});
 					}}
 				/>
-				<AnswerInput
-					disabled={isProbUngraded($focusedProb) || isProbSolved($focusedProb)}
-					placeholder={getProbLastAnswer($focusedProb) !== undefined
-						? (getProbLastAnswer($focusedProb) as string)
-						: 'Odpověď'}
-					submitAnswer={(answer: string) => {
-						if (!$focusedProb) return;
-
+				<Grader answer={getProbLastAnswer($focusedProb) ?? ""} prob={$focusedProb} onAccept={() => {
 						chat($focusedProb.id, {
-							type: 'answer',
-							value: answer,
-							origin: 'sent'
+							origin: "sent",
+							type: "grade",
+							value: "correct"
 						});
-					}}
-					onPaste={(text: string) => {
-						if (!$focusedProb) return;
-
+					}} 
+					onReject={() => {
 						chat($focusedProb.id, {
-							type: 'paste',
-							value: text,
-							origin: 'sent'
+							origin: "sent",
+							type: "grade",
+							value: "incorrect"
 						});
 					}}
 				/>
 			</div>
 			<div class="chat">
 				<Chat
-                    type="player"
+					type="corrector"
 					prob={$focusedProb}
 					send={(message) => {
 						if (!$focusedProb) return;
@@ -279,7 +182,6 @@
                     border-top: 1px color-mix(in srgb, var(--color-purple) 30%, transparent 70%) solid;
                     margin: 20px 0px;
                 }
-                
             }
             
             .controls {

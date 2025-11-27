@@ -19,5 +19,6 @@ export type CurrentState = {
 export type MessageType = {
     origin: "recieved" | "sent",
     type: "message" | "answer" | "grade" | "window-focus" | "copy" | "paste",
-    value: string
+    value: string,
+    sentTime: Date
 }
