@@ -3,7 +3,7 @@
     import type { MessageType } from "$lib/types";
     import Message from "./Message.svelte";
 
-    let { prob, send }: { prob: Prob, send: (message: MessageType) => void } = $props();
+    let { prob, type, send }: { prob: Prob, type: "player" | "corrector", send: (message: Omit<MessageType, 'sentTime'>) => void } = $props();
 
     let inputMessage: string = $state("");
 

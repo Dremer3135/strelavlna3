@@ -67,10 +67,17 @@
             },
             {
               origin: "recieved",
-              type: "grade",
-              value: "correct",
+              type: "answer",
+              value: "Odpoved neni lalala",
               sentTime: new Date('2025-11-27T14:05:30Z')
             },
+
+            // {
+            //   origin: "recieved",
+            //   type: "grade",
+            //   value: "correct",
+            //   sentTime: new Date('2025-11-27T14:05:30Z')
+            // },
           ]
         },
         "ijfs": {
@@ -119,14 +126,8 @@
     })
   });
 
-  function handleBuy(diff: string) {
-    console.log("Buying:", diff);
-  }
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
     console.log("Message of type '" + message.type + "': " + message.value);
-  }
-  function handleSell(probId: string) {
-    console.log("Selling:", probId);
   }
   function handleFocus(probId: string) {
     console.log("Focusing:", probId);
@@ -134,7 +135,7 @@
 </script>
 
 <main>
-  <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} />
+  <Main chat={handleChat} focus={handleFocus} />
 </main>
 
 <style lang="scss">
