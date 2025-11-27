@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -179,6 +180,7 @@ func getPrice(conn *redis.Client, ptype string, diff string) int {
 
 func setPrice(conn *redis.Client, ptype string, diff string, price int) {
 	err := conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0))
+	fmt.Printf("%v %#v\n", err, err)
 	if err != nil { panic(err) }
 }
 
