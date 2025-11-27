@@ -8,10 +8,13 @@
   
   onMount(() => {
 
-    // const socket = new WebSocket(`https://sv.skrat.org/ws?token=${$page.data.token}`)
-    // socket.addEventListener("message", (event) => {
-    //   console.log(typeof event.data)
-    // });
+    const socket = new WebSocket(`https://sv.skrat.org/ws?token=${$page.data.token}`)
+    socket.addEventListener("message", (event) => {
+      let data = JSON.parse(event.data);
+      if (data.name === "initload") {
+        console.log(data);
+      }
+    });
 
 
     probs.update(_ => {
