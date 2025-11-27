@@ -363,7 +363,7 @@ $effect(() => {
         <p class="f-18">Začátek soutěže</p>
     </div>
     <div class="blue-left main-b-element m-b3">
-        <h2>12:00</h2>
+        <h2>11:30</h2>
         <p class="f-18">Konec soutěže</p>
     </div>
     <div class="blue-left main-b-element m-b4">
