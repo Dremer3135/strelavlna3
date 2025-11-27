@@ -185,7 +185,7 @@ func getPrice(conn *redis.Client, ptype string, diff string) int {
 }
 
 func setPrice(conn *redis.Client, ptype string, diff string, price int) {
-	err := conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0))
+	err := conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0)).Err()
 	if err != nil { panic(err) }
 }
 
