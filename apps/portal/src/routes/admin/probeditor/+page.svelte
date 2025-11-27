@@ -14,6 +14,7 @@
     import { PROB_DIFFICULTIES, PROB_FOCUSES } from "$lib/constants";
     import { editableContests } from "$lib/stores/contests";
     import Sidebar from "./Sidebar.svelte";
+    import { correctors } from "$lib/stores/correctors";
     let { data, form } = $props();
 
 
@@ -117,6 +118,18 @@
                     }
                 });
                 if (valid) uniqueProbIds.add(probId);
+            });
+            temp.forEach(probId => {
+                if ($correctors[getProbEditedState($editableProbs[probId]).author]) {
+                    let name: string = removeDiacritics($correctors[getProbEditedState($editableProbs[probId]).author].username ?? "no-author");
+                    let valid = true;
+                    cues.forEach(cue => {
+                        if (!name.includes(removeDiacritics(cue))) {
+                            valid = false;
+                        }
+                    });
+                    if (valid) uniqueProbIds.add(probId);
+                }
             });
 
             newFilteredProbIds = Array.from(uniqueProbIds);
@@ -666,7 +679,7 @@
             padding: 5px 10px;
             background-color: #FAFAFA88;
             border: 2px var(--color-pink) solid;
-            border-color: #AAAAAA;
+            border-color: #BBBBBB;
             box-sizing: border-box;
             border-radius: 3px;
             font-family: 'Fredoka';

@@ -1,0 +1,16 @@
+import { writable, derived } from 'svelte/store';
+import type { CurrentState, Prob } from '$lib/types';
+import { probs } from './probs';
+
+export const currentState = writable<CurrentState>({
+    teamName: "-",
+    money: 0,
+    myId: "bablba"
+});
+
+export const focusedProb = derived<[typeof probs, typeof currentState], Prob | undefined>(
+    [probs, currentState],
+    ([$probs, $currentState]) => {
+        return Object.values($probs).find(prob => prob.focusedBy.includes($currentState.myId))
+    }
+);

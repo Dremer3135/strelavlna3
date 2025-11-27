@@ -2,7 +2,7 @@
     import Latex from "./Latex.svelte";
     import type { ProbContentType } from "$lib/types.ts";
 
-    let { content }: { content: ProbContentType } = $props()
+    let { content, onCopy }: { content: ProbContentType, onCopy?: (text: string) => void } = $props()
 
 
     $effect(() => {
@@ -10,7 +10,12 @@
     })
 </script>
 
-<main>
+<main oncopy={(e) => {
+        const selection = window.getSelection()?.toString();
+        if (selection && onCopy) {
+            onCopy(selection);
+        }
+    }}>
     <h1 class="name">{content.name}</h1>
     <p class="text"><Latex text={content.text}/></p>
     {#each content.images as image}
