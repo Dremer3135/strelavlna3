@@ -87,62 +87,71 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	return res
 }
 
-func buyProb(conn *redis.Client, teamid string, diff string) (Prob, error) {
-	money := getMoney(conn, teamid)
+func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money int, remprobs map[string]int, err error) {
+	money = getMoney(conn, teamid)
 	price := getPrice(conn, PriceBuy, diff)
 	if money < price {
-		return Prob{}, errors.New("not enough money")
+		err = errors.New("not enough money")
+		return
 	}
 	probid := popOwnedProb(conn, teamid, OwnedFree, diff)
 	if probid == "" {
-		return Prob{}, errors.New("not available")
+		err = errors.New("not available")
+		return
 	}
-	prob := getProb(conn, probid)
+	prob = getProb(conn, probid)
 	if prob.Infinite {
 		addOwnedProb(conn, teamid, OwnedFree, diff, probid)
 		// TODO: generate prob
 	}
 	addOwnedProb(conn, teamid, OwnedBought, diff, probid)
-	setMoney(conn, teamid, money - price)
+	money -= price
+	setMoney(conn, teamid, price)
 	setTState(conn, teamid, probid, OwnedBought)
 	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
-	return prob, nil
+	remprobs = make(map[string]int)
+	for _, diff := range [3]string{"A", "B", "C"} {
+		remprobs[diff] = getNumberRemProbs(conn, teamid, diff)
+	}
+	return
 }
 
-func sellProb(conn *redis.Client, teamid, probid string) error {
+func sellProb(conn *redis.Client, teamid, probid string) (money int, err error) {
 	diff := getProbDiffValidity(conn, probid)
 	if diff == "" {
-		return errors.New("not valid prob")
+		return 0, errors.New("not valid prob")
 	}
 	bought := getOwnedProbs(conn, teamid, OwnedBought, diff)
 	if !slices.Contains(bought, probid) {
-		return errors.New("not bought")
+		return 0, errors.New("not bought")
 	}
 	moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSold)
 	reward := getPrice(conn, PriceSell, diff)
-	money := getMoney(conn, teamid)
-	setMoney(conn, teamid, money + reward)
+	money = getMoney(conn, teamid)
+	money += reward
+	setMoney(conn, teamid, money)
 	setTState(conn, teamid, probid, OwnedSold)
 	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
-	return nil
+	return
 }
 
-func solveProb(conn *redis.Client, teamid, probid string) error {
+func solveProb(conn *redis.Client, teamid, probid string) (money int, err error) {
 	diff := getProbDiffValidity(conn, probid)
 	if diff == "" {
-		return errors.New("not valid prob")
+		return 0, errors.New("not valid prob")
 	}
 	bought := getOwnedProbs(conn, teamid, OwnedBought, diff)
 	if !slices.Contains(bought, probid) {
-		return errors.New("not bought")
+		return 0, errors.New("not bought")
 	}
 	moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSolved)
 	reward := getPrice(conn, PriceSolve, diff)
-	money := getMoney(conn, teamid)
-	setMoney(conn, teamid, money + reward)
+	money = getMoney(conn, teamid)
+	money += reward
+	setMoney(conn, teamid, money)
 	setTState(conn, teamid, probid, OwnedSolved)
 	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
-	return nil
+	return
 }
 
 func autoGrade(conn *redis.Client, teamid, probid, answer string) (bool, error) {

@@ -335,3 +335,10 @@ func setTeamName(conn *redis.Client, teamid string, name string) {
 	err := conn.Set(ctx, "teamname:" + teamid, name, time.Duration(0)).Err()
 	if err != nil { panic(err) }
 }
+
+func getNumberRemProbs(conn *redis.Client, teamid string, diff string) int {
+	res, err := conn.SCard(ctx, "oprobs:" + teamid + ":" + OwnedFree + ":" + diff).Result()
+	if err != nil { panic(err) }
+
+	return int(res)
+}
