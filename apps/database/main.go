@@ -255,7 +255,7 @@ func main() {
 			teams := []*core.Record{}
 
 			err := app.RecordQuery("teams").
-				AndWhere(dbx.HashExp{"finalEmail": false}).
+				AndWhere(dbx.HashExp{"finalEmail": true}).
 				OrderBy("created").
 				Limit(1).
 				All(&teams)
@@ -360,7 +360,7 @@ func main() {
 				return
 			}
 
-			team.Set("finalEmail", true)
+			team.Set("finalEmail", false)
 			err = app.Save(team)
 			if err != nil {
 				app.Logger().Error("team save failed", "err", err)
