@@ -34,7 +34,7 @@
       color: color-mix(in srgb, var(--color-theme) 20%, black 80%);
     }
 
-    &.disbaled {
+    &.disabled {
       cursor: not-allowed;
       color: #555555;
       border-color: #AAAAAA;

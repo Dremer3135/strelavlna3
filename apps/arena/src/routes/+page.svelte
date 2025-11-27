@@ -34,17 +34,38 @@
           diff: "A",
           images: [],
           focusedBy: ["lalala", "bablbamId"],
-          chat: [{
-            origin: "recieved",
-            type: "message",
-            value: "Hello my friend!"
-          },
-          {
-            origin: "sent",
-            type: "message",
-            value: "Hi!"
-          },
-        ]
+          chat: [
+            {
+              origin: "recieved",
+              type: "message",
+              value: "Hello my friend!"
+            },
+            {
+              origin: "sent",
+              type: "message",
+              value: "Hi!"
+            },
+            {
+              origin: "sent",
+              type: "answer",
+              value: "Odpoved je lalala"
+            },
+            {
+              origin: "recieved",
+              type: "grade",
+              value: "incorrect"
+            },
+            {
+              origin: "sent",
+              type: "message",
+              value: "prosiiim"
+            },
+            {
+              origin: "recieved",
+              type: "grade",
+              value: "correct"
+            },
+          ]
         },
         "ijfs": {
           id: "ijfs",
@@ -82,8 +103,12 @@
     currentState.update(state => {
       return {
         teamName: "Bambuláci 4. trida",
-        money: 1534,
-        myId: "bablbamId"
+        money: 80,
+        myId: "bablbamId",
+        probsRemaining: [10, 2, -1],
+        pricesBuy: [10, 30, 80],
+        pricesSell: [10, 15, 40],
+        procesSolve: [15, 50, 200]
       }
     })
   });

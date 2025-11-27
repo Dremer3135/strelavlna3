@@ -1,13 +1,14 @@
 <script lang="ts">
-    let { submitAnswer, onPaste }: { submitAnswer: (answer: string) => void, onPaste?: (data: string) => void } = $props();
+    let { submitAnswer, disabled, placeholder, onPaste }: { submitAnswer: (answer: string) => void, disabled: boolean, placeholder: string, onPaste?: (data: string) => void } = $props();
 
     let answer: string = $state("");
 
 </script>
 
 <main>
-    <input type="text" placeholder="Odpověď" bind:value={answer} onkeydown={(e) => {
+    <input type="text" placeholder={placeholder} class:disabled={disabled} bind:value={answer} onkeydown={(e) => {
         if (e.key == "Enter") {
+            if (disabled) return;
             submitAnswer(answer);
             answer = "";
         }
@@ -40,10 +41,12 @@
             font-size: 18px;
             border-radius: 3px;
 
-            &:focus {
+            &:focus:not(.disabled) {
                 border-color: var(--color-purple);
                 background-color: color-mix(in srgb, var(--color-purple) 5%, transparent 95%);
             }
+
+
         }
     }
 </style>

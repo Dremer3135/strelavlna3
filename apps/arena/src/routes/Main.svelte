@@ -8,6 +8,7 @@
     import { ProbContent } from "shared"
     import AnswerInput from "$lib/assets/components/AnswerInput.svelte";
     import Chat from "$lib/assets/components/Chat.svelte";
+    import { getProbLastAnswer, isProbSolved, isProbUngraded } from "$lib/utils";
 
     let { buy, sell, focus, chat }: { buy: (diff: string) => void, sell: (id: string) => void, focus: (id: string) => void, chat: (probId: string, message: MessageType) => void } = $props();
 
@@ -17,7 +18,10 @@
 
     $effect(() => {
         console.log($focusedProb);
-    })
+    });
+
+    let buyHovered = $state(Array(difficulties.length).fill(false));
+    let sellHovered = $state(false);
 
 </script>
 
@@ -29,7 +33,12 @@
             <h3 class="money">{$currentState.money} DC</h3>
         </div>
         <div class="prob-selector">
-            {#each Object.values($probs) as prob}
+            {#each Object.values($probs).filter(prob => !isProbSolved(prob)) as prob}
+                <ProbSelect prob={prob} onSelect={() => {
+                    focus(prob.id);
+                }}/>
+            {/each}
+            {#each Object.values($probs).filter(prob => isProbSolved(prob)) as prob}
                 <ProbSelect prob={prob} onSelect={() => {
                     focus(prob.id);
                 }}/>
@@ -38,26 +47,28 @@
         
         <div class="controls">
             <div class="buy">
-                <Button disabled={false} theme="yellow" onclick={() => {buySelectOpened = !buySelectOpened}}>
-                    <i class="fa-solid fa-angle-down"></i>
-                    <p class="buy">Koupit</p>
-                </Button>
-                <div class="dropdown" class:opened={buySelectOpened}>
-                    {#each difficulties as diff, i}
-                        <Button disabled={false} theme={ ["yellow", "orange", "pink", "purple"][i%4] as "yellow" | "orange" | "pink" | "purple" }
-                        onclick={() => {
-                            buySelectOpened = !buySelectOpened;
-                            buy(diff);
-                        }}
-                        >
-                            <p class="buy">[{diff}]</p>
-                        </Button>
-                        
-                    {/each}
-                </div>
+                {#each difficulties as diff, i}
+                    <Button disabled={$currentState.pricesBuy[i] > $currentState.money || $currentState.probsRemaining[i] == 0} theme={ ["yellow", "orange", "pink", "purple"][i%4] as "yellow" | "orange" | "pink" | "purple" }
+                    onclick={() => {
+                        if ($currentState.pricesBuy[i] > $currentState.money || $currentState.probsRemaining[i] == 0) return;
+                        buySelectOpened = !buySelectOpened;
+                        buy(diff);
+                    }}         
+                    onmouseenter={() => { buyHovered[i] = true; }}           
+                    onmouseleave={() => { buyHovered[i] = false; }}           
+                    >
+                        <p>Koupit [{diff}]</p>
+                        <span class="anchor">
+                            <p class="tooltip" class:visible={buyHovered[i]}>Zbývá: {$currentState.probsRemaining[i] == -1 ? "∞" : $currentState.probsRemaining[i]}</p>
+                        </span>
+                    </Button>
+                    
+                {/each}
             </div>
             <div class="sell">
-                <Button disabled={false} theme="pink"
+                <Button disabled={!$focusedProb} theme="pink"
+                onmouseenter={() => { sellHovered = true; }}
+                onmouseleave={() => { sellHovered = false; }}
                 onclick={() => {
                     if ($focusedProb) {
                         sell($focusedProb.id);
@@ -65,7 +76,12 @@
                 }}
                 >
                     <i class="fa-solid fa-trash-can"></i>
-                    <p class="buy">Prodat</p>
+                    <p>Prodat</p>
+                    <span class="anchor">
+                        <p class="tooltip" class:visible={$focusedProb && sellHovered}>
+                            Prodat úlohu <span class="bold">{$focusedProb?.name}</span>
+                        </p>
+                    </span>
                 </Button>
             </div>
         </div>
@@ -85,7 +101,7 @@
                         origin: "sent"
                     })
                 }}/>
-                <AnswerInput submitAnswer={(answer: string) => {
+                <AnswerInput disabled={isProbUngraded($focusedProb) || isProbSolved($focusedProb)} placeholder={ getProbLastAnswer($focusedProb) !== undefined ? getProbLastAnswer($focusedProb) as string : "Odpověď" } submitAnswer={(answer: string) => {
                     if (!$focusedProb) return;
 
                     chat($focusedProb.id, {
@@ -104,7 +120,6 @@
                     });
                 }}
                 />   
-
             </div>
             <div class="chat">
                 <Chat prob={$focusedProb} send={(message) => {
@@ -200,9 +215,7 @@
                     color: black;
                 }
 
-                .dropdown {
-                    opacity: 0;
-                    padding: 10px;
+                .buy {
                     box-sizing: border-box;
                     display: flex;
                     flex-direction: column;
@@ -210,11 +223,61 @@
                     align-items: flex-start;
                     gap: 10px;
 
-                    &.opened {
-                        opacity: 1;
+                    .anchor {
+                        position: relative;
+
+                        .tooltip {
+                            display: none;
+                            position: absolute;
+                            top: 50%;
+                            left: 30px;
+                            transform: translateY(-50%);
+                            font-size: 12px;
+                            font-family: 'Lexend';
+                            color: color-mix(in srgb, var(--color-purple) 40%, black 60%);
+                            padding: 5px 10px;
+                            border-radius: 3px;
+                            box-shadow: 0px 0px 5px 0px #00000030;
+                            background-color: color-mix(in srgb, var(--color-purple) 15%, white 85%);
+                            text-wrap: nowrap;
+
+                            &.visible {
+                                display: block;
+                            }
+                        }
                     }
                 }
 
+                .sell {
+                    .anchor {
+                        position: relative;
+
+                        .tooltip {
+                            display: none;
+                            position: absolute;
+                            top: 50%;
+                            left: 30px;
+                            transform: translateY(-50%);
+                            font-size: 15px;
+                            font-weight: 400;
+                            font-family: 'Lexend';
+                            color: color-mix(in srgb, var(--color-purple) 40%, black 60%);
+                            padding: 5px 10px;
+                            border-radius: 3px;
+                            box-shadow: 0px 0px 5px 0px #00000030;
+                            background-color: color-mix(in srgb, var(--color-purple) 15%, white 85%);
+                            text-wrap: nowrap;
+
+                            .bold {
+                                font-weight: 700;
+                            }
+
+                            &.visible {
+                                display: block;
+                            }
+                        }
+                    }
+                }
             }
         }
         

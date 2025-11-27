@@ -27,7 +27,10 @@
         <h2>Chat</h2>
     </div>
     <div class="content">
-        {#each prob.chat as message}
+        {#each prob.chat as message, i}
+            {#if i > 0 && prob.chat[i-1].origin != message.origin}
+            <div class="spacer"></div>
+            {/if}
             <Message message={message} />
         {/each}    
     </div>
@@ -73,6 +76,10 @@
             flex-direction: column;
             gap: 10px;
             flex-grow: 1;
+
+            .spacer {
+                height: 15px;
+            }
         }
 
         .controls {

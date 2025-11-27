@@ -65,8 +65,8 @@
         let remaining_min_str: string = remaining_min < 10 ? "0" + remaining_min.toString() : remaining_min.toString();
         let remaining_hr_str: string = remaining_hr < 10 ? "0" + remaining_hr.toString() : remaining_hr.toString();
         let remaining_day_str: string = remaining_day.toString();
-
-        remaining_new_str[i] = remaining_day_str + " dní " + remaining_hr_str + ":" + remaining_min_str + ":" + remaining_sec_str;
+        let dayString = remaining_day >= 5 ? " dní " : remaining_day >= 2 ? " dny " : " den "
+        remaining_new_str[i] = remaining_day_str + dayString + remaining_hr_str + ":" + remaining_min_str + ":" + remaining_sec_str;
       }
 
       remaining_str.set(remaining_new_str);

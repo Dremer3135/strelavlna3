@@ -9,7 +9,11 @@ export type Prob = ProbContentType & {
 export type CurrentState = {
     teamName: string,
     money: number,
-    myId: string
+    myId: string,
+    probsRemaining: number[],
+    pricesBuy: number[],
+    pricesSell: number[],
+    procesSolve: number[]
 }
 
 export type MessageType = {

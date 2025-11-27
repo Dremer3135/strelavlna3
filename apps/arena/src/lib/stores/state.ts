@@ -5,7 +5,11 @@ import { probs } from './probs';
 export const currentState = writable<CurrentState>({
     teamName: "-",
     money: 0,
-    myId: "bablba"
+    myId: "bablba",
+    probsRemaining: [10, 2, 0],
+    pricesBuy: [10, 30, 80],
+    pricesSell: [10, 15, 40],
+    procesSolve: [15, 50, 200]
 });
 
 export const focusedProb = derived<[typeof probs, typeof currentState], Prob | undefined>(

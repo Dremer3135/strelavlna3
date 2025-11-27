@@ -3,17 +3,29 @@
     let { message }: { message: MessageType } = $props();
 </script>
 
-<main class:recieved={message.origin === "sent"}>
+<main>
     {#if message.type == "message"}
-    <div class="message">
+    <div class="message" class:sent={message.origin === "sent"}>
         <div class="content">
             <p>{message.value}</p>
         </div>
     </div>
     {:else if message.type == "grade"}
-    <div class="grade">
+    <div class="grade" class:sent={message.origin === "sent"}>
         <div class="content">
-            <p>{message.value}</p>
+            {#if message.value == "correct"}
+            <p>Odpověď byla uznána!</p>
+            <i class="fa-solid fa-square-check"></i>
+            {:else}
+            <p>Odpověď byla zamítnuta!</p>
+            <i class="fa-solid fa-square-xmark"></i>
+            {/if}
+        </div>
+    </div>
+    {:else if message.type == "answer"}
+    <div class="answer" class:sent={message.origin === "sent"}>
+        <div class="content">
+            <p>Odpověděli jste: <span class="bold">{message.value}</span></p>
         </div>
     </div>
     {/if}
@@ -21,33 +33,118 @@
 
 <style lang="scss">
     main {
-        border: 3px var(--color-pink) solid;
-        border-radius: 5px;
-        background-color: color-mix(in srgb, var(--color-pink) 5%, transparent 95%);
-        padding: 10px;
-        box-sizing: border-box;
-        margin-right: 30px;
-        
-        .content {
-            p {
-                font-family: 'Lexend';
-                font-size: 16px;
-                font-weight: 500;
-                margin: 0px;
-            }
+        .sent {
+            margin-right: 0px !important;
+            margin-left: 30px !important;
         }
-        
-        &.recieved {
-            margin-right: 0px;
-            margin-left: 30px;
-            background-color: var(--color-pink);
-        
+
+        .message {
+            border: 3px var(--color-pink) solid;
+            border-radius: 5px;
+            background-color: color-mix(in srgb, var(--color-pink) 5%, transparent 95%);
+            padding: 10px;
+            box-sizing: border-box;
+            margin-right: 30px;
+
             .content {
                 p {
-                    color: white;
-                    font-weight: 600;
+                    font-family: 'Lexend';
+                    font-size: 16px;
+                    font-weight: 500;
+                    margin: 0px;
                 }
             }
+
+            &.sent {
+                margin-right: 0px;
+                margin-left: 30px;
+                background-color: var(--color-pink);
+            
+                .content {
+                    p {
+                        color: white;
+                        font-weight: 600;
+                    }
+                }
+            }
+        }
+
+        .grade {
+            border: 3px var(--color-purple) solid;
+            border-radius: 5px;
+            // background-color: white;
+            // background-color: color-mix(in srgb, var(--color-purple) 5%, transparent 95%);
+            padding: 10px;
+            box-sizing: border-box;
+            margin-right: 30px;
+
+            background-image: repeating-linear-gradient(
+                -45deg,
+                color-mix(in srgb, var(--color-purple) 3%, white 97%),
+                color-mix(in srgb, var(--color-purple) 0%, white 100%) 10px,
+                color-mix(in srgb, var(--color-purple) 10%, white 90%) 10px,
+                color-mix(in srgb, var(--color-purple) 6%, white 94%) 20px,
+            );
+            
+            
+            .content {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                justify-content: space-between;
+                
+                p {
+                    font-family: 'Lexend';
+                    font-size: 16px;
+                    font-weight: 700;
+                    margin: 0px;
+                    color: color-mix(in srgb, var(--color-purple) 30%, black 70%);
+                    
+                }
+
+                i {
+                    font-size: 22px;
+                    color: color-mix(in srgb, var(--color-purple) 65%, black 35%)
+                }
+            }
+
+            &.sent {
+            }
+        }
+
+        .answer {
+            border: 3px var(--color-pink) solid;
+            border-radius: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-right: 30px;
+
+            background-image: repeating-linear-gradient(
+                -45deg,
+                color-mix(in srgb, var(--color-pink) 3%, white 97%),
+                color-mix(in srgb, var(--color-pink) 0%, white 100%) 10px,
+                color-mix(in srgb, var(--color-pink) 10%, white 90%) 10px,
+                color-mix(in srgb, var(--color-pink) 6%, white 94%) 20px,
+            );
+            
+            
+            .content {
+                p {
+                    font-family: 'Lexend';
+                    font-size: 16px;
+                    font-weight: 400;
+                    margin: 0px;
+
+                    .bold {
+                        font-weight: 700;
+                    }
+                }
+            }
+            
+            // &.sent {
+            //     background-image: none;
+            //     background-color: color-mix(in srgb, var(--color-pink) 15%, white 85%);
+            // }
         }
     }
 
