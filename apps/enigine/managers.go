@@ -42,6 +42,7 @@ const (
 
 	CorrWriteMsg
 	CorrGrade
+	CorrGraded
 	WriteMsg // WriteMsgMsg
 	RecMsg
 	// GradeProb
@@ -148,7 +149,14 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				msg.callback <- Msg{UserError, id, self, "join"}
 				break
 			}
-			plid := strconv.Itoa(len(players))
+			plidi := 0
+			plid := "0"
+			for {
+				_, ok := players[plid]
+				if !ok { break }
+				plidi++
+				plid = strconv.Itoa(plidi)
+			}
 		  plchan := make(chan Msg, 10)
 		  go playerManager(data, plchan, self, plid, id)
 		  players[plid] = plchan
@@ -232,7 +240,6 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}
 
 		case WriteMsg:
-
 			data, ok := msg.data.(WriteMsgMsg)
 		  if !ok { break }
 
@@ -241,17 +248,24 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			for _, pl := range players {
 				pl <- Msg{WriteMsg, id, self, data}
 			}
-			admins <- Msg{WriteMsg, id, self, data}
 
-			if data.mtype == MTypeGrade {
-				err := solveProb(conn, data.teamid, data.probid)
-				if err != nil { msg.callback <- Msg{UserError, id, self, err}; break }
+			corr := getTCorr(conn, id, data.probid)
+			correctors[corr] <- Msg{WriteMsg, id, self, data}
 
-				for _, pl := range players {
-					pl <- Msg{SolvedProb, id, self, data.probid}
-				}
-				admins <- Msg{SolvedProb, id, self, msg.data}
+		case CorrGrade:
+			data, ok := msg.data.(string)
+		  if !ok { break }
+
+			money, err := solveProb(conn, id, data)
+			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
+
+			for _, pl := range players {
+				pl <- Msg{SolveProb, id, self, IdMoneyMsg{data, money}}
 			}
+
+			corr := getTCorr(conn, id, data)
+			correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data}}
+
 		}
 	}
 }
@@ -585,6 +599,11 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		  data, ok := msg.data.(TeamProbMsg)
 		  if !ok { break }
 		  teams[data.team] <- Msg{CorrGrade, id, self, data.prob}
+
+
+		case CorrGraded:
+		  data, ok := msg.data.(TeamProbMsg)
+		  if !ok { break }
 			err := ws.WriteJSON(map[string]string{
 				"name": "graded",
 				"probid": data.prob,

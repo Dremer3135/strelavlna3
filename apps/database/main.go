@@ -24,6 +24,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/hook"
 	"github.com/pocketbase/pocketbase/tools/mailer"
+	"github.com/pocketbase/pocketbase/tools/security"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -289,6 +290,8 @@ func main() {
 				return
 			}
 
+			token := security.RandomString(5)
+
 			var renbuf bytes.Buffer
 			tmpl, err := template.New("reg_confirm").Parse(text.GetString("text"))
 			if err != nil {
@@ -312,7 +315,7 @@ func main() {
 				RegistrationStart,
 				RegistrationEnd string
 			}{
-				team.Id,
+				token,
 				contest.GetString("subject"),
 				contest.GetString("name"),
 				contest.GetString("whatsapp"),
@@ -363,6 +366,7 @@ func main() {
 			}
 
 			team.Set("finalEmail", false)
+			team.Set("token", token)
 			err = app.Save(team)
 			if err != nil {
 				app.Logger().Error("team save failed", "err", err)
