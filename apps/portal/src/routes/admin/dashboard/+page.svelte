@@ -13,7 +13,7 @@
 
     let rdbid = $state("");
     async function genRdb() {
-      await pocketbase.send("/api/rdb", {query: rdbid })
+      await pocketbase.send("/api/rdb", {query: {id: rdbid} })
     }
 </script>
 
