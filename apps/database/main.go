@@ -714,7 +714,7 @@ func main() {
 
 				for _, team := range teams {
 					setMoney(rdb, team.Id, 100)
-					setPlayToken(rdb, team.Id, team.GetString("token"))
+					setPlayToken(rdb, team.GetString("token"), team.Id)
 					setTeamName(rdb, team.Id, team.GetString("name"))
 				}
 
