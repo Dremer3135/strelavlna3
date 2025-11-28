@@ -446,6 +446,7 @@ func adminManager(self chan Msg) {
 	conn := NewRdbConn()
 	for {
 		msg := <- self
+		fmt.Printf("admin: %#v\n", msg)
 		switch msg.tp {
 
 		case TeamRegister:
@@ -551,6 +552,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 	}()
 	chanloop: for {
 		msg, ok := <- self
+		fmt.Printf("corr: %#v\n", msg)
 		if !ok {
 			ws.Close()
 			admins <- Msg{WsError, id, self, errors.New("chan closed")}
