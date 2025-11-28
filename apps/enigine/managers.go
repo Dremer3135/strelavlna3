@@ -352,6 +352,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				"data": data,
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
+			fmt.Printf("err: %v\n", err)
 
 		case Focus:
 		  data, ok := msg.data.(PlayerFocusMsg)
