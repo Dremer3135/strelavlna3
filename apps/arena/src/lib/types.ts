@@ -14,7 +14,9 @@ export type CurrentState = {
     probsRemaining: number[],
     pricesBuy: number[],
     pricesSell: number[],
-    procesSolve: number[]
+    procesSolve: number[],
+    start: Date,
+    end: Date
 }
 
 export type MessageType = {

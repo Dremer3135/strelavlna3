@@ -184,6 +184,10 @@
                     border-top: 1px color-mix(in srgb, var(--color-purple) 30%, transparent 70%) solid;
                     margin: 20px 0px;
                 }
+
+				&::-webkit-scrollbar {
+					display: none;
+				}
             }
             
             .controls {

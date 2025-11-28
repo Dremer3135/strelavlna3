@@ -1,16 +1,29 @@
 <script lang="ts">
-  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import Main from './Main.svelte';
   import { probs } from '$lib/stores/probs';
-  import { currentState } from '$lib/stores/state';
+  import { currentState, wsConnected } from '$lib/stores/state';
   import type { MessageType, CurrentState } from '$lib/types';
+  import Waitroom from './Waitroom.svelte';
+    import Disconnected from '$lib/assets/components/Disconnected.svelte';
+
+  let { data } = $props();
 
   let socket: WebSocket;
   
   onMount(() => {
+    socket = new WebSocket(`https://sv.skrat.org/ws?token=${data.token}`);
 
-    socket = new WebSocket(`https://sv.skrat.org/ws?token=${$page.data.token}`)
+    socket.onopen = () => {
+      wsConnected.set(true);
+    };
+    // socket.onclose = () => {
+    //   wsConnected.set(false);
+    // }
+    // socket.onerror = () => {
+    //   wsConnected.set(false);
+    // }
+
     socket.addEventListener("message", (event) => {
       let data = JSON.parse(event.data);
       if (data.name === "initload") {
@@ -22,6 +35,8 @@
           pricesBuy: [data.buycost.A, data.buycost.B, data.buycost.C],
           pricesSell: [data.sellcost.A, data.sellcost.B, data.sellcost.C],
           procesSolve: [data.solvecost.A, data.solvecost.B, data.solvecost.C],
+          start: new Date(Date.now() + 1*60*1000),
+          end: new Date(Date.now() + 2*60*1000)
         });
 
         let nprobs: any = {};
@@ -278,14 +293,20 @@
 </script>
 
 <main>
-  <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
+  {#if $wsConnected}
+    <Waitroom />
+    <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
+  {:else}
+    <Disconnected/>
+  {/if}
 </main>
 
 <style lang="scss">
   main {
+    min-height: 0px;
     display: flex;
     flex-direction: column;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
   }
 </style>

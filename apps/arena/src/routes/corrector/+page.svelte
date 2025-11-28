@@ -3,8 +3,9 @@
   import { onMount } from 'svelte';
   import Main from './Main.svelte';
   import { probs } from '$lib/stores/probs';
-  import { currentState } from '$lib/stores/state';
+  import { currentState, wsConnected } from '$lib/stores/state';
   import type { MessageType } from '$lib/types';
+    import Disconnected from '$lib/assets/components/Disconnected.svelte';
   
   onMount(() => {
 
@@ -213,7 +214,9 @@
         probsRemaining: [10, 2, -1],
         pricesBuy: [10, 30, 80],
         pricesSell: [10, 15, 40],
-        procesSolve: [15, 50, 200]
+        procesSolve: [15, 50, 200],
+        start: new Date(Date.now() + 0.2*60*1000),
+        end: new Date(Date.now() + 20*60*1000)
       }
     })
   });
@@ -227,14 +230,20 @@
 </script>
 
 <main>
-  <Main chat={handleChat} focus={handleFocus} />
+  {#if $wsConnected}
+    <Main chat={handleChat} focus={handleFocus} />
+  {:else}
+    <Disconnected/>
+  {/if}
 </main>
 
 <style lang="scss">
   main {
+    flex-grow: 1;
+    min-height: 0px;
     display: flex;
     flex-direction: column;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
   }
 </style>
