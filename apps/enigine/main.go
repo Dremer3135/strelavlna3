@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
@@ -32,20 +33,21 @@ func main() {
 	}
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		token := r.URL.Query().Get("token")
-		teamid, err := rdb.Get(ctx, "playtoken:" + token).Result()
-		if err != nil {
-			http.Error(w, "invalid token", 400)
-			return
-		}
+		// token := r.URL.Query().Get("token")
+		// teamid, err := rdb.Get(ctx, "playtoken:" + token).Result()
+		// if err != nil {
+		// 	http.Error(w, "invalid token", 400)
+		// 	return
+		// }
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		fmt.Println(conn)
 
-		fmt.Println(teamid)
-		achan <- Msg{PlayerJoinRequest, "", mchan, PlayerJoinReqMsg{teamid, conn}}
+		// fmt.Println(teamid)
+		// achan <- Msg{PlayerJoinRequest, "", mchan, PlayerJoinReqMsg{teamid, conn}}
 	})
 
 	http.HandleFunc("/corr/ws", func(w http.ResponseWriter, r *http.Request) {
