@@ -88,7 +88,7 @@
         probs.update((e) => {
           Object.keys(e).forEach((k) => {
             if (k === data.probid) {
-              e[k].fucusedBy = e[k].focusedBy.filter((x: any) => x !== $currentState.myId);
+              e[k].focusedBy = e[k].focusedBy.filter((x: any) => x !== $currentState.myId);
             } else {
               e[k].focusedBy.push($currentState.myId);
             }
