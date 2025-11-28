@@ -1,5 +1,7 @@
 <script lang="ts">
+    import Navbar from '$lib/assets/components/Navbar.svelte';
 	import favicon from '$lib/assets/favicon.png';
+    import { wsConnected } from '$lib/stores/state';
 
 	let { children } = $props();
 </script>
@@ -8,7 +10,12 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{@render children?.()}
+<main>
+    {#if $wsConnected}
+    <Navbar />
+    {/if}
+    {@render children?.()}
+</main>
 
 
 <style>
@@ -31,5 +38,17 @@
         --color-lightblue:#003F88;
         --color-gray: #353538;
         --color-light-gray: #f8f7ff;
+    }
+
+    main {
+        display: flex;
+        flex-direction: column;
+        min-height: 0px;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    main::-webkit-scrollbar {
+        display: none;
     }
 </style>

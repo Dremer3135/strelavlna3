@@ -9,7 +9,9 @@ export const currentState = writable<CurrentState>({
     probsRemaining: [10, 2, 0],
     pricesBuy: [10, 30, 80],
     pricesSell: [10, 15, 40],
-    procesSolve: [15, 50, 200]
+    procesSolve: [15, 50, 200],
+    start: new Date(Date.now()),
+    end: new Date(Date.now())
 });
 
 export const focusedProb = derived<[typeof probs, typeof currentState], Prob | undefined>(
@@ -18,3 +20,5 @@ export const focusedProb = derived<[typeof probs, typeof currentState], Prob | u
         return Object.values($probs).find(prob => prob.focusedBy.includes($currentState.myId))
     }
 );
+
+export const wsConnected = writable<boolean>(true);
