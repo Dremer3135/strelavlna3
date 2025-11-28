@@ -48,7 +48,7 @@ func main() {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		fmt.Println(conn)
+		// fmt.Println(conn)
 
 		fmt.Println(teamid)
 		achan <- Msg{PlayerJoinRequest, "", mchan, PlayerJoinReqMsg{teamid, conn}}
