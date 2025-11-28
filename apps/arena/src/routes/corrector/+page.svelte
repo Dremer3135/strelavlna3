@@ -9,216 +9,139 @@
   
   onMount(() => {
 
-    // const socket = new WebSocket(`https://sv.skrat.org/ws?token=${$page.data.token}`)
-    // socket.addEventListener("message", (event) => {
-    //   console.log(typeof event.data)
-    // });
+    const socket = new WebSocket(`https://sv.skrat.org/ws/corr?token=${$page.data.token}`)
+    socket.addEventListener("message", (event) => {
+      let data = JSON.parse(event.data);
+      console.log(data);
+      if (data.name === "initload") {
+        currentState.set({
+          teamName: data.data.teamname,
+          money: data.data.money,
+          myId: data.data.playerid,
+          probsRemaining: [data.data.remprobs.A, data.data.remprobs.B, data.data.remprobs.C],
+          pricesBuy: [data.data.buycost.A, data.data.buycost.B, data.data.buycost.C],
+          pricesSell: [data.data.sellcost.A, data.data.sellcost.B, data.data.sellcost.C],
+          procesSolve: [data.data.solvecost.A, data.data.solvecost.B, data.data.solvecost.C],
+          start: new Date(Date.now() + data.data.start),
+          end: new Date(Date.now() + data.data.end)
+        });
 
+        let nprobs: any = {};
 
-    probs.update(_ => {
-      return { 
-        "askhdj": {
-          id: "askhdj",
-          name: "Tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["s", "lalala"],
-          chat: []
-        },
-        "asjldh": {
-          id: "asjldh",
-          name: "tohle je jmeno lalal",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["lalala", "bablbamId"],
-          chat: [
-            {
-              origin: "recieved",
-              type: "message",
-              value: "Hello my friend!",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "message",
-              value: "Hi!",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "answer",
-              value: "Odpoved je lalala",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "grade",
-              value: "incorrect",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "message",
-              value: "prosiiim",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "answer",
-              value: "Odpoved neni lalala",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "copy",
-              value: "tohlrje je neco co dam chatgpt",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "window-focus",
-              value: "blur honzik",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "window-focus",
-              value: "focus honzik",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "paste",
-              value: "tohlrje je z chatgpt",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "paste",
-              value: "tohlrje je z chatgpt",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "paste",
-              value: "tohlrje je z chatgpt",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "paste",
-              value: "tohlrje je z chatgpt",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
+        for (let prob of data.data.bought) {
+          nprobs[prob.id] = {
+            id: prob.id,
+            name: prob.name,
+            text: prob.text,
+            answer: prob.answer,
+            diff: prob.diff,
+            images: prob.images,
+            focusedBy: [],
+            chat: data.data.tlines[prob.id].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: e.time,
+            }}),
+            owned: "bought",
+          };
+        }
 
-            // {
-            //   origin: "recieved",
-            //   type: "grade",
-            //   value: "correct",
-            //   sentTime: new Date('2025-11-27T14:05:30Z')
-            // },
-          ]
-        },
-        "ijfs": {
-          id: "ijfs",
-          name: "tohle je jmenoslav",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "alsAL": {
-          id: "alsAL",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["adf", "ads"],
-          chat: []
-        },
-        "PIJFSLKHBKJ": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "baa": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "a": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "b": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "c": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "d": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        
+        for (let prob of data.data.solved) {
+          nprobs[prob.id] = {
+            id: prob.id,
+            name: prob.name,
+            text: prob.text,
+            answer: prob.answer,
+            diff: prob.diff,
+            images: prob.images,
+            focusedBy: [],
+            chat: data.data.tlines[prob.id].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: e.time,
+            }}),
+            owned: "solved",
+          };
+        }
+
+        for (let prob of data.data.sold) {
+          nprobs[prob.id] = {
+            id: prob.id,
+            name: prob.name,
+            text: prob.text,
+            answer: prob.answer,
+            diff: prob.diff,
+            images: prob.images,
+            focusedBy: [],
+            chat: data.data.tlines[prob.id].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: e.time,
+            }}),
+            owned: "sold",
+          };
+        }
+
+        probs.set(nprobs);
+      } else if (data.name === "focus") {
+        probs.update((e) => {
+          Object.keys(e).forEach((k) => {
+            if (k === data.probid) {
+              e[k].focusedBy = e[k].focusedBy.filter((x: any) => x !== $currentState.myId);
+            } else {
+              e[k].focusedBy.push($currentState.myId);
+            }
+          })
+          return e;
+        });
+      } else if (data.name === "written") {
+        probs.update((e) => {
+          Object.keys(e).forEach((k) => {
+            if (k === data.probid) {
+              e[k].chat.push({
+                origin: data.type,
+                type: data.solve ? "answer" : "message",
+                value: data.text,
+                sentTime: data.time,
+              });
+            }
+          })
+          return e;
+        });
+      } else if (data.name === "bought") {
+        probs.update((e) => {
+          e[data.prob.id] = {
+            id: data.prob.id,
+            name: data.prob.name,
+            text: data.prob.text,
+            answer: data.prob.answer,
+            diff: data.prob.diff,
+            images: data.prob.images,
+            focusedBy: [],
+            chat: [],
+            owned: "bought",
+          };
+          return e;
+        });
+        currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+      } else if (data.name === "sold") {
+        probs.update((e) => {
+          e[data.probid].owned = "sold";
+          currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+          return e;
+        });
+      } else if (data.name === "solved") {
+        probs.update((e) => {
+          e[data.probid].owned = "solved";
+          currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+          return e;
+        });
       }
     });
-    currentState.update(state => {
-      return {
-        teamName: "Bambuláci 4. trida",
-        money: 80,
-        myId: "bablbamId",
-        probsRemaining: [10, 2, -1],
-        pricesBuy: [10, 30, 80],
-        pricesSell: [10, 15, 40],
-        procesSolve: [15, 50, 200],
-        start: new Date(Date.now() + 0.2*60*1000),
-        end: new Date(Date.now() + 20*60*1000)
-      }
-    })
+
   });
 
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
@@ -226,6 +149,9 @@
   }
   function handleFocus(probId: string) {
     console.log("Focusing:", probId);
+  }
+  function handleGrade(probId: string) {
+    console.log("Grading:", probId);
   }
 </script>
 

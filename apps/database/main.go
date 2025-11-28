@@ -375,6 +375,82 @@ func main() {
 		},
 	)
 
+	app.Cron().MustAdd(
+		"corr_token_mail",
+		"*/10 * * * *",
+		func() {
+			corrs := []*core.Record{}
+
+			err := app.RecordQuery("correctors").
+				AndWhere(dbx.HashExp{"token": ""}).
+				OrderBy("created").
+				Limit(1).
+				All(&corrs)
+
+			if len(corrs) < 1 {
+				return
+			}
+
+			corr := corrs[0]
+
+			if err != nil {
+				app.Logger().Error("corr query failed", "err", err)
+				return
+			}
+
+			text := core.Record{}
+
+			err = app.RecordQuery("texts").
+				AndWhere(dbx.HashExp{"name": "corr_token_mail"}).
+				Limit(1).
+				One(&text)
+
+			if err != nil {
+				app.Logger().Error("text query failed", "err", err)
+				return
+			}
+
+			token := security.RandomString(5)
+
+			var renbuf bytes.Buffer
+			tmpl, err := template.New("corr_token_mail").Parse(text.GetString("text"))
+			if err != nil {
+				app.Logger().Error("texttempl query failed", "err", err)
+				return
+			}
+			err = tmpl.Execute(&renbuf, struct{
+				Token string 
+				Name string
+			}{ token, corr.GetString("username") })
+			if err != nil {
+				app.Logger().Error("templ failed", "err", err)
+				return
+			}
+
+			msg := renbuf.String()
+
+			err = app.NewMailClient().Send(&mailer.Message{
+				From: mail.Address{
+					Address: "strela-vlna@gchd.cz",
+					Name: "Střela Vlna",
+				},
+				To: []mail.Address{ {Address: corr.GetString("email")}, },
+				Subject: text.GetString("data"),
+				HTML: msg,
+			})
+			if err != nil {
+				app.Logger().Error("mail failed", "err", err)
+				return
+			}
+
+			corr.Set("token", token)
+			err = app.Save(corr)
+			if err != nil {
+				app.Logger().Error("corr save failed", "err", err)
+			}
+		},
+	)
+
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
 		e.Router.POST("/api/code", func(e *core.RequestEvent) error {

@@ -54,7 +54,7 @@ func main() {
 		achan <- Msg{PlayerJoinRequest, "", mchan, PlayerJoinReqMsg{teamid, conn}}
 	})
 
-	http.HandleFunc("/corr/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws/corr", func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
 		corrid, err := rdb.Get(ctx, "corrtoken:" + token).Result()
 		if err != nil {

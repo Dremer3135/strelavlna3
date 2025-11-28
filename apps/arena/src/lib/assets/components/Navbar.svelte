@@ -12,6 +12,7 @@
     
     
     function updateClock() {
+        // console.log($currentState.start);
         if (Date.now() > $currentState.start.getTime()) {
             remaining = Math.abs($currentState.end.getTime() - Date.now());
         } else {

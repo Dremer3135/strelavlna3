@@ -57,6 +57,9 @@ const (
 	ServerError // error
 
 	TooManyPlayers
+
+	Start
+	End
 )
 
 // type BoughtProbMsg struct {
@@ -267,6 +270,11 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			corr := getTCorr(conn, id, data)
 			correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data}}
 
+		case Start:
+			for _, pl := range players {
+				pl <- Msg{Start, id, self, nil}
+			}
+
 		}
 	}
 }
@@ -422,6 +430,12 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				"solve": false,
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case Start:
+			err := ws.WriteJSON(map[string]any{
+				"name": "start",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
 		  
 		}
 	}
@@ -510,6 +524,13 @@ func adminManager(self chan Msg) {
 			team, ok := teams[data.Teamid]
 			if !ok { break }
 			team <- Msg{PlayerJoinRequest, "", self, data.Conn}
+
+		case Start:
+		  setState(conn, StateRunning)
+		  for _, team := range teams {
+				team <- Msg{Start, "", self, nil}
+			}
+		
 		}
 	}
 }
