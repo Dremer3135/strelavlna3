@@ -39,6 +39,10 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
 	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
 
+	res.BuyCost = make(map[string]int)
+	res.SellCost = make(map[string]int)
+	res.SolveCost = make(map[string]int)
+
 	res.RemProbs = map[string]int{}
 	for _, diff := range DIFFS {
 		res.RemProbs[diff] = getNumberRemProbs(conn, teamid, diff)
