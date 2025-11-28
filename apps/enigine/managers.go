@@ -272,14 +272,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 }
 
 func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, teamid string) {
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
 	go func() {
-		defer func() {
-			ticker.Stop()
-			ws.Close()
-		}()
 		for {
 			var msg map[string]string
 			err := ws.ReadJSON(&msg)
@@ -324,120 +317,112 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			}
 		}
 	}()
-
 	chanloop: for {
-		select {
-		case msg, ok := <-self:
-			fmt.Printf("client: %#v\n", msg)
-			if !ok {
-				ws.Close()
-				team <- Msg{PlayerLeft, id, self, errors.New("chan closed")}
-				break chanloop
+		msg, ok := <- self
+		fmt.Printf("client: %#v\n", msg)
+		if !ok {
+			ws.Close()
+			team <- Msg{PlayerLeft, id, self, errors.New("chan closed")}
+			break
+		}
+		switch msg.tp {
+
+		case WsError:
+			data, ok := msg.data.(error)
+			if !ok { break }
+			ws.Close()
+			team <- Msg{PlayerLeft, id, self, data}
+			break chanloop
+
+		case UserError:
+			data, ok := msg.data.(string)
+			if !ok { break }
+			err := ws.WriteJSON(map[string]string{
+				"name": "error",
+				"error": data,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case PlayerInitLoaded:
+		  data, ok := msg.data.(InitLoad)
+			fmt.Printf("%v %v\n", ok, data)
+			if !ok { break }
+			err := ws.WriteJSON(map[string]any{
+				"name": "initload",
+				"data": data,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+			fmt.Printf("err: %v\n", err)
+
+		case Focus:
+		  data, ok := msg.data.(PlayerFocusMsg)
+		  if !ok { break }
+			err := ws.WriteJSON(map[string]string{
+				"name": "focus",
+				"playerid": data.playerid,
+				"probid": data.probid,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case WriteMsg:
+		  data, ok := msg.data.(WriteMsgMsg)
+		  if !ok { break }
+			mtype := "sent"
+			if data.admin {
+				mtype = "recieved"
 			}
-			switch msg.tp {
+			err := ws.WriteJSON(map[string]any{
+				"name": "written",
+				"probid": data.probid,
+				"text": data.msg,
+				"type": mtype,
+				"solve": false,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
 
-			case WsError:
-				data, ok := msg.data.(error)
-				if !ok { break }
-				ws.Close()
-				team <- Msg{PlayerLeft, id, self, data}
-				break chanloop
+		case BoughtProb:
+		  data, ok := msg.data.(BoughtProbMsg)
+		  if !ok { break }
+			err := ws.WriteJSON(map[string]any{
+				"name": "bought",
+				"prob": data.prob,
+				"money": data.money,
+				"remprobs": data.remprobs,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
 
-			case UserError:
-				data, ok := msg.data.(string)
-				if !ok { break }
-				err := ws.WriteJSON(map[string]string{
-					"name": "error",
-					"error": data,
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
+		case SoldProb:
+		  data, ok := msg.data.(IdMoneyMsg)
+		  if !ok { break }
+			err := ws.WriteJSON(map[string]string{
+				"name": "sold",
+				"probid": data.id,
+				"money": strconv.Itoa(data.money),
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
 
-			case PlayerInitLoaded:
-			  data, ok := msg.data.(InitLoad)
-				fmt.Printf("%v %v\n", ok, data)
-				if !ok { break }
-				err := ws.WriteJSON(map[string]any{
-					"name": "initload",
-					"data": data,
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-				fmt.Printf("err: %v\n", err)
+		case SolvedProb:
+		  data, ok := msg.data.(IdMoneyMsg)
+		  if !ok { break }
+			err := ws.WriteJSON(map[string]string{
+				"name": "solved",
+				"probid": data.id,
+				"money": strconv.Itoa(data.money),
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
 
-			case Focus:
-			  data, ok := msg.data.(PlayerFocusMsg)
-			  if !ok { break }
-				err := ws.WriteJSON(map[string]string{
-					"name": "focus",
-					"playerid": data.playerid,
-					"probid": data.probid,
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-
-			case WriteMsg:
-			  data, ok := msg.data.(WriteMsgMsg)
-			  if !ok { break }
-				mtype := "sent"
-				if data.admin {
-					mtype = "recieved"
-				}
-				err := ws.WriteJSON(map[string]any{
-					"name": "written",
-					"probid": data.probid,
-					"text": data.msg,
-					"type": mtype,
-					"solve": false,
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-
-			case BoughtProb:
-			  data, ok := msg.data.(BoughtProbMsg)
-			  if !ok { break }
-				err := ws.WriteJSON(map[string]any{
-					"name": "bought",
-					"prob": data.prob,
-					"money": data.money,
-					"remprobs": data.remprobs,
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-
-			case SoldProb:
-			  data, ok := msg.data.(IdMoneyMsg)
-			  if !ok { break }
-				err := ws.WriteJSON(map[string]string{
-					"name": "sold",
-					"probid": data.id,
-					"money": strconv.Itoa(data.money),
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-
-			case SolvedProb:
-			  data, ok := msg.data.(IdMoneyMsg)
-			  if !ok { break }
-				err := ws.WriteJSON(map[string]string{
-					"name": "solved",
-					"probid": data.id,
-					"money": strconv.Itoa(data.money),
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-
-			case SolveProbReq:
-			  data, ok := msg.data.(SolveProbMsg)
-			  if !ok { break }
-				err := ws.WriteJSON(map[string]any{
-					"name": "written",
-					"probid": data.probid,
-					"text": teamid,
-					"type": "sent",
-					"solve": false,
-				})
-				if err != nil { self <- Msg{WsError, id, self, err} }
-			
-			}
-		case <-ticker.C:
-			if err := ws.WriteMessage(websocket.PingMessage, nil); err != nil {
-				self <- Msg{WsError, id, self, err}
-				break chanloop
-			}
+		case SolveProbReq:
+		  data, ok := msg.data.(SolveProbMsg)
+		  if !ok { break }
+			err := ws.WriteJSON(map[string]any{
+				"name": "written",
+				"probid": data.probid,
+				"text": teamid,
+				"type": "sent",
+				"solve": false,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+		  
 		}
 	}
 }
