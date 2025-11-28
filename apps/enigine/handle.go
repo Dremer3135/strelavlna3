@@ -54,6 +54,10 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 		res.SolveCost[diff] = getPrice(conn, PriceSolve, diff)
 	}
 
+	res.Bought = make([]Prob, 0)
+	res.Sold = make([]Prob, 0)
+	res.Solved = make([]Prob, 0)
+
   if state == StateBefore {
 		return res
 	}
