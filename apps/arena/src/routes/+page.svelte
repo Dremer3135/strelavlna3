@@ -26,6 +26,7 @@
 
     socket.addEventListener("message", (event) => {
       let data = JSON.parse(event.data);
+      console.log(data);
       if (data.name === "initload") {
         currentState.set({
           teamName: data.teamname,
