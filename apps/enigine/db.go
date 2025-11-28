@@ -345,3 +345,19 @@ func getNumberRemProbs(conn *redis.Client, teamid string, diff string) int {
 
 	return int(res)
 }
+
+func setTeams(conn *redis.Client, teams []string) {
+	teamsany := []any{}
+	for _, team := range teams {
+		teamsany = append(teamsany, team)
+	}
+	err := conn.SAdd(ctx, "teams", teamsany...).Err()
+	if err != nil { panic(err) }
+}
+
+func getTeams(conn *redis.Client) []string {
+	res, err := conn.SMembers(ctx, "teams").Result()
+	if err != nil { panic(err) }
+
+	return res
+}

@@ -705,6 +705,13 @@ func main() {
 				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
 				if err != nil { return err }
 
+				teamids := []string{}
+				for _, team := range teams {
+					teamids = append(teamids, team.Id)
+				}
+
+				setTeams(rdb, teamids)
+
 				for _, team := range teams {
 					setMoney(rdb, team.Id, 100)
 					setPlayToken(rdb, team.Id, team.GetString("token"))

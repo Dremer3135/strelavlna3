@@ -41,6 +41,7 @@ func main() {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
+			return
 		}
 
 		fmt.Println(teamid)
