@@ -29,20 +29,20 @@
       console.log(data);
       if (data.name === "initload") {
         currentState.set({
-          teamName: data.teamname,
-          money: data.money,
-          myId: data.playerid,
-          probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C],
-          pricesBuy: [data.buycost.A, data.buycost.B, data.buycost.C],
-          pricesSell: [data.sellcost.A, data.sellcost.B, data.sellcost.C],
-          procesSolve: [data.solvecost.A, data.solvecost.B, data.solvecost.C],
+          teamName: data.data.teamname,
+          money: data.data.money,
+          myId: data.data.playerid,
+          probsRemaining: [data.data.remprobs.A, data.data.remprobs.B, data.data.remprobs.C],
+          pricesBuy: [data.data.buycost.A, data.data.buycost.B, data.data.buycost.C],
+          pricesSell: [data.data.sellcost.A, data.data.sellcost.B, data.data.sellcost.C],
+          procesSolve: [data.data.solvecost.A, data.data.solvecost.B, data.data.solvecost.C],
           start: new Date(Date.now() + 1*60*1000),
           end: new Date(Date.now() + 2*60*1000)
         });
 
         let nprobs: any = {};
 
-        for (let prob of data.bought) {
+        for (let prob of data.data.bought) {
           nprobs[prob.id] = {
             id: prob.id,
             name: prob.name,
@@ -51,7 +51,7 @@
             diff: prob.diff,
             images: prob.images,
             focusedBy: [],
-            chat: data.tlines[prob.id].map((e: any) => {return {
+            chat: data.data.tlines[prob.id].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
@@ -61,7 +61,7 @@
           };
         }
 
-        for (let prob of data.solved) {
+        for (let prob of data.data.solved) {
           nprobs[prob.id] = {
             id: prob.id,
             name: prob.name,
@@ -70,7 +70,7 @@
             diff: prob.diff,
             images: prob.images,
             focusedBy: [],
-            chat: data.tlines[prob.id].map((e: any) => {return {
+            chat: data.data.tlines[prob.id].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
@@ -80,7 +80,7 @@
           };
         }
 
-        for (let prob of data.sold) {
+        for (let prob of data.data.sold) {
           nprobs[prob.id] = {
             id: prob.id,
             name: prob.name,
@@ -89,7 +89,7 @@
             diff: prob.diff,
             images: prob.images,
             focusedBy: [],
-            chat: data.tlines[prob.id].map((e: any) => {return {
+            chat: data.data.tlines[prob.id].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,

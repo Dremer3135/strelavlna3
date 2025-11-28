@@ -738,6 +738,9 @@ func main() {
 						Queue: prob.GetStringSlice("queue"),
 						Images: imgs,
 					})
+					for _, team := range teams {
+						addOwnedProb(rdb, team.Id, OwnedFree, prob.GetString("diff"), prob.Id)
+					}
 				}
 
 				corectors, err := e.App.FindAllRecords("correctors")
