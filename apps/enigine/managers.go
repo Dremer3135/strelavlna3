@@ -344,7 +344,9 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 
 		case PlayerInitLoaded:
 		  data, ok := msg.data.(InitLoad)
-			if !ok { break }
+			if !ok {
+				fmt.Printf("not ok\n")
+			}
 			err := ws.WriteJSON(map[string]any{
 				"name": "initload",
 				"data": data,
