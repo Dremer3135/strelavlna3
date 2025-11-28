@@ -1,23 +1,31 @@
 <script lang="ts">
     import type { MessageType } from "$lib/types";
-    let { message, type }: { message: MessageType, type: "player" | "corrector" } = $props();
+    let { message, type, showAdvanced = false }: { message: MessageType, type: "player" | "corrector", showAdvanced?: boolean } = $props();
     
-    let sentTimeString = $derived(
+    let sentTimeStringShort = $derived(
         `${String(message.sentTime.getHours()).padStart(2, '0')}:` +
         `${String(message.sentTime.getMinutes()).padStart(2, '0')}`);
+    
+        let sentTimeString = $derived(
+        `${String(message.sentTime.getHours()).padStart(2, '0')}:` +
+        `${String(message.sentTime.getMinutes()).padStart(2, '0')}:` + 
+        `${String(message.sentTime.getSeconds()).padStart(2, '0')}`);
+    
+
+
 </script>
 
 <main>
     {#if message.type == "message"}
     <div class="message" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeString}</p>
+        <p class="time">{sentTimeStringShort}</p>
         <div class="content">
             <p>{message.value}</p>
         </div>
     </div>
     {:else if message.type == "grade"}
     <div class="grade" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeString}</p>
+        <p class="time">{sentTimeStringShort}</p>
         <div class="content">
             {#if message.value == "correct"}
             <p>Odpověď byla uznána!</p>
@@ -30,34 +38,38 @@
     </div>
     {:else if message.type == "answer"}
     <div class="answer" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeString}</p>
+        <p class="time">{sentTimeStringShort}</p>
         <div class="content">
+            {#if type == "player"}
             <p>Odpověděli jste: <span class="bold">{message.value}</span></p>
+            {:else}
+            <p>Hráč odpověděl: <span class="bold">{message.value}</span></p>
+            {/if}
         </div>
     </div>
-    {:else if message.type == "copy" && type == "corrector"}
+    {:else if message.type == "copy" && type == "corrector" && showAdvanced}
     <div class="copy-paste" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeString}</p>
+        <p class="time">{sentTimeStringShort}</p>
         <div class="content">
             <p>Hráč zkopíroval: <span class="bold">{message.value}</span></p>
         </div>
     </div>
-    {:else if message.type == "paste" && type == "corrector"}
+    {:else if message.type == "paste" && type == "corrector" && showAdvanced}
     <div class="copy-paste" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeString}</p>
+        <p class="time">{sentTimeStringShort}</p>
         <div class="content">
             <p>Hráč vložil: <span class="bold">{message.value}</span></p>
         </div>
     </div>
-    {:else if message.type == "window-focus" && type == "corrector"}
+    {:else if message.type == "window-focus" && type == "corrector" && showAdvanced}
     <div class="window-focus" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeString}</p>
+        <p class="time">{sentTimeStringShort}</p>
         <div class="content">
-            {#if message.value.split(" ")[0] == "focused"}
-                <p>{message.value.split(" ")[1]} přišel</p>
+            {#if message.value.split(" ")[0] == "focus"}
+                <p><span class="bold">{message.value.split(" ")[1]}</span> přišel</p>
                 <i class="fa-solid fa-right-to-bracket"></i>
             {:else}
-                <p>{message.value.split(" ")[1]} odešel</p>
+                <p><span class="bold">{message.value.split(" ")[1]}</span> odešel</p>
                 <i class="fa-solid fa-right-from-bracket"></i>
             {/if}
         </div>
@@ -201,6 +213,77 @@
             //     background-image: none;
             //     background-color: color-mix(in srgb, var(--color-pink) 15%, white 85%);
             // }
+        }
+
+        .copy-paste {
+            position: relative;
+            border: 3px var(--color-orange) solid;
+            border-radius: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-right: 50px;
+
+            background-image: repeating-linear-gradient(
+                -45deg,
+                color-mix(in srgb, var(--color-orange) 3%, white 97%),
+                color-mix(in srgb, var(--color-orange) 0%, white 100%) 10px,
+                color-mix(in srgb, var(--color-orange) 10%, white 90%) 10px,
+                color-mix(in srgb, var(--color-orange) 6%, white 94%) 20px,
+            );
+            
+            
+            .content {
+                p {
+                    font-family: 'Lexend';
+                    font-size: 16px;
+                    font-weight: 400;
+                    margin: 0px;
+
+                    .bold {
+                        font-weight: 700;
+                    }
+                }
+            }
+        }
+        
+        .window-focus {
+            position: relative;
+            border: 3px var(--color-orange) solid;
+            border-radius: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-right: 50px;
+            
+            background-image: repeating-linear-gradient(
+                -45deg,
+                color-mix(in srgb, var(--color-orange) 3%, white 97%),
+                color-mix(in srgb, var(--color-orange) 0%, white 100%) 10px,
+                color-mix(in srgb, var(--color-orange) 10%, white 90%) 10px,
+                color-mix(in srgb, var(--color-orange) 6%, white 94%) 20px,
+            );
+                
+                
+            .content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              
+                p {
+                    font-family: 'Lexend';
+                    font-size: 16px;
+                    font-weight: 400;
+                    margin: 0px;
+
+                    .bold {
+                        font-weight: 700;
+                    }
+                }
+
+                i {
+                    font-size: 19px;
+                    color: color-mix(in srgb, var(--color-orange) 30%, black 70%);
+                }
+            }
         }
     }
 

@@ -20,18 +20,27 @@
         inputMessage = "";
     }
 
+    let showAdvanced = $state(false);
+
 </script>
 
 <main>
     <div class="title">
         <h2>Chat</h2>
+        {#if type == "corrector"}
+            {#if showAdvanced}
+                <i class="fa-solid fa-eye" onclick={() => { showAdvanced = false; }}></i>
+            {:else}
+                <i class="fa-solid fa-eye-slash" onclick={() => { showAdvanced = true; }}></i>
+            {/if}
+        {/if}
     </div>
     <div class="content">
         {#each prob.chat as message, i}
             {#if i > 0 && prob.chat[i-1].origin != message.origin}
             <div class="spacer"></div>
             {/if}
-            <Message message={message} />
+            <Message message={message} type={type} showAdvanced={showAdvanced} />
         {/each}    
     </div>
     <div class="controls">
@@ -46,6 +55,7 @@
 
 <style lang="scss">
     main {
+        min-height: 0px;
         background-color: color-mix(in srgb, var(--color-pink) 5%, transparent 95%);
         border-left: 1px color-mix(in srgb, var(--color-pink) 30%, transparent 70%) solid;
         width: 350px;
@@ -56,15 +66,29 @@
         flex-direction: column;
 
         .title {
+            padding-bottom: 10px;
+            border-bottom: 1px color-mix(in srgb, var(--color-pink) 30%, transparent 70%) solid;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
             h2 {
                 font-family: 'Lexend';
                 font-size: 30px;
                 font-weight: 600;
                 margin: 0px;
                 text-align: center;
-                padding-bottom: 10px;
-                border-bottom: 1px color-mix(in srgb, var(--color-pink) 30%, transparent 70%) solid;
                 color: color-mix(in srgb, var(--color-pink) 30%, black 70%);
+            }
+
+            i {
+                background-color: color-mix(in srgb, var(--color-pink) 10%, transparent 90%);
+                border: 2px color-mix(in srgb, var(--color-pink) 20%, transparent 80%) solid;
+                border-radius: 3px;
+                padding: 6px;
+                font-size: 18px;
+                color: color-mix(in srgb, var(--color-pink) 30%, black 70%);
+                cursor: pointer;
             }
         }
 
@@ -79,6 +103,10 @@
 
             .spacer {
                 height: 15px;
+            }
+
+            &::-webkit-scrollbar {
+                display: none;
             }
         }
 

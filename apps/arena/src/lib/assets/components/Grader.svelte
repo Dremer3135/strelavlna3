@@ -47,6 +47,7 @@
         .answer {
             width: 100%;
             padding: 10px;
+            box-sizing: border-box;
             font-family: 'Lexend';
             font-size: 18px;
             font-weight: 500;
@@ -65,6 +66,7 @@
         .actual {
             width: 100%;
             padding: 10px;
+            box-sizing: border-box;
             font-family: 'Lexend';
             font-size: 18px;
             font-weight: 500;
