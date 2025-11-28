@@ -28,7 +28,7 @@
         },
         "asjldh": {
           id: "asjldh",
-          name: "tohle je jmeno",
+          name: "tohle je jmeno lalal",
           text: "tohle jetextulohy",
           answer: "",
           diff: "A",
@@ -54,13 +54,13 @@
               sentTime: new Date('2025-11-27T14:05:30Z')
             },
             {
-              origin: "recieved",
+              origin: "sent",
               type: "grade",
               value: "incorrect",
               sentTime: new Date('2025-11-27T14:05:30Z')
             },
             {
-              origin: "sent",
+              origin: "recieved",
               type: "message",
               value: "prosiiim",
               sentTime: new Date('2025-11-27T14:05:30Z')
@@ -69,6 +69,48 @@
               origin: "recieved",
               type: "answer",
               value: "Odpoved neni lalala",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "copy",
+              value: "tohlrje je neco co dam chatgpt",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "window-focus",
+              value: "blur honzik",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "window-focus",
+              value: "focus honzik",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "paste",
+              value: "tohlrje je z chatgpt",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "paste",
+              value: "tohlrje je z chatgpt",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "paste",
+              value: "tohlrje je z chatgpt",
+              sentTime: new Date('2025-11-27T14:05:30Z')
+            },
+            {
+              origin: "recieved",
+              type: "paste",
+              value: "tohlrje je z chatgpt",
               sentTime: new Date('2025-11-27T14:05:30Z')
             },
 
@@ -82,7 +124,7 @@
         },
         "ijfs": {
           id: "ijfs",
-          name: "tohle je jmeno",
+          name: "tohle je jmenoslav",
           text: "tohle jetextulohy",
           answer: "",
           diff: "A",
@@ -101,6 +143,56 @@
           chat: []
         },
         "PIJFSLKHBKJ": {
+          id: "PIJFSLKHBKJ",
+          name: "tohle je jmeno",
+          text: "tohle jetextulohy",
+          answer: "",
+          diff: "A",
+          images: [],
+          focusedBy: [],
+          chat: []
+        },
+        "baa": {
+          id: "PIJFSLKHBKJ",
+          name: "tohle je jmeno",
+          text: "tohle jetextulohy",
+          answer: "",
+          diff: "A",
+          images: [],
+          focusedBy: [],
+          chat: []
+        },
+        "a": {
+          id: "PIJFSLKHBKJ",
+          name: "tohle je jmeno",
+          text: "tohle jetextulohy",
+          answer: "",
+          diff: "A",
+          images: [],
+          focusedBy: [],
+          chat: []
+        },
+        "b": {
+          id: "PIJFSLKHBKJ",
+          name: "tohle je jmeno",
+          text: "tohle jetextulohy",
+          answer: "",
+          diff: "A",
+          images: [],
+          focusedBy: [],
+          chat: []
+        },
+        "c": {
+          id: "PIJFSLKHBKJ",
+          name: "tohle je jmeno",
+          text: "tohle jetextulohy",
+          answer: "",
+          diff: "A",
+          images: [],
+          focusedBy: [],
+          chat: []
+        },
+        "d": {
           id: "PIJFSLKHBKJ",
           name: "tohle je jmeno",
           text: "tohle jetextulohy",

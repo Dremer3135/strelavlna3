@@ -52,13 +52,13 @@
                 chat(fProb.id, {
                     origin: "sent",
                     type: "window-focus",
-                    value: "focused " + untrack(() => $currentState.myId)
+                    value: "blur " + untrack(() => $currentState.myId)
                 });
             } else {
                 chat(fProb.id, {
                     origin: "sent",
                     type: "window-focus",
-                    value: "blured " + untrack(() => $currentState.myId)
+                    value: "focus " + untrack(() => $currentState.myId)
                 });
             }
         }
@@ -223,11 +223,14 @@
         flex-grow: 1;
         display: flex;
         flex-direction: row;
+        min-height: 0px;
 
         .left-panel {
             width: 350px;
             display: flex;
             flex-direction: column;
+            min-height: 0px;
+
 
             .team-stats {
                 display: flex;
@@ -281,6 +284,10 @@
                     width: 100%;
                     border-top: 1px color-mix(in srgb, var(--color-purple) 30%, transparent 70%) solid;
                     margin: 20px 0px;
+                }
+
+                &::-webkit-scrollbar {
+                    display: none;
                 }
                 
             }

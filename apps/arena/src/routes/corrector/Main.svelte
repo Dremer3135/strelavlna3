@@ -123,6 +123,8 @@
         flex-grow: 1;
         display: flex;
         flex-direction: row;
+		min-height: 0px;
+
 
         .left-panel {
             width: 350px;
@@ -273,6 +275,8 @@
         .content {
             display: flex;
             flex-grow: 1;
+			min-height: 0px;
+
             .prob {
                 flex-grow: 1;
                 display: flex;
@@ -283,6 +287,7 @@
             }
 
             .chat {
+				min-height: 0px;
                 display: flex;
                 flex-direction: column;
             }
