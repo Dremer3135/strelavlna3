@@ -10,6 +10,7 @@ import (
 
 type InitLoad struct {
 	TeamId string `json:"teamid"`
+	TeamName string `json:"teamname"`
 	PlayerId string `json:"playerid"`
 	State string `json:"state"`
 	Bought []Prob `json:"bought"`
@@ -20,6 +21,10 @@ type InitLoad struct {
 	Start int `json:"start"`
 	End int `json:"end"`
 	Rank int `json:"rank"`
+	RemProbs map[string]int `json:"remprobs"`
+	BuyCost map[string]int `json:"buycost"`
+	SellCost map[string]int `json:"sellcost"`
+	SolveCost map[string]int `json:"solvecost"`
 }
 
 func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
@@ -28,10 +33,22 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	res.State = state
 
 	res.TeamId = teamid
+	res.TeamName = getTeamName(conn, teamid)
 	res.PlayerId = playerid
 	res.Money = getMoney(conn, teamid)
 	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
 	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
+
+	res.RemProbs = map[string]int{}
+	for _, diff := range DIFFS {
+		res.RemProbs[diff] = getNumberRemProbs(conn, teamid, diff)
+	}
+
+	for _, diff := range DIFFS {
+		res.BuyCost[diff] = getPrice(conn, PriceBuy, diff)
+		res.SellCost[diff] = getPrice(conn, PriceSell, diff)
+		res.SolveCost[diff] = getPrice(conn, PriceSolve, diff)
+	}
 
   if state == StateBefore {
 		return res
@@ -40,12 +57,12 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	tlines := map[string][]TLineAtom{}
 
 	bought := make([]Prob, 0)
-	for _, d := range diffs {
+	for _, d := range DIFFS {
 		l := getOwnedProbs(conn, teamid, OwnedBought, d)
 		for _, i := range l {
 			p := getProb(conn, i)
-			p.Answer = ""
-			p.Code = ""
+			p.Answer = "<dobrej pokus>"
+			p.Code = "<dobrej pokus>"
 			bought = append(bought, p)
 			tlines[i] = readTLine(conn, teamid, i)
 		}
@@ -53,7 +70,7 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	res.Bought = bought
 
 	solved := make([]Prob, 0)
-	for _, d := range diffs {
+	for _, d := range DIFFS {
 		l := getOwnedProbs(conn, teamid, OwnedSolved, d)
 		for _, i := range l {
 			p := getProb(conn, i)
@@ -66,7 +83,7 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	res.Solved = solved
 
 	sold := make([]Prob, 0)
-	for _, d := range diffs {
+	for _, d := range DIFFS {
 		l := getOwnedProbs(conn, teamid, OwnedSold, d)
 		for _, i := range l {
 			p := getProb(conn, i)
@@ -110,7 +127,7 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 	setTState(conn, teamid, probid, OwnedBought)
 	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
 	remprobs = make(map[string]int)
-	for _, diff := range [3]string{"A", "B", "C"} {
+	for _, diff := range DIFFS {
 		remprobs[diff] = getNumberRemProbs(conn, teamid, diff)
 	}
 	return

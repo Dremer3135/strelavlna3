@@ -4,187 +4,281 @@
   import Main from './Main.svelte';
   import { probs } from '$lib/stores/probs';
   import { currentState } from '$lib/stores/state';
-  import type { MessageType } from '$lib/types';
+  import type { MessageType, CurrentState } from '$lib/types';
+
+  let socket: WebSocket;
   
   onMount(() => {
 
-    // const socket = new WebSocket(`https://sv.skrat.org/ws?token=${$page.data.token}`)
-    // socket.addEventListener("message", (event) => {
-    //   console.log(typeof event.data)
-    // });
+    socket = new WebSocket(`https://sv.skrat.org/ws?token=${$page.data.token}`)
+    socket.addEventListener("message", (event) => {
+      let data = JSON.parse(event.data);
+      if (data.name === "initload") {
+        currentState.set({
+          teamName: data.teamname,
+          money: data.money,
+          myId: data.playerid,
+          probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C],
+          pricesBuy: [data.buycost.A, data.buycost.B, data.buycost.C],
+          pricesSell: [data.sellcost.A, data.sellcost.B, data.sellcost.C],
+          procesSolve: [data.solvecost.A, data.solvecost.B, data.solvecost.C],
+        });
 
+        let nprobs: any = {};
 
-    probs.update(_ => {
-      return { 
-        "askhdj": {
-          id: "askhdj",
-          name: "Tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["s", "lalala"],
-          chat: []
-        },
-        "asjldh": {
-          id: "asjldh",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["lalala", "bablbamId"],
-          chat: [
-            {
-              origin: "recieved",
-              type: "message",
-              value: "Hello my friend!",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "message",
-              value: "Hi!",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "answer",
-              value: "Odpoved je lalala",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "grade",
-              value: "incorrect",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "message",
-              value: "prosiiim",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "grade",
-              value: "correct",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-          ]
-        },
-        "ijfs": {
-          id: "ijfs",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "alsAL": {
-          id: "alsAL",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["adf", "ads"],
-          chat: []
-        },
-        "PIJFSLKHBKJ": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "baa": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "a": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "b": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "c": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "d": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        
+        for (let prob of data.bought) {
+          nprobs[prob.id] = {
+            id: prob.id,
+            name: prob.name,
+            text: prob.text,
+            answer: prob.answer,
+            diff: prob.diff,
+            images: prob.images,
+            focusedBy: [],
+            chat: data.tlines[prob.id].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: e.time,
+            }}),
+            owned: "bought",
+          };
+        }
+
+        for (let prob of data.solved) {
+          nprobs[prob.id] = {
+            id: prob.id,
+            name: prob.name,
+            text: prob.text,
+            answer: prob.answer,
+            diff: prob.diff,
+            images: prob.images,
+            focusedBy: [],
+            chat: data.tlines[prob.id].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: e.time,
+            }}),
+            owned: "solved",
+          };
+        }
+
+        for (let prob of data.sold) {
+          nprobs[prob.id] = {
+            id: prob.id,
+            name: prob.name,
+            text: prob.text,
+            answer: prob.answer,
+            diff: prob.diff,
+            images: prob.images,
+            focusedBy: [],
+            chat: data.tlines[prob.id].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: e.time,
+            }}),
+            owned: "sold",
+          };
+        }
+
+        probs.set(nprobs);
+      } else if (data.name === "focus") {
+        probs.update((e) => {
+          Object.keys(e).forEach((k) => {
+            if (k === data.probid) {
+              e[k].fucusedBy = e[k].focusedBy.filter((x: any) => x !== $currentState.myId);
+            } else {
+              e[k].focusedBy.push($currentState.myId);
+            }
+          })
+          return e;
+        });
+      } else if (data.name === "written") {
+        probs.update((e) => {
+          Object.keys(e).forEach((k) => {
+            if (k === data.probid) {
+              e[k].chat.push({
+                origin: data.type,
+                type: data.solve ? "answer" : "message",
+                value: data.text,
+                sentTime: data.time,
+              });
+            }
+          })
+          return e;
+        });
+      } else if (data.name === "bought") {
+        probs.update((e) => {
+          e[data.prob.id] = {
+            id: data.prob.id,
+            name: data.prob.name,
+            text: data.prob.text,
+            answer: data.prob.answer,
+            diff: data.prob.diff,
+            images: data.prob.images,
+            focusedBy: [],
+            chat: [],
+            owned: "bought",
+          };
+          return e;
+        });
+        currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+      } else if (data.name === "sold") {
+        probs.update((e) => {
+          e[data.probid].owned = "sold";
+          currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+          return e;
+        });
+      } else if (data.name === "solved") {
+        probs.update((e) => {
+          e[data.probid].owned = "solved";
+          currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+          return e;
+        });
       }
     });
-    currentState.update(state => {
-      return {
-        teamName: "Bambuláci 4. trida",
-        money: 80,
-        myId: "bablbamId",
-        probsRemaining: [10, 2, -1],
-        pricesBuy: [10, 30, 80],
-        pricesSell: [10, 15, 40],
-        procesSolve: [15, 50, 200]
-      }
-    })
+
+
+    // probs.update(_ => {
+    //   return { 
+    //     "askhdj": {
+    //       id: "askhdj",
+    //       name: "Tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: ["s", "lalala"],
+    //       chat: []
+    //     },
+    //     "asjldh": {
+    //       id: "asjldh",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: ["lalala", "bablbamId"],
+    //       chat: [
+    //         {
+    //           origin: "recieved",
+    //           type: "message",
+    //           value: "Hello my friend!",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "sent",
+    //           type: "message",
+    //           value: "Hi!",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "sent",
+    //           type: "answer",
+    //           value: "Odpoved je lalala",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "recieved",
+    //           type: "grade",
+    //           value: "incorrect",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "sent",
+    //           type: "message",
+    //           value: "prosiiim",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "recieved",
+    //           type: "grade",
+    //           value: "correct",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //       ]
+    //     },
+    //     "ijfs": {
+    //       id: "ijfs",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: [],
+    //       chat: []
+    //     },
+    //     "alsAL": {
+    //       id: "alsAL",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: ["adf", "ads"],
+    //       chat: []
+    //     },
+    //     "PIJFSLKHBKJ": {
+    //       id: "PIJFSLKHBKJ",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: [],
+    //       chat: []
+    //     },
+    //
+    //   }
+    // });
+    // currentState.update(state => {
+    //   return {
+    //     teamName: "Bambuláci 4. trida",
+    //     money: 80,
+    //     myId: "bablbamId",
+    //     probsRemaining: [10, 2, -1],
+    //     pricesBuy: [10, 30, 80],
+    //     pricesSell: [10, 15, 40],
+    //     procesSolve: [15, 50, 200]
+    //   }
+    // })
   });
 
   function handleBuy(diff: string) {
-    console.log("Buying:", diff);
+    socket.send(JSON.stringify({
+      "name": "buy",
+      "diff": diff,
+    }));
   }
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
     console.log("Message of type '" + message.type + "': " + message.value);
   }
   function handleSell(probId: string) {
-    console.log("Selling:", probId);
+    socket.send(JSON.stringify({
+      "name": "buy",
+      "probid": probId,
+    }));
   }
   function handleFocus(probId: string) {
     console.log("Focusing:", probId);
+    socket.send(JSON.stringify({
+      "name": "buy",
+      "probid": probId,
+    }));
+  }
+  function handleSolve(probId: string, answer: string) {
+    socket.send(JSON.stringify({
+      "name": "solve",
+      "probid": probId,
+      "answer": answer,
+    }));
   }
 </script>
 
 <main>
-  <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} />
+  <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
 </main>
 
 <style lang="scss">

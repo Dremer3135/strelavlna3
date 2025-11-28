@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -94,6 +95,7 @@ type Prob struct {
 	Auto bool `json:"auto" redis:"auto"`
 	Infinite bool `json:"infinite" redis:"infinite"`
 	Queue []string `json:"queue" redis:"queue"`
+	Images []string `json:"images" redis:"images"`
 }
 
 func (p Prob) toMap() map[string]string {
@@ -107,6 +109,7 @@ func (p Prob) toMap() map[string]string {
 		"auto": "false",
 		"infinite": "false",
 		"queue": strings.Join(p.Queue, ":"),
+		"images": strings.Join(p.Images, ":"),
 	}
 	if p.Auto { res["auto"] = "true" }
 	if p.Infinite { res["infinite"] = "true" }
@@ -123,6 +126,7 @@ func (p *Prob) fromMap(m map[string]string) {
 	p.Auto = m["auto"] == "true"
 	p.Infinite = m["infinite"] == "true"
 	p.Queue = strings.Split(m["queue"], ":")
+	p.Images = strings.Split(m["images"], ":")
 } 
 
 func getProb(conn *redis.Client, probid string) Prob {
@@ -178,7 +182,8 @@ func getPrice(conn *redis.Client, ptype string, diff string) int {
 }
 
 func setPrice(conn *redis.Client, ptype string, diff string, price int) {
-	err := conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0))
+	err := conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0)).Err()
+	fmt.Printf("%v %#v\n", err, err)
 	if err != nil { panic(err) }
 }
 
