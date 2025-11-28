@@ -152,6 +152,7 @@ func latexEscapeComment(s string) string {
   res := s
   res = strings.ReplaceAll(res, `%`, `\%`)
   res = strings.ReplaceAll(res, `<br>`, `\n`)
+  res = strings.ReplaceAll(res, `°`, `\degree`)
   return res
 }
 
