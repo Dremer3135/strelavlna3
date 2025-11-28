@@ -152,6 +152,7 @@ func latexEscapeComment(s string) string {
   res := s
   res = strings.ReplaceAll(res, `%`, `\%`)
   res = strings.ReplaceAll(res, `<br>`, `\n`)
+  res = strings.ReplaceAll(res, `°`, `\degree`)
   return res
 }
 
@@ -256,7 +257,7 @@ func main() {
 			teams := []*core.Record{}
 
 			err := app.RecordQuery("teams").
-				AndWhere(dbx.HashExp{"finalEmail": true}).
+				AndWhere(dbx.HashExp{"token": ""}).
 				OrderBy("created").
 				Limit(1).
 				All(&teams)
