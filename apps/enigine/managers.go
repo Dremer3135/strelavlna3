@@ -476,6 +476,9 @@ func adminManager(self chan Msg) {
 		case CorrectorLeft:
 			_, ok := msg.data.(error)
 		  if !ok { break }
+		  for _, ch := range teams {
+				ch <- Msg{CorrectorLeft, "", self, msg.from}
+			}
 		  delete(correctors, msg.from)
 			tickets := getCorrTickets(conn, msg.from)
 		  for _, t := range tickets {
@@ -495,9 +498,6 @@ func adminManager(self chan Msg) {
 				corr <- Msg{BoughtProb, "", self, CorrTicket{teamid, getTeamName(conn, teamid), prob}}
 				setTCorr(conn, msg.from, prob.Id, adminid)
 				addCorrTicket(conn, adminid, msg.from, prob.Id)
-			}
-		  for _, ch := range teams {
-				ch <- Msg{CorrectorLeft, "", self, msg.from}
 			}
 
 		case PlayerJoinRequest:
