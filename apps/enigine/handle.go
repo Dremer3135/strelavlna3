@@ -211,6 +211,8 @@ type CorrInitLoad struct {
 	Start int `json:"start"`
 	End int `json:"end"`
 	State string `json:"state"`
+	Admin bool `json:"admin"`
+	Id string `json:"id"`
 }
 
 type CorrTicket struct {
@@ -230,6 +232,9 @@ func corrInitLoad(conn *redis.Client, id string) CorrInitLoad {
 	res.State = getState(conn)
 	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
 	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
+	res.Id = id
+
+	res.Admin = getCorrAdmin(conn, id)
 
 	res.TLines = make(map[string][]TLineAtom)
 	
