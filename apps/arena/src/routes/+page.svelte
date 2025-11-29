@@ -104,15 +104,10 @@
 
         probs.set(nprobs);
       } else if (data.name === "focus") {
-        probs.update((e) => {
-          Object.keys(e).forEach((k) => {
-            if (k === data.probid) {
-              e[k].focusedBy = e[k].focusedBy.filter((x: any) => x !== $currentState.myId);
-            } else {
-              e[k].focusedBy.push($currentState.myId);
-            }
-          })
-          return e;
+        probs.update((currentProbs) => {
+          currentProbs = Object.fromEntries(Object.entries(currentProbs).map(([_, prob]) => [prob.id, {...prob, focusedBy: prob.focusedBy.filter((x: any) => x !== data.playerid)}]));  // remove focus of specific plaeyer from all probs
+          currentProbs[data.probid].focusedBy.push(data.playerid);  // add focus to specific prob
+          return currentProbs;
         });
       } else if (data.name === "written") {
         probs.update((e) => {
