@@ -4,7 +4,7 @@
     import { currentState } from "$lib/stores/state";
     import { onMount } from "svelte";
 
-    let { start, end }: { start: () => void; end: () => void } = $props();
+    let { start, end }: { start?: () => void; end?: () => void } = $props();
 
     let remaining = $state(0);
     let timeValid = $state(false);
