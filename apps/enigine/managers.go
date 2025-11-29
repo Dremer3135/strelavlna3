@@ -275,6 +275,13 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				pl <- Msg{Start, id, self, nil}
 			}
 
+		case Focus:
+			data, ok := msg.data.(PlayerFocusMsg)
+		  if !ok { break }
+		  for _, pl := range players {
+				pl <- Msg{Focus, id, self, data}
+			}
+
 		}
 	}
 }
