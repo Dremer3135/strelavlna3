@@ -413,7 +413,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				"text": data.msg,
 				"origin": rtype,
 				"type": data.mtype,
-				"time": data.time,
+				"time": data.time.UnixMilli(),
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -687,7 +687,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				"teamid": data.teamid,
 				"text": data.msg,
 				"type": data.mtype,
-				"time": data.time,
+				"time": data.time.UnixMilli(),
 				"origin": rtype,
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
@@ -702,7 +702,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				"text": data.text,
 				"origin": "recieved",
 				"type": MTypeSolve,
-				"time": time.Now(),
+				"time": time.Now().UnixMilli(),
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
