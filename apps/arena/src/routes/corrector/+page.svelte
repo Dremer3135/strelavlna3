@@ -48,8 +48,8 @@
         for (let tickid of Object.keys(data.data.bought_tickets)) {
           let tick = data.data.bought_tickets[tickid];
           let prob = tick.prob;
-          nprobs[tick.teamid + ":" + prob.id] = {
-            id: tick.teamid + ":" + prob.id,
+          nprobs[tick.team_id + ":" + prob.id] = {
+            id: tick.team_id + ":" + prob.id,
             name: tick.team_name + ": " + prob.name,
             text: prob.text,
             answer: prob.answer,
@@ -69,8 +69,8 @@
         for (let tickid of Object.keys(data.data.solved_tickets)) {
           let tick = data.data.solved_tickets[tickid];
           let prob = tick.prob;
-          nprobs[tick.teamid + ":" + prob.id] = {
-            id: tick.teamid + ":" + prob.id,
+          nprobs[tick.team_id + ":" + prob.id] = {
+            id: tick.team_id + ":" + prob.id,
             name: prob.team_name,
             text: prob.text,
             answer: prob.answer,
@@ -90,8 +90,8 @@
         for (let tickid of Object.keys(data.data.sold_tickets)) {
           let tick = data.data.sold_tickets[tickid];
           let prob = tick.prob;
-          nprobs[tick.teamid + ":" + prob.id] = {
-            id: tick.teamid + ":" + prob.id,
+          nprobs[tick.team_id + ":" + prob.id] = {
+            id: tick.team_id + ":" + prob.id,
             name: prob.team_name,
             text: prob.text,
             answer: prob.answer,

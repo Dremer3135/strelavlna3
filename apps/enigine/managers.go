@@ -318,7 +318,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}
 
 		case Results:
-			data, ok := msg.data.(ResultsMsg)
+			data, ok := msg.data.(TeamMoneyResult)
 		  if !ok { break }
 			for _, pl := range players {
 				pl <- Msg{Results, id, self, data}
@@ -619,13 +619,13 @@ func adminManager(self chan Msg) {
 				tmrl = append(tmrl, ManyTeamMoneyResult{v, k})
 			}
 		  slices.SortFunc(tmrl, func(a, b ManyTeamMoneyResult) int {
-				if a.money > b.money { return 1 }
-				if a.money < b.money { return -1 }
+				if a.money < b.money { return 1 }
+				if a.money > b.money { return -1 }
 				return 0
 			})
-		  for _, tmr := range tmrl {
+		  for i, tmr := range tmrl {
 				for _, id := range tmr.ids {
-					teams[id] <- Msg{Results, "", self, TeamMoneyResult{id, tmr.money}}
+					teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, i + 1}}
 				}
 			}
 		}
@@ -633,8 +633,8 @@ func adminManager(self chan Msg) {
 }
 
 type TeamMoneyResult struct {
-	id string
 	money int
+	rank int
 }
 
 type ManyTeamMoneyResult struct {
