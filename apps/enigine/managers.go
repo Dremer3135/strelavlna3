@@ -524,6 +524,7 @@ func adminManager(self chan Msg) {
 				setTCorr(conn, msg.from, prob.Id, adminid)
 				addCorrTicket(conn, adminid, teamid, probid)
 			}
+		   clearCorrTickets(conn, msg.from)
 
 		case PlayerJoinRequest:
 			data, ok := msg.data.(PlayerJoinReqMsg)
