@@ -824,6 +824,7 @@ func main() {
 
 				for _, corr := range corectors {
 					setCorrToken(rdb, corr.Id, corr.Id)
+					setCorrAdmin(rdb, corr.GetString("token"), corr.GetBool("admin"))
 				}
 
 				setState(rdb, StateBefore)

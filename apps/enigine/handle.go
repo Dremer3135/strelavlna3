@@ -210,6 +210,7 @@ type CorrInitLoad struct {
 	TLines map[string][]TLineAtom `json:"tlines"`
 	Start int `json:"start"`
 	End int `json:"end"`
+	State string `json:"state"`
 }
 
 type CorrTicket struct {
@@ -226,6 +227,7 @@ func corrInitLoad(conn *redis.Client, id string) CorrInitLoad {
 		SoldTickets: make(map[string]CorrTicket),
 	}
 
+	res.State = getState(conn)
 	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
 	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
 
