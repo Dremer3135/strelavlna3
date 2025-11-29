@@ -161,6 +161,7 @@
   });
 
   function handleBuy(diff: string) {
+    console.log(`Buying ${diff}`);
     socket.send(JSON.stringify({
       "name": "buy",
       "diff": diff,
@@ -168,6 +169,7 @@
   }
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
     // console.log("Message of type '" + message.type + "': " + message.value);
+    console.log(`Writing ${probId} ${message}`);
     socket.send(JSON.stringify({
       "name": "write",
       "probid": probId,
@@ -176,12 +178,14 @@
     }));
   }
   function handleSell(probId: string) {
+    console.log(`Selling ${probId}`);
     socket.send(JSON.stringify({
       "name": "sell",
       "probid": probId,
     }));
   }
   function handleFocus(probId: string) {
+    console.log(`Focusing ${probId}`);
     console.log("Focusing:", probId);
     socket.send(JSON.stringify({
       "name": "focus",
@@ -189,6 +193,7 @@
     }));
   }
   function handleSolve(probId: string, answer: string) {
+    console.log(`Solving ${probId} ${answer}`);
     socket.send(JSON.stringify({
       "name": "solve",
       "probid": probId,
