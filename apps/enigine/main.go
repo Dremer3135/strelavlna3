@@ -24,7 +24,7 @@ func NewRdbConn() *redis.Client {
 func main() {
 	rdb := NewRdbConn()
 
-	achan := make(chan Msg, 10)
+	achan := make(chan Msg, 1000)
 	go adminManager(achan)
 
 	mchan := make(chan Msg, 10)

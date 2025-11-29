@@ -175,7 +175,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				plidi++
 				plid = strconv.Itoa(plidi)
 			}
-		  plchan := make(chan Msg, 10)
+		  plchan := make(chan Msg, 1000)
 		  go playerManager(data, plchan, self, plid, id)
 		  players[plid] = plchan
 
@@ -219,9 +219,12 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			prob.Answer = "<dobrej pokus>"
 
 			for _, pl := range players {
-				pl <- Msg{BoughtProb, id, self, BoughtProbMsg{
+				select {
+				case pl <- Msg{BoughtProb, id, self, BoughtProbMsg{
 					prob, money, remprobs,
-				}}
+				}}:
+				default:
+				}
 			}
 
 		case SellProb:
@@ -237,7 +240,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			correctors[corr] <- Msg{SoldProb, id, self, probid}
 
 			for _, pl := range players {
-				pl <- Msg{SoldProb, id, self, IdMoneyMsg{probid, money}}
+				select {
+				case pl <- Msg{SoldProb, id, self, IdMoneyMsg{probid, money}}:
+				default:
+				}
 			}
 
 		case SolveProb:
@@ -249,7 +255,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			// 	pl <- Msg{SolveProbReq, id, self, data}
 			// }
 
-			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false, time.Now()}}
+			go func(){
+				self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false, time.Now()}}
+			}()
 
 			prob := getProb(conn, data.probid)
 			if strings.TrimSpace(data.text) == strings.TrimSpace(prob.Answer) {
@@ -257,7 +265,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 				for _, pl := range players {
-					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.probid, money}}
+					select {
+					case pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.probid, money}}:
+					default:
+					}
 				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
@@ -275,7 +286,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			pushTLine(conn, id, data.probid, TLineAtom{side, data.mtype, data.msg, time.Now()})
 
 			for _, pl := range players {
-				pl <- Msg{WriteMsg, id, self, data}
+				select {
+				case pl <- Msg{WriteMsg, id, self, data}:
+				default:
+				}
 			}
 
 			corr := getTCorr(conn, id, data.probid)
@@ -292,9 +306,12 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 				for _, pl := range players {
-					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.prob, money}}
-					correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
+					select {
+					case pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.prob, money}}:
+					default:
+					}
 				}
+				correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
 			}
 
 			// pushTLine(conn, data.team, data.prob, TLineAtom{MSideAdmin, MTypeGrade, data.decision, time.Now()})
@@ -303,32 +320,46 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			// 	pl <- msgs
 			// }
 
-			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
+			go func(){
+				self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
+			}()
 
 			correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
 
 		case Start:
 			for _, pl := range players {
-				pl <- Msg{Start, id, self, nil}
+				select {
+				case pl <- Msg{Start, id, self, nil}:
+				default:
+				}
 			}
 
 		case End:
 			for _, pl := range players {
-				pl <- Msg{End, id, self, nil}
+				select {
+				case pl <- Msg{End, id, self, nil}:
+				default:
+				}
 			}
 
 		case Results:
 			data, ok := msg.data.(TeamMoneyResult)
 		  if !ok { break }
 			for _, pl := range players {
-				pl <- Msg{Results, id, self, data}
+				select {
+				case pl <- Msg{Results, id, self, data}:
+				default:
+				}
 			}
 
 		case Focus:
 			data, ok := msg.data.(PlayerFocusMsg)
 		  if !ok { break }
 		  for _, pl := range players {
-				pl <- Msg{Focus, id, self, data}
+				select {
+				case pl <- Msg{Focus, id, self, data}:
+				default:
+				}
 			}
 
 		}
@@ -545,34 +576,43 @@ func adminManager(self chan Msg) {
 		case TeamRegister:
 			id, ok := msg.data.(string)
 		  if !ok { break }
-			tchan := make(chan Msg, 10)
+			tchan := make(chan Msg, 1000)
 		  go teamManager(tchan, self, id, getTeamName(conn, id))
 		  teams[id] = tchan
 			for _, ch := range correctors {
-				ch <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, tchan}}
+				select {
+				case ch <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, tchan}}:
+				default:
+				}
 			}
 
 		case TeamChanError:
-			tchan := make(chan Msg, 10)
+			tchan := make(chan Msg, 1000)
 		  go teamManager(tchan, self, msg.from, getTeamName(conn, msg.from))
 		  teams[msg.from] = tchan
 
 		case CorrectorJoined:
 			data, ok := msg.data.(CorrectorJoinedReqMsg)
 		  if !ok { break }
-			cchan := make(chan Msg, 10)
+			cchan := make(chan Msg, 1000)
 		  go correctorManager(data.Conn, cchan, self, data.Id, teams)
 		  correctors[data.Id] = cchan
 			cchan <- Msg{CorrectorInitLoaded, "", self, corrInitLoad(conn, data.Id)}
 		  for _, ch := range teams {
-				ch <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{data.Id, cchan}}
+				select {
+				case ch <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{data.Id, cchan}}:
+				default:
+				}
 			}
 
 		case CorrectorLeft:
 			_, ok := msg.data.(error)
 		  if !ok { break }
 		  for _, ch := range teams {
-				ch <- Msg{CorrectorLeft, "", self, msg.from}
+				select {
+				case ch <- Msg{CorrectorLeft, "", self, msg.from}:
+				default:
+				}
 			}
 		  delete(correctors, msg.from)
 			tickets := getCorrTickets(conn, msg.from)
@@ -594,7 +634,7 @@ func adminManager(self chan Msg) {
 				setTCorr(conn, msg.from, prob.Id, adminid)
 				addCorrTicket(conn, adminid, teamid, probid)
 			}
-		   clearCorrTickets(conn, msg.from)
+			clearCorrTickets(conn, msg.from)
 
 		case PlayerJoinRequest:
 			data, ok := msg.data.(PlayerJoinReqMsg)
@@ -606,19 +646,31 @@ func adminManager(self chan Msg) {
 		case Start:
 		  setState(conn, StateRunning)
 		  for _, team := range teams {
-				team <- Msg{Start, "", self, nil}
+				select {
+				case team <- Msg{Start, "", self, nil}:
+				default:
+				}
 			}
 		  for _, corr := range correctors {
-				corr <- Msg{Start, "", self, nil}
+				select {
+				case corr <- Msg{Start, "", self, nil}:
+				default:
+				}
 			}
 		
 		case End:
 		  setState(conn, StateAfter)
 		  for _, team := range teams {
-				team <- Msg{End, "", self, nil}
+				select {
+				case team <- Msg{End, "", self, nil}:
+				default:
+				}
 			}
 		  for _, corr := range correctors {
-				corr <- Msg{End, "", self, nil}
+				select {
+				case corr <- Msg{End, "", self, nil}:
+				default:
+				}
 			}
 
 		case Results:
@@ -641,7 +693,10 @@ func adminManager(self chan Msg) {
 				rank := i + 1
 				for _, id := range tmr.ids {
 					setRank(conn, id, rank)
-					teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, rank}}
+					select {
+						case teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, rank}}:
+						default:
+					}
 				}
 				i += len(tmr.ids)
 			}
