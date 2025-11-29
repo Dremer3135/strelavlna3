@@ -168,7 +168,7 @@
     if (message.type === "grade") {
       socket.send(JSON.stringify({
         "name": "grade",
-        "ticketit": probId,
+        "id": probId,
         "decision": message.value,
       }));
       return;
