@@ -166,6 +166,12 @@
 
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
     console.log("Message of type '" + message.type + "': " + message.value);
+    socket.send(JSON.stringify({
+      "name": "write",
+      "probid": probId,
+      "message": message.value,
+      "mtype": message.type,
+    }))
   }
   function handleFocus(probId: string) {
     socket.send(JSON.stringify({"name": "focus", "id": probId}));
