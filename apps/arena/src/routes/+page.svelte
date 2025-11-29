@@ -18,12 +18,12 @@
     socket.onopen = () => {
       wsConnected.set(true);
     };
-    // socket.onclose = () => {
-    //   wsConnected.set(false);
-    // }
-    // socket.onerror = () => {
-    //   wsConnected.set(false);
-    // }
+    socket.onclose = () => {
+      wsConnected.set(false);
+    }
+    socket.onerror = () => {
+      wsConnected.set(false);
+    }
 
     socket.addEventListener("message", (event) => {
       let data = JSON.parse(event.data);
