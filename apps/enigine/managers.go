@@ -77,6 +77,7 @@ type WriteMsgMsg struct {
 	mtype string
 	msg string
 	admin bool
+	time time.Time
 }
 
 type PlayerJoinedMsg struct {
@@ -397,6 +398,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				"text": data.msg,
 				"type": mtype,
 				"solve": false,
+				// "time": 
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
