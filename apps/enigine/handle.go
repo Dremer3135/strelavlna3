@@ -1,7 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"slices"
 	"time"
 
@@ -127,9 +132,11 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 		return
 	}
 	prob = getProb(conn, probid)
-	if prob.Infinite {
-		addOwnedProb(conn, teamid, OwnedFree, diff, probid)
-		// TODO: generate prob
+	if prob.Auto {
+		genProb(conn, &prob)
+		if prob.Infinite {
+			addOwnedProb(conn, teamid, OwnedFree, diff, probid)
+		}
 	}
 	addOwnedProb(conn, teamid, OwnedBought, diff, probid)
 	money -= price
@@ -266,4 +273,55 @@ func corrInitLoad(conn *redis.Client, id string) CorrInitLoad {
 	}
 
 	return res
+}
+
+func genProb(conn *redis.Client, prob *Prob) error {
+	constsMap := getConstants(conn)
+	jbody, err := json.Marshal(struct{
+		Code string `json:"code"`
+		Text string `json:"text"`
+		Answer string `json:"answer"`
+		Consts map[string]float64 `json:"consts"`
+		Timeout float32 `json:"timeout"`
+		MemMB int `json:"mem_mb"`
+	}{
+		prob.Code,
+		prob.Text,
+		prob.Answer,
+		constsMap,
+		1,
+		32,
+	})
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Post("http://localhost:8000/run", "application/json", bytes.NewBuffer(jbody))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	prespb, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	presp := map[string]any{}
+	err = json.Unmarshal(prespb, &presp)
+	if err != nil {
+		return err
+	}
+	succ, ok := presp["success"].(bool)
+	if !ok || !succ {
+		return errors.New(fmt.Sprint(presp["error"]))
+	}
+	text, ok := presp["text"].(string)
+	if !ok {
+		return errors.New("idk")
+	}
+	answer, ok := presp["answer"].(string)
+	if !ok {
+		return errors.New("idk")
+	}
+	prob.Text = text
+	prob.Answer = answer
+	return nil
 }

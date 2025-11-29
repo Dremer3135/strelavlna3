@@ -133,7 +133,7 @@
         probs.update((e) => {
           e[data.teamid + ":" + data.prob.id] = {
             id: data.teamid + ":" + data.prob.id,
-            name: data.prob.name,
+            name: data.teamname + ": " + data.prob.name,
             text: data.prob.text,
             answer: data.prob.answer,
             diff: data.prob.diff,

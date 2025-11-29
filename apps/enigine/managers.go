@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -60,6 +61,7 @@ const (
 
 	Start
 	End
+	Results
 )
 
 // type BoughtProbMsg struct {
@@ -134,6 +136,11 @@ type IdMoneyMsg struct {
 	money int
 }
 
+type ResultsMsg struct {
+	money int
+	rank int
+}
+
 func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	players := map[string]chan Msg{}
 	conn := NewRdbConn()
@@ -189,6 +196,8 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			diff, ok := msg.data.(string)
 		  if !ok { msg.callback <- Msg{UserError, id, self, "buy"}; break }
 
+			if getState(conn) != StateRunning { msg.callback <- Msg{UserError, id, self, "not running"}; break }
+
 			prob, money, remprobs, err := buyProb(conn, id, diff)
 			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
@@ -219,6 +228,8 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			probid, ok := msg.data.(string)
 		  if !ok { break }
 
+			if getState(conn) != StateRunning { msg.callback <- Msg{UserError, id, self, "not running"}; break }
+
 			money, err := sellProb(conn, id, probid)
 			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
@@ -233,6 +244,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			data, ok := msg.data.(SolveProbMsg)
 		  if !ok { break }
 
+			if getState(conn) != StateRunning { msg.callback <- Msg{UserError, id, self, "not running"}; break }
 			// for _, pl := range players {
 			// 	pl <- Msg{SolveProbReq, id, self, data}
 			// }
@@ -298,6 +310,18 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 		case Start:
 			for _, pl := range players {
 				pl <- Msg{Start, id, self, nil}
+			}
+
+		case End:
+			for _, pl := range players {
+				pl <- Msg{End, id, self, nil}
+			}
+
+		case Results:
+			data, ok := msg.data.(ResultsMsg)
+		  if !ok { break }
+			for _, pl := range players {
+				pl <- Msg{Results, id, self, data}
 			}
 
 		case Focus:
@@ -572,8 +596,50 @@ func adminManager(self chan Msg) {
 				corr <- Msg{Start, "", self, nil}
 			}
 		
+		case End:
+		  setState(conn, StateAfter)
+		  for _, team := range teams {
+				team <- Msg{End, "", self, nil}
+			}
+		  for _, corr := range correctors {
+				corr <- Msg{End, "", self, nil}
+			}
+
+		case Results:
+			moneys := make(map[int][]string)
+		  for id := range teams {
+				money := getMoney(conn, id)
+				ll, ok := moneys[money]
+				if !ok { ll = make([]string, 0) }
+				ll = append(ll, id)
+				moneys[money] = append(ll, id)
+			}
+			tmrl := make([]ManyTeamMoneyResult, 0)
+			for k, v := range moneys {
+				tmrl = append(tmrl, ManyTeamMoneyResult{v, k})
+			}
+		  slices.SortFunc(tmrl, func(a, b ManyTeamMoneyResult) int {
+				if a.money > b.money { return 1 }
+				if a.money < b.money { return -1 }
+				return 0
+			})
+		  for _, tmr := range tmrl {
+				for _, id := range tmr.ids {
+					teams[id] <- Msg{Results, "", self, TeamMoneyResult{id, tmr.money}}
+				}
+			}
 		}
 	}
+}
+
+type TeamMoneyResult struct {
+	id string
+	money int
+}
+
+type ManyTeamMoneyResult struct {
+	ids []string
+	money int
 }
 
 func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id string, teams map[string]chan Msg) {
@@ -613,6 +679,12 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 
 			case "start":
 			  admins <- Msg{Start, id, self, nil}
+
+			case "end":
+			  admins <- Msg{End, id, self, nil}
+
+			case "results":
+			  admins <- Msg{Results, id, self, nil}
 
 			}
 		}

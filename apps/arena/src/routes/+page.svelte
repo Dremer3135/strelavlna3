@@ -153,6 +153,8 @@
         });
       } else if (data.name === "start") {
         currentState.update((e) => { return {...e, runningState: "running"}})
+      } else if (data.name === "end") {
+        currentState.update((e) => { return {...e, runningState: "running"}})
       }
       // console.log(data);
       // console.log($probs);
@@ -211,8 +213,10 @@
       <Waitroom />
     {:else if $currentState.runningState === "running"}
       <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
+    {:else if $currentState.runningState === "after"}
+      <h1>Čekáme na výsledky...</h1>
     {:else}
-      <h1>GG, skončili jste {$currentState.rank}</h1>
+      <h1>GG, skončili jste {$currentState.rank} s {$currentState.money} body</h1>
       <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
       <!-- <Waitroom /> -->
       <!-- <h1>Soutěž skončila. Děkujeme za účast!</h1> -->

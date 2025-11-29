@@ -835,6 +835,10 @@ func main() {
 				constants, err := e.App.FindAllRecords("constants")
 				if err != nil { return err }
 
+				for _, con := range constants {
+					addConstant(rdb, con.GetString("variable_name"), con.GetFloat("value"))
+				}
+
 				rdb.Save(ctx).Result()
 
 				return e.String(200, "ok")
