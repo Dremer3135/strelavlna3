@@ -198,11 +198,14 @@
   function handleEnd() {
     socket.send(JSON.stringify({"name": "end"}));
   }
+  function handleResults() {
+    socket.send(JSON.stringify({"name": "results"}));
+  }
 </script>
 
 
 {#if $wsConnected}
-  <Navbar start={handleStart} end={handleEnd}/>
+  <Navbar start={handleStart} end={handleEnd} results={handleResults}/>
 {/if}
 <main>
   {#if $wsConnected}

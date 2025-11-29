@@ -14,7 +14,38 @@
 
 
 </script>
-
+{#if message.type == "copy" || message.type == "paste" || message.type == "window-focus"}
+<main>
+    {#if message.type == "copy" && type == "corrector" && showAdvanced}
+    <div class="copy-paste" class:sent={message.origin === "sent"}>
+        <p class="time">{sentTimeStringShort}</p>
+        <div class="content">
+            <p>Hráč zkopíroval: <span class="bold">{message.value}</span></p>
+        </div>
+    </div>
+    {:else if message.type == "paste" && type == "corrector" && showAdvanced}
+    <div class="copy-paste" class:sent={message.origin === "sent"}>
+        <p class="time">{sentTimeStringShort}</p>
+        <div class="content">
+            <p>Hráč vložil: <span class="bold">{message.value}</span></p>
+        </div>
+    </div>
+    {:else if message.type == "window-focus" && type == "corrector" && showAdvanced}
+    <div class="window-focus" class:sent={message.origin === "sent"}>
+        <p class="time">{sentTimeStringShort}</p>
+        <div class="content">
+            {#if message.value.split(" ")[0] == "focus"}
+                <p><span class="bold">{message.value.split(" ")[1]}</span> přišel</p>
+                <i class="fa-solid fa-right-to-bracket"></i>
+            {:else}
+                <p><span class="bold">{message.value.split(" ")[1]}</span> odešel</p>
+                <i class="fa-solid fa-right-from-bracket"></i>
+            {/if}
+        </div>
+    </div>
+    {/if}
+</main>
+{:else}
 <main>
     {#if message.type == "message"}
     <div class="message" class:sent={message.origin === "sent"}>
@@ -47,35 +78,10 @@
             {/if}
         </div>
     </div>
-    {:else if message.type == "copy" && type == "corrector" && showAdvanced}
-    <div class="copy-paste" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
-        <div class="content">
-            <p>Hráč zkopíroval: <span class="bold">{message.value}</span></p>
-        </div>
-    </div>
-    {:else if message.type == "paste" && type == "corrector" && showAdvanced}
-    <div class="copy-paste" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
-        <div class="content">
-            <p>Hráč vložil: <span class="bold">{message.value}</span></p>
-        </div>
-    </div>
-    {:else if message.type == "window-focus" && type == "corrector" && showAdvanced}
-    <div class="window-focus" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
-        <div class="content">
-            {#if message.value.split(" ")[0] == "focus"}
-                <p><span class="bold">{message.value.split(" ")[1]}</span> přišel</p>
-                <i class="fa-solid fa-right-to-bracket"></i>
-            {:else}
-                <p><span class="bold">{message.value.split(" ")[1]}</span> odešel</p>
-                <i class="fa-solid fa-right-from-bracket"></i>
-            {/if}
-        </div>
-    </div>
     {/if}
 </main>
+{/if}
+
 
 <style lang="scss">
     main {

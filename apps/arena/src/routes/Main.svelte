@@ -48,17 +48,18 @@
 	$effect(() => {
         let fProb = untrack(() => $focusedProb);
         if (fProb) {
+            console.log("no cap!");
             if (isWindowFocused) {
                 chat(fProb.id, {
                     origin: "sent",
                     type: "window-focus",
-                    value: "blur " + untrack(() => $currentState.myId)
+                    value: "focus " + untrack(() => $currentState.myId)
                 });
             } else {
                 chat(fProb.id, {
                     origin: "sent",
                     type: "window-focus",
-                    value: "focus " + untrack(() => $currentState.myId)
+                    value: "blue " + untrack(() => $currentState.myId)
                 });
             }
         }
