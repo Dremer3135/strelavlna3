@@ -570,6 +570,9 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				if !ok { self <- Msg{UserError, id, self, "no probid"}}
 			  self <- Msg{CorrGrade, id, self, TeamProbMsg{tid, probid}}
 
+			case "start":
+			  admins <- Msg{Start, id, self, nil}
+
 			}
 		}
 	}()

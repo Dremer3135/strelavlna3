@@ -5,11 +5,14 @@
   import { probs } from '$lib/stores/probs';
   import { currentState, wsConnected } from '$lib/stores/state';
   import type { MessageType } from '$lib/types';
-    import Disconnected from '$lib/assets/components/Disconnected.svelte';
+  import Disconnected from '$lib/assets/components/Disconnected.svelte';
+
+  let socket: WebSocket;
   
   onMount(() => {
 
-    const socket = new WebSocket(`https://sv.skrat.org/ws/corr?token=${$page.data.token}`)
+    socket = new WebSocket(`https://sv.skrat.org/ws/corr?token=${$page.data.token}`)
+
     socket.addEventListener("message", (event) => {
       let data = JSON.parse(event.data);
       console.log(data);
@@ -25,6 +28,7 @@
           start: new Date(Date.now() + data.data.start),
           end: new Date(Date.now() + data.data.end),
           runningState: data.data.state,
+          rank: -1,
         });
 
         let nprobs: any = {};
@@ -153,6 +157,9 @@
   }
   function handleGrade(probId: string) {
     console.log("Grading:", probId);
+  }
+  function handleStart() {
+    socket.send(JSON.stringify({"name": "start"}));
   }
 </script>
 

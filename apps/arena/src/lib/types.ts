@@ -18,6 +18,7 @@ export type CurrentState = {
     start: Date,
     end: Date,
     runningState: "before" | "running" | "after"
+    rank: number,
 }
 
 export type MessageType = {

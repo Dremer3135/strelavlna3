@@ -39,6 +39,7 @@
           start: new Date(Date.now() + data.data.start),
           end: new Date(Date.now() + data.data.end),
           runningState: data.data.state,
+          rank: -1,
         });
 
         let nprobs: any = {};
@@ -302,8 +303,9 @@
       <Waitroom />
     {:else if $currentState.runningState === "running"}
       <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
-      {:else}
-      <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
+    {:else}
+      <h1>GG, skončili jste {$currentState.rank}</h1>
+      <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
       <!-- <Waitroom /> -->
       <!-- <h1>Soutěž skončila. Děkujeme za účast!</h1> -->
     {/if}
