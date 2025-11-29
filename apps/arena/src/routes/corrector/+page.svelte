@@ -49,7 +49,7 @@
           let tick = data.data.bought_tickets[tickid];
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
-            id: prob.id,
+            id: tick.teamid + ":" + prob.id,
             name: tick.team_name + ": " + prob.name,
             text: prob.text,
             answer: prob.answer,
@@ -70,7 +70,7 @@
           let tick = data.data.bought_tickets[tickid];
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
-            id: prob.id,
+            id: tick.teamid + ":" + prob.id,
             name: prob.team_name,
             text: prob.text,
             answer: prob.answer,
@@ -91,7 +91,7 @@
           let tick = data.data.bought_tickets[tickid];
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
-            id: prob.id,
+            id: tick.teamid + ":" + prob.id,
             name: prob.team_name,
             text: prob.text,
             answer: prob.answer,
@@ -132,7 +132,7 @@
       } else if (data.name === "bought") {
         probs.update((e) => {
           e[data.teamid + ":" + data.prob.id] = {
-            id: data.prob.id,
+            id: data.teamid + ":" + data.prob.id,
             name: data.prob.name,
             text: data.prob.text,
             answer: data.prob.answer,
