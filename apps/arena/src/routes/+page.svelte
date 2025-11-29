@@ -37,7 +37,8 @@
           pricesSell: [data.data.sellcost.A, data.data.sellcost.B, data.data.sellcost.C],
           procesSolve: [data.data.solvecost.A, data.data.solvecost.B, data.data.solvecost.C],
           start: new Date(Date.now() + data.data.start),
-          end: new Date(Date.now() + data.data.end)
+          end: new Date(Date.now() + data.data.end),
+          runningState: data.data.state,
         });
 
         let nprobs: any = {};
@@ -295,8 +296,14 @@
 
 <main>
   {#if $wsConnected}
-    <Waitroom />
-    <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
+    {#if $currentState.runningState === "before"}
+      <Waitroom />
+    {:else if $currentState.runningState === "running"}
+      <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
+    {:else}
+      <Waitroom />
+      <!-- <h1>Soutěž skončila. Děkujeme za účast!</h1> -->
+    {/if}
   {:else}
     <Disconnected/>
   {/if}
