@@ -500,7 +500,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 
 		case End:
 			err := ws.WriteJSON(map[string]any{
-				"name": "end",
+				"name": "start",
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -639,9 +639,11 @@ func adminManager(self chan Msg) {
 				if a.money > b.money { return -1 }
 				return 0
 			})
-		  for i, tmr := range tmrl {
+			i := 0
+		  for _, tmr := range tmrl {
 				for _, id := range tmr.ids {
 					teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, i + 1}}
+					i += len(tmr.ids)
 				}
 			}
 		}

@@ -154,7 +154,7 @@
       } else if (data.name === "start") {
         currentState.update((e) => { return {...e, runningState: "running"}})
       } else if (data.name === "end") {
-        currentState.update((e) => { return {...e, runningState: "running"}})
+        currentState.update((e) => { return {...e, runningState: "end"}})
       } else if (data.name === "results") {
         currentState.update((e) => { return {...e, runningState: "results", money: data.money, rank: data.rank}})
       }
@@ -218,7 +218,12 @@
     {:else if $currentState.runningState === "after"}
       <h1>Čekáme na výsledky...</h1>
     {:else}
-      <h1>GG, skončili jste {$currentState.rank} s {$currentState.money} body</h1>
+      <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
+      <h2>Na závěrečnou obrazovku nezbyl budget</h2>
+      <h2>Užijte si alespoň tyto obrázky koťátek</h2>
+      {#each Array(7).fill(0) as _item}
+        <img src="https://cataas.com/cat" alt="kočka">
+      {/each}
       <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
       <!-- <Waitroom /> -->
       <!-- <h1>Soutěž skončila. Děkujeme za účast!</h1> -->
