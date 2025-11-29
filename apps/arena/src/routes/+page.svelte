@@ -58,7 +58,7 @@
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
-              sentTime: e.time,
+              sentTime: new Date(e.time),
             }}),
             owned: "bought",
           };
@@ -77,7 +77,7 @@
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
-              sentTime: e.time,
+              sentTime: new Date(e.time),
             }}),
             owned: "solved",
           };
@@ -96,7 +96,7 @@
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
-              sentTime: e.time,
+              sentTime: new Date(e.time),
             }}),
             owned: "sold",
           };
@@ -117,7 +117,7 @@
                 origin: data.origin,
                 type: data.type,
                 value: data.text,
-                sentTime: data.time,
+                sentTime: new Date(data.time),
               });
             }
           })
