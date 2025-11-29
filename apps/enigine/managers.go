@@ -282,15 +282,16 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
-			pushTLine(conn, data.team, data.prob, TLineAtom{MSideAdmin, MTypeGrade, data.decision, time.Now()})
-			msgs := Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
-			for _, pl := range players {
-				pl <- msgs
-			}
+			// pushTLine(conn, data.team, data.prob, TLineAtom{MSideAdmin, MTypeGrade, data.decision, time.Now()})
+			// msgs := Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
+			// for _, pl := range players {
+			// 	pl <- msgs
+			// }
+
+			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
 
 			corr := getTCorr(conn, id, data.prob)
 			correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
-		  correctors[corr] <- msgs
 
 		case Start:
 			for _, pl := range players {
@@ -594,7 +595,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 			case "write":
 			  tid, ok := msg["id"]
 				if !ok { self <- Msg{UserError, id, self, "no teamid"}}
-			  text, ok := msg["text"]
+			  text, ok := msg["message"]
 				if !ok { self <- Msg{UserError, id, self, "no text"}}
 				teamid, probid := parseTicketId(tid)
 			  self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
