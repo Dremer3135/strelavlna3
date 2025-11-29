@@ -260,7 +260,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			if data.admin {
 				side = MSideAdmin
 			}
-			pushTLine(conn, msg.from, data.probid, TLineAtom{side, data.mtype, data.msg, time.Now()})
+			pushTLine(conn, id, data.probid, TLineAtom{side, data.mtype, data.msg, time.Now()})
 
 			for _, pl := range players {
 				pl <- Msg{WriteMsg, id, self, data}
