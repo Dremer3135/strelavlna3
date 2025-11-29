@@ -136,6 +136,7 @@ func (p *Prob) fromMap(m map[string]string) {
 	p.Infinite = m["infinite"] == "true"
 	p.Queue = strings.Split(m["queue"], ":")
 	p.Images = strings.Split(m["images"], "\\")
+	if m["images"] == "" { p.Images = []string{} }
 } 
 
 func getProb(conn *redis.Client, probid string) Prob {

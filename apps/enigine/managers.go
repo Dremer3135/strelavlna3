@@ -497,6 +497,22 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				"name": "start",
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case End:
+			err := ws.WriteJSON(map[string]any{
+				"name": "end",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case Results:
+		  data, ok := msg.data.(TeamMoneyResult)
+		  if !ok { break }
+			err := ws.WriteJSON(map[string]any{
+				"name": "results",
+				"money": data.money,
+				"rank": data.rank,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
 		  
 		}
 	}
