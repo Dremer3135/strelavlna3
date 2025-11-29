@@ -10,8 +10,11 @@ export const currentState = writable<CurrentState>({
     pricesBuy: [10, 30, 80],
     pricesSell: [10, 15, 40],
     procesSolve: [15, 50, 200],
-    start: new Date(Date.now()),
-    end: new Date(Date.now())
+    start: undefined,
+    end: undefined,
+    runningState: "before",
+    rank: 0,
+    isAdmin: false
 });
 
 export const focusedProb = derived<[typeof probs, typeof currentState], Prob | undefined>(
@@ -21,4 +24,4 @@ export const focusedProb = derived<[typeof probs, typeof currentState], Prob | u
     }
 );
 
-export const wsConnected = writable<boolean>(true);
+export const wsConnected = writable<boolean>(false);
