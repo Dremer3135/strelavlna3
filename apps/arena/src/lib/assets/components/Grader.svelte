@@ -1,13 +1,13 @@
 <script lang="ts">
     import type { Prob } from "$lib/types";
-    import { isProbUngraded } from "$lib/utils";
+    import { isProbSolved, isProbUngraded } from "$lib/utils";
     import Button from "./Button.svelte";
 
     let { prob, answer, onAccept, onReject }: { answer: string, prob: Prob | undefined, onAccept: () => void, onReject: () => void } = $props();
 </script>
 
 <svelte:body onkeydown={(e) => {
-    if (!prob) return;
+    if (!prob || isProbSolved(prob)) return;
     if (e.shiftKey) {
         if (e.key == "A") {
             onAccept();
@@ -21,13 +21,13 @@
     <div class="separator"></div>
     <div class="actual">Správná odpověď: <span class="bold">{prob?.answer}</span></div>
     <div class="controls">
-        <Button theme="yellow" disabled={!prob} onclick={() => {
+        <Button theme="yellow" disabled={!prob || isProbSolved(prob)} onclick={() => {
             if (!prob) return;
             onAccept();
         }}>
             <p>Accept <span class="thin">(Shift + A)</span></p>
         </Button>
-        <Button theme="pink" disabled={!prob || !isProbUngraded(prob)} onclick={() => {
+        <Button theme="pink" disabled={!prob || !isProbUngraded(prob) || isProbSolved(prob)} onclick={() => {
             if (!prob || !isProbUngraded(prob)) return;
             onReject();
         }}>

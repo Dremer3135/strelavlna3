@@ -73,7 +73,7 @@
 		{#if $focusedProb}
 			<div class="prob">
 				<ProbContent
-					content={$focusedProb}
+					content={{...$focusedProb, answer: undefined}}
 					onCopy={(text: string) => {
 						console.log('copying');
 
