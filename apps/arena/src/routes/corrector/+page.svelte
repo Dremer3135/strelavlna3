@@ -149,17 +149,17 @@
           };
           return e;
         });
-        currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+        // currentState.update((e) => { return {...e, money: data.money}})
       } else if (data.name === "sold") {
         probs.update((e) => {
           e[data.probid].owned = "sold";
-          currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+          // currentState.update((e) => { return {...e, money: data.money}})
           return e;
         });
       } else if (data.name === "solved") {
         probs.update((e) => {
           e[data.probid].owned = "solved";
-          currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
+          // currentState.update((e) => { return {...e, money: data.money}})
           return e;
         });
       } else if (data.name === "start") {
