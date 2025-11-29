@@ -67,7 +67,7 @@
         }
 
         for (let tickid of Object.keys(data.data.solved_tickets)) {
-          let tick = data.data.bought_tickets[tickid];
+          let tick = data.data.solved_tickets[tickid];
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
             id: tick.teamid + ":" + prob.id,
@@ -88,7 +88,7 @@
         }
 
         for (let tickid of Object.keys(data.data.sold_tickets)) {
-          let tick = data.data.bought_tickets[tickid];
+          let tick = data.data.sold_tickets[tickid];
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
             id: tick.teamid + ":" + prob.id,
