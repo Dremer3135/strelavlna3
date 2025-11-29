@@ -219,10 +219,10 @@
       <h1>Čekáme na výsledky...</h1>
     {:else}
       <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
-      <h2>Na závěrečnou obrazovku nezbyl budget</h2>
+      <h2 style="color: red">Na závěrečnou obrazovku nezbyl budget</h2>
       <h2>Užijte si alespoň tyto obrázky koťátek</h2>
-      {#each Array(7).fill(0) as _item}
-        <img src="https://cataas.com/cat" alt="kočka">
+      {#each Array(7).fill(0) as _item, i}
+        <img src="https://cataas.com/cat?t={i}" alt="kočka">
       {/each}
       <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
       <!-- <Waitroom /> -->
