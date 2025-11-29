@@ -227,9 +227,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			data, ok := msg.data.(SolveProbMsg)
 		  if !ok { break }
 
-			for _, pl := range players {
-				pl <- Msg{SolveProbReq, id, self, data}
-			}
+			// for _, pl := range players {
+			// 	pl <- Msg{SolveProbReq, id, self, data}
+			// }
 
 			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false, time.Now()}}
 
@@ -398,7 +398,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				"text": data.msg,
 				"type": mtype,
 				"solve": false,
-				// "time": 
+				"time": data.time,
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -433,17 +433,18 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
-		case SolveProbReq:
-		  data, ok := msg.data.(SolveProbMsg)
-		  if !ok { break }
-			err := ws.WriteJSON(map[string]any{
-				"name": "written",
-				"probid": data.probid,
-				"text": teamid,
-				"type": "sent",
-				"solve": false,
-			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+		// case SolveProbReq:
+		//   data, ok := msg.data.(SolveProbMsg)
+		//   if !ok { break }
+		// 	err := ws.WriteJSON(map[string]any{
+		// 		"name": "written",
+		// 		"probid": data.probid,
+		// 		"text": teamid,
+		// 		"type": "sent",
+		// 		"solve": false,
+		// 		"time": data.time,
+		// 	})
+		// 	if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case Start:
 			err := ws.WriteJSON(map[string]any{
@@ -672,6 +673,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				"text": data.msg,
 				"type": mtype,
 				"solve": false,
+				"time": data.time,
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -685,6 +687,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				"text": data.text,
 				"type": "recieved",
 				"solve": true,
+				"time": time.Now(),
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
