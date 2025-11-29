@@ -118,7 +118,7 @@ func (p Prob) toMap() map[string]string {
 		"auto": "false",
 		"infinite": "false",
 		"queue": strings.Join(p.Queue, ":"),
-		"images": strings.Join(p.Images, ":"),
+		"images": strings.Join(p.Images, "\\"),
 	}
 	if p.Auto { res["auto"] = "true" }
 	if p.Infinite { res["infinite"] = "true" }
@@ -135,7 +135,7 @@ func (p *Prob) fromMap(m map[string]string) {
 	p.Auto = m["auto"] == "true"
 	p.Infinite = m["infinite"] == "true"
 	p.Queue = strings.Split(m["queue"], ":")
-	p.Images = strings.Split(m["images"], ":")
+	p.Images = strings.Split(m["images"], "\\")
 } 
 
 func getProb(conn *redis.Client, probid string) Prob {
