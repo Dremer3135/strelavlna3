@@ -23,7 +23,8 @@
           pricesSell: [data.data.sellcost.A, data.data.sellcost.B, data.data.sellcost.C],
           procesSolve: [data.data.solvecost.A, data.data.solvecost.B, data.data.solvecost.C],
           start: new Date(Date.now() + data.data.start),
-          end: new Date(Date.now() + data.data.end)
+          end: new Date(Date.now() + data.data.end),
+          runningState: data.data.state,
         });
 
         let nprobs: any = {};

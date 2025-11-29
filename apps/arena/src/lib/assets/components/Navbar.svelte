@@ -5,14 +5,19 @@
     import { onMount } from "svelte";
 
     let remaining = $state(0);
+    let timeValid = $state(false);
     
-    let hours: string = $derived(Math.floor(remaining / 1000 / 60 / 60).toString().padStart(2, "0"));
-    let minutes: string = $derived((Math.floor(remaining / 1000 / 60) % 60).toString().padStart(2, "0"));
-    let seconds: string = $derived((Math.floor(remaining / 1000) % 60).toString().padStart(2, "0"));
+    let hours: string = $derived(timeValid ? Math.floor(remaining / 1000 / 60 / 60).toString().padStart(2, "0") : "--");
+    let minutes: string = $derived(timeValid ? (Math.floor(remaining / 1000 / 60) % 60).toString().padStart(2, "0") : "--");
+    let seconds: string = $derived(timeValid ? (Math.floor(remaining / 1000) % 60).toString().padStart(2, "0") : "--");
     
     
     function updateClock() {
         // console.log($currentState.start);
+        if (!$currentState.start || ! $currentState.end) {
+            timeValid = false;
+            return;
+        }
         if (Date.now() > $currentState.start.getTime()) {
             remaining = Math.abs($currentState.end.getTime() - Date.now());
         } else {
