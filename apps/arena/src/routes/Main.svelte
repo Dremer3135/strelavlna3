@@ -133,7 +133,7 @@
 			</div>
 			<div class="sell">
 				<Button
-					disabled={!$focusedProb}
+					disabled={!$focusedProb || $focusedProb.owned !== 'bought'}
 					theme="pink"
 					onmouseenter={() => {
 						sellHovered = true;
@@ -142,9 +142,8 @@
 						sellHovered = false;
 					}}
 					onclick={() => {
-						if ($focusedProb) {
-							sell($focusedProb.id);
-						}
+                        if (!$focusedProb || $focusedProb.owned !== 'bought') return;
+                        sell($focusedProb.id);
 					}}
 				>
 					<i class="fa-solid fa-trash-can" />
@@ -226,7 +225,7 @@
         min-height: 0px;
 
         .left-panel {
-            width: 350px;
+            min-width: 350px;
             display: flex;
             flex-direction: column;
             min-height: 0px;
