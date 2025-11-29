@@ -18,13 +18,13 @@
       console.log(data);
       if (data.name === "initload") {
         currentState.set({
-          teamName: data.data.teamname,
-          money: data.data.money,
-          myId: data.data.playerid,
-          probsRemaining: [data.data.remprobs.A, data.data.remprobs.B, data.data.remprobs.C],
-          pricesBuy: [data.data.buycost.A, data.data.buycost.B, data.data.buycost.C],
-          pricesSell: [data.data.sellcost.A, data.data.sellcost.B, data.data.sellcost.C],
-          procesSolve: [data.data.solvecost.A, data.data.solvecost.B, data.data.solvecost.C],
+          teamName: "",
+          money: 0,
+          myId: "",
+          probsRemaining: [],
+          pricesBuy: [],
+          pricesSell: [],
+          procesSolve: [],
           start: new Date(Date.now() + data.data.start),
           end: new Date(Date.now() + data.data.end),
           runningState: data.data.state,

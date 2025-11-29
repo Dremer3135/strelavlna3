@@ -530,6 +530,9 @@ func adminManager(self chan Msg) {
 		  for _, team := range teams {
 				team <- Msg{Start, "", self, nil}
 			}
+		  for _, corr := range correctors {
+				corr <- Msg{Start, "", self, nil}
+			}
 		
 		}
 	}

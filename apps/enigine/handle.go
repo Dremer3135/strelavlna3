@@ -58,6 +58,8 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	res.Sold = make([]Prob, 0)
 	res.Solved = make([]Prob, 0)
 
+	res.TLines = make(map[string][]TLineAtom)
+
   if state == StateBefore {
 		return res
 	}
@@ -206,6 +208,8 @@ type CorrInitLoad struct {
 	SolvedTickets map[string]CorrTicket `json:"solved_tickets"`
 	SoldTickets map[string]CorrTicket `json:"sold_tickets"`
 	TLines map[string][]TLineAtom `json:"tlines"`
+	Start int `json:"start"`
+	End int `json:"end"`
 }
 
 type CorrTicket struct {
@@ -221,6 +225,11 @@ func corrInitLoad(conn *redis.Client, id string) CorrInitLoad {
 		SolvedTickets: make(map[string]CorrTicket),
 		SoldTickets: make(map[string]CorrTicket),
 	}
+
+	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
+	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
+
+	res.TLines = make(map[string][]TLineAtom)
 	
 	for _, tickid := range tickets {
 		teamid, probid := parseTicketId(tickid)
