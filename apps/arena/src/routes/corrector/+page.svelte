@@ -118,7 +118,7 @@
       } else if (data.name === "written") {
         probs.update((e) => {
           Object.keys(e).forEach((k) => {
-            if (k === data.probid) {
+            if (k === data.teamid + ":" + data.probid) {
               e[k].chat.push({
                 origin: data.type,
                 type: data.solve ? "answer" : "message",
@@ -131,7 +131,7 @@
         });
       } else if (data.name === "bought") {
         probs.update((e) => {
-          e[data.prob.id] = {
+          e[data.teamid + ":" + data.prob.id] = {
             id: data.prob.id,
             name: data.prob.name,
             text: data.prob.text,
@@ -147,13 +147,13 @@
         // currentState.update((e) => { return {...e, money: data.money}})
       } else if (data.name === "sold") {
         probs.update((e) => {
-          e[data.probid].owned = "sold";
+          e[data.teamid + ":" + data.probid].owned = "sold";
           // currentState.update((e) => { return {...e, money: data.money}})
           return e;
         });
       } else if (data.name === "solved") {
         probs.update((e) => {
-          e[data.probid].owned = "solved";
+          e[data.teamid + ":" + data.probid].owned = "solved";
           // currentState.update((e) => { return {...e, money: data.money}})
           return e;
         });
@@ -176,7 +176,7 @@
 
     socket.send(JSON.stringify({
       "name": "write",
-      "ticketid": probId,
+      "id": probId,
       "message": message.value,
       "mtype": message.type,
     }));
