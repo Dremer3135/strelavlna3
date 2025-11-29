@@ -112,7 +112,7 @@
       } else if (data.name === "focus") {
         probs.update((currentProbs) => {
           currentProbs = Object.fromEntries(Object.entries(currentProbs).map(([_, prob]) => [prob.id, {...prob, focusedBy: prob.focusedBy.filter((x: any) => x !== $currentState.myId)}]));  // remove focus of specific plaeyer from all probs
-          currentProbs[data.probid].focusedBy.push($currentState.myId);  // add focus to specific prob
+          currentProbs[data.id].focusedBy.push($currentState.myId);  // add focus to specific prob
           return currentProbs;
         });
       } else if (data.name === "written") {
