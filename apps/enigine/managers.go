@@ -588,14 +588,13 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				self <- Msg{Focus, id, self, tid}
 
 			case "write":
-			  tid, ok := msg["teamid"]
+			  tid, ok := msg["id"]
 				if !ok { self <- Msg{UserError, id, self, "no teamid"}}
-			  probid, ok := msg["probid"]
-				if !ok { self <- Msg{UserError, id, self, "no probid"}}
 			  text, ok := msg["text"]
 				if !ok { self <- Msg{UserError, id, self, "no text"}}
-			  self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, tid, MTypeText, text, true, time.Now()}}
-			  self <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, tid, MTypeText, text, true, time.Now()}}
+				teamid, probid := parseTicketId(tid)
+			  self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
+			  self <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
 
 			case "grade":
 			  tid, ok := msg["id"]

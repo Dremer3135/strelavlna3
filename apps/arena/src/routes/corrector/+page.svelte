@@ -165,6 +165,15 @@
   });
 
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
+<<<<<<< HEAD
+    console.log("Message of type '" + message.type + "': " + message.value);
+    socket.send(JSON.stringify({
+      "name": "write",
+      "probid": probId,
+      "message": message.value,
+      "mtype": message.type,
+    }))
+=======
     if (message.type === "grade") {
       socket.send(JSON.stringify({
         "name": "grade",
@@ -182,6 +191,7 @@
     }));
 
     // console.log("Message of type '" + message.type + "': " + message.value);
+>>>>>>> ffc188c816b9ce55b6c9aba3006e4b59055b4e20
   }
   function handleFocus(probId: string) {
     socket.send(JSON.stringify({"name": "focus", "id": probId}));
