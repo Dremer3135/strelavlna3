@@ -111,8 +111,8 @@
         probs.set(nprobs);
       } else if (data.name === "focus") {
         probs.update((currentProbs) => {
-          currentProbs = Object.fromEntries(Object.entries(currentProbs).map(([_, prob]) => [prob.id, {...prob, focusedBy: prob.focusedBy.filter((x: any) => x !== data.playerid)}]));  // remove focus of specific plaeyer from all probs
-          currentProbs[data.probid].focusedBy.push(data.playerid);  // add focus to specific prob
+          currentProbs = Object.fromEntries(Object.entries(currentProbs).map(([_, prob]) => [prob.id, {...prob, focusedBy: prob.focusedBy.filter((x: any) => x !== $currentState.myId)}]));  // remove focus of specific plaeyer from all probs
+          currentProbs[data.id].focusedBy.push($currentState.myId);  // add focus to specific prob
           return currentProbs;
         });
       } else if (data.name === "written") {
@@ -168,7 +168,8 @@
     console.log("Message of type '" + message.type + "': " + message.value);
   }
   function handleFocus(probId: string) {
-    console.log("Focusing:", probId);
+    socket.send(JSON.stringify({"name": "focus", "id": probId}));
+    // console.log("Focusing:", probId);
   }
   function handleGrade(probId: string) {
     console.log("Grading:", probId);
