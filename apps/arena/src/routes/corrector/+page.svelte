@@ -56,7 +56,7 @@
             diff: prob.diff,
             images: prob.images,
             focusedBy: [],
-            chat: data.data.tlines[prob.id].map((e: any) => {return {
+            chat: data.data.tlines[tickid].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
@@ -77,7 +77,7 @@
             diff: prob.diff,
             images: prob.images,
             focusedBy: [],
-            chat: data.data.tlines[prob.id].map((e: any) => {return {
+            chat: data.data.tlines[tickid].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
@@ -98,7 +98,7 @@
             diff: prob.diff,
             images: prob.images,
             focusedBy: [],
-            chat: data.data.tlines[prob.id].map((e: any) => {return {
+            chat: data.data.tlines[tickid].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
