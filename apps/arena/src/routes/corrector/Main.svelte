@@ -14,10 +14,12 @@
 
 	let {
 		focus,
-		chat
+		chat,
+    start,
 	}: {
 		focus: (id: string) => void;
 		chat: (probId: string, message: Omit<MessageType, 'sentTime'>) => void;
+    start: () => void;
 	} = $props();
 
 	const difficulties = ['A', 'B', 'C'];
@@ -25,6 +27,7 @@
 </script>
 
 <main>
+  <button onclick={start}>Start</button>
 	<div class="left-panel">
 		<!-- <div class="team-stats">
 			<h2 class="name">{$currentState.teamName}</h2>
