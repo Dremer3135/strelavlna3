@@ -256,7 +256,11 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			data, ok := msg.data.(WriteMsgMsg)
 		  if !ok { break }
 
-			pushTLine(conn, msg.from, data.probid, TLineAtom{MSidePlayer, MTypeText, data.msg, time.Now()})
+			side := MSidePlayer
+			if data.admin {
+				side = MSideAdmin
+			}
+			pushTLine(conn, msg.from, data.probid, TLineAtom{side, data.mtype, data.msg, time.Now()})
 
 			for _, pl := range players {
 				pl <- Msg{WriteMsg, id, self, data}
@@ -337,7 +341,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			case "write":
 				probid, ok := msg["probid"]
 				if !ok { self <- Msg{UserError, id, self, "no probid"}; break }
-				text, ok := msg["text"]
+				text, ok := msg["message"]
 				if !ok { self <- Msg{UserError, id, self, "no text"}; break }
 				mtype, ok := msg["mtype"]
 				if !ok { self <- Msg{UserError, id, self, "no mtype"}; break }
@@ -691,19 +695,19 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
-		case SolveProb:
-		  data, ok := msg.data.(SolveProbMsg)
-		  if !ok { break }
-			err := ws.WriteJSON(map[string]any{
-				"name": "written",
-				"probid": data.probid,
-				"teamid": msg.from,
-				"text": data.text,
-				"origin": "recieved",
-				"type": MTypeSolve,
-				"time": time.Now().UnixMilli(),
-			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+		// case SolveProb:
+		//   data, ok := msg.data.(SolveProbMsg)
+		//   if !ok { break }
+		// 	err := ws.WriteJSON(map[string]any{
+		// 		"name": "written",
+		// 		"probid": data.probid,
+		// 		"teamid": msg.from,
+		// 		"text": data.text,
+		// 		"origin": "recieved",
+		// 		"type": MTypeSolve,
+		// 		"time": time.Now().UnixMilli(),
+		// 	})
+		// 	if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case SoldProb:
 		  data, ok := msg.data.(string)
