@@ -276,14 +276,14 @@
   }
   function handleSell(probId: string) {
     socket.send(JSON.stringify({
-      "name": "buy",
+      "name": "sell",
       "probid": probId,
     }));
   }
   function handleFocus(probId: string) {
     console.log("Focusing:", probId);
     socket.send(JSON.stringify({
-      "name": "buy",
+      "name": "focus",
       "probid": probId,
     }));
   }
