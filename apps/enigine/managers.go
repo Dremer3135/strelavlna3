@@ -642,6 +642,7 @@ func adminManager(self chan Msg) {
 			i := 0
 		  for _, tmr := range tmrl {
 				for _, id := range tmr.ids {
+					setRank(conn, id, i+1)
 					teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, i + 1}}
 					i += len(tmr.ids)
 				}
