@@ -190,7 +190,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 		  if !ok { msg.callback <- Msg{UserError, id, self, "buy"}; break }
 
 			prob, money, remprobs, err := buyProb(conn, id, diff)
-			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
+			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 			adminid := ""
 			for _, a := range prob.Queue {
@@ -220,7 +220,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 		  if !ok { break }
 
 			money, err := sellProb(conn, id, probid)
-			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
+			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 			corr := getTCorr(conn, id, probid)
 			correctors[corr] <- Msg{SoldProb, id, self, probid}
@@ -242,7 +242,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			prob := getProb(conn, data.probid)
 			if strings.TrimSpace(data.text) == strings.TrimSpace(prob.Answer) {
 				money, err := solveProb(conn, id, data.probid)
-				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
+				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 				for _, pl := range players {
 					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.probid, money}}
@@ -275,7 +275,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			if data.decision == DecisionCorrect {
 				money, err := solveProb(conn, id, data.prob)
-				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
+				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 				for _, pl := range players {
 					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.prob, money}}
@@ -546,7 +546,7 @@ func adminManager(self chan Msg) {
 						break
 					}
 				} 
-				if adminid == "" { break }
+				if adminid == "" { break }correct
 				corr := correctors[adminid]
 				corr <- Msg{BoughtProb, "", self, CorrTicket{teamid, getTeamName(conn, teamid), prob}}
 				setTCorr(conn, msg.from, prob.Id, adminid)
