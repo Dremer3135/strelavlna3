@@ -198,7 +198,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			corr <- Msg{BoughtProb, "", self, CorrTicket{id, tname, prob}}
 
 			setTCorr(conn, msg.from, prob.Id, adminid)
-			addCorrTicket(conn, adminid, msg.from, prob.Id)
+			addCorrTicket(conn, adminid, id, prob.Id)
 
 			prob.Answer = "<dobrej pokus>"
 
