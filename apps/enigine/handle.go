@@ -135,7 +135,7 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 	money -= price
 	setMoney(conn, teamid, money)
 	setTState(conn, teamid, probid, OwnedBought)
-	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
+	// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
 	remprobs = make(map[string]int)
 	for _, diff := range DIFFS {
 		remprobs[diff] = getNumberRemProbs(conn, teamid, diff)
@@ -158,7 +158,7 @@ func sellProb(conn *redis.Client, teamid, probid string) (money int, err error) 
 	money += reward
 	setMoney(conn, teamid, money)
 	setTState(conn, teamid, probid, OwnedSold)
-	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
+	// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
 	return
 }
 
@@ -177,7 +177,7 @@ func solveProb(conn *redis.Client, teamid, probid string) (money int, err error)
 	money += reward
 	setMoney(conn, teamid, money)
 	setTState(conn, teamid, probid, OwnedSolved)
-	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
+	// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
 	return
 }
 
@@ -197,7 +197,7 @@ func autoGrade(conn *redis.Client, teamid, probid, answer string) (bool, error) 
 		money := getMoney(conn, teamid)
 		setMoney(conn, teamid, money + reward)
 		setTState(conn, teamid, probid, OwnedSolved)
-		pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
+		// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
 		return true, nil
 	}
 	return false, nil
