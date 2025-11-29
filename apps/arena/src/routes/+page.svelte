@@ -155,6 +155,8 @@
         currentState.update((e) => { return {...e, runningState: "running"}})
       } else if (data.name === "end") {
         currentState.update((e) => { return {...e, runningState: "running"}})
+      } else if (data.name === "results") {
+        currentState.update((e) => { return {...e, runningState: "results", money: data.money, rank: data.rank}})
       }
       // console.log(data);
       // console.log($probs);
