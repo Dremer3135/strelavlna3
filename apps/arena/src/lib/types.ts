@@ -19,6 +19,7 @@ export type CurrentState = {
     end: Date,
     runningState: "before" | "running" | "after"
     rank: number,
+    isAdmin?: boolean
 }
 
 export type MessageType = {

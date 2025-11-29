@@ -6,6 +6,7 @@
   import { currentState, wsConnected } from '$lib/stores/state';
   import type { MessageType } from '$lib/types';
   import Disconnected from '$lib/assets/components/Disconnected.svelte';
+  import Navbar from '$lib/assets/components/Navbar.svelte';
 
   let socket: WebSocket;
   
@@ -29,6 +30,7 @@
           end: new Date(Date.now() + data.data.end),
           runningState: data.data.state,
           rank: -1,
+          isAdmin: data.data.admin,
         });
 
         let nprobs: any = {};
@@ -167,8 +169,15 @@
   function handleStart() {
     socket.send(JSON.stringify({"name": "start"}));
   }
+  function handleEnd() {
+    socket.send(JSON.stringify({"name": "end"}));
+  }
 </script>
 
+
+{#if $wsConnected}
+  <Navbar start={handleStart} end={handleEnd}/>
+{/if}
 <main>
   {#if $wsConnected}
     <Main chat={handleChat} focus={handleFocus} />

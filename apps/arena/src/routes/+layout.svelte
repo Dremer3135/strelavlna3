@@ -11,9 +11,9 @@
 </svelte:head>
 
 <main>
-    {#if $wsConnected}
+    <!-- {#if $wsConnected}
     <Navbar />
-    {/if}
+    {/if} -->
     {@render children?.()}
 </main>
 
