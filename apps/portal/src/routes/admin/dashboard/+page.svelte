@@ -15,6 +15,14 @@
     async function genRdb() {
       await pocketbase.send("/api/rdb", {query: {id: rdbid} })
     }
+
+    async function start() {
+      await pocketbase.send("/api/start")
+    }
+
+    async function end() {
+      await pocketbase.send("/api/end")
+    }
 </script>
 
 <main>
@@ -29,4 +37,8 @@
     <br>
     <input type="text" bind:value={rdbid}>
     <button onclick={genRdb}>GenRdb</button>
+    <br>
+    <button onclick={start}>Start</button>
+    <br>
+    <button onclick={End}>End</button>
 </main>
