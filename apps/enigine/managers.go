@@ -622,32 +622,30 @@ func adminManager(self chan Msg) {
 			}
 
 		case Results:
-			setState(conn, StateResults)
 			moneys := make(map[int][]string)
-		  for id := range teams {
+			for id := range teams {
 				money := getMoney(conn, id)
-				ll, ok := moneys[money]
-				if !ok { ll = make([]string, 0) }
-				ll = append(ll, id)
-				moneys[money] = append(ll, id)
+				moneys[money] = append(moneys[money], id) 
 			}
-			tmrl := make([]ManyTeamMoneyResult, 0)
+			tmrl := make([]ManyTeamMoneyResult, 0, len(moneys))
 			for k, v := range moneys {
 				tmrl = append(tmrl, ManyTeamMoneyResult{v, k})
 			}
-		  slices.SortFunc(tmrl, func(a, b ManyTeamMoneyResult) int {
+			slices.SortFunc(tmrl, func(a, b ManyTeamMoneyResult) int {
 				if a.money < b.money { return 1 }
 				if a.money > b.money { return -1 }
 				return 0
 			})
 			i := 0
-		  for _, tmr := range tmrl {
+			for _, tmr := range tmrl {
+				rank := i + 1
 				for _, id := range tmr.ids {
-					setRank(conn, id, i+1)
-					teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, i + 1}}
-					i += len(tmr.ids)
+					setRank(conn, id, rank)
+					teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, rank}}
 				}
+				i += len(tmr.ids)
 			}
+
 		}
 	}
 }
