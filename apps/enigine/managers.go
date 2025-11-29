@@ -694,6 +694,12 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
+		case Start:
+		  err := ws.WriteJSON(map[string]string{
+				"name": "start",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
 		}
 	}
 }

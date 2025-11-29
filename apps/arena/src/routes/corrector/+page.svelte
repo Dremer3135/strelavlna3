@@ -152,6 +152,8 @@
           currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
           return e;
         });
+      } else if (data.name === "start") {
+        currentState.update((e) => { return {...e, runningState: "running"}})
       }
     });
 
@@ -167,6 +169,7 @@
     console.log("Grading:", probId);
   }
   function handleStart() {
+    console.log("start");
     socket.send(JSON.stringify({"name": "start"}));
   }
   function handleEnd() {
