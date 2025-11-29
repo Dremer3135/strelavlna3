@@ -35,10 +35,12 @@
 
         let nprobs: any = {};
 
-        for (let prob of data.data.bought) {
-          nprobs[prob.id] = {
+        for (let tickid of Object.keys(data.data.bought_tickets)) {
+          let tick = data.data.bought_tickets[tickid];
+          let prob = tick.prob;
+          nprobs[tick.teamid + ":" + prob.id] = {
             id: prob.id,
-            name: prob.name,
+            name: tick.teamname + ": " + prob.name,
             text: prob.text,
             answer: prob.answer,
             diff: prob.diff,
@@ -54,8 +56,10 @@
           };
         }
 
-        for (let prob of data.data.solved) {
-          nprobs[prob.id] = {
+        for (let tickid of Object.keys(data.data.solved_tickets)) {
+          let tick = data.data.bought_tickets[tickid];
+          let prob = tick.prob;
+          nprobs[tick.teamid + ":" + prob.id] = {
             id: prob.id,
             name: prob.name,
             text: prob.text,
@@ -73,8 +77,10 @@
           };
         }
 
-        for (let prob of data.data.sold) {
-          nprobs[prob.id] = {
+        for (let tickid of Object.keys(data.data.sold_tickets)) {
+          let tick = data.data.bought_tickets[tickid];
+          let prob = tick.prob;
+          nprobs[tick.teamid + ":" + prob.id] = {
             id: prob.id,
             name: prob.name,
             text: prob.text,

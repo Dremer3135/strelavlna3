@@ -361,3 +361,15 @@ func getTeams(conn *redis.Client) []string {
 
 	return res
 }
+
+func setCorrAdmin(conn *redis.Client, adminid string, admin bool) {
+	err := conn.Set(ctx, "corradmin:" + adminid, admin, time.Duration(0)).Err()
+	if err != nil { panic(err) }
+}
+
+func getCorrAdmin(conn *redis.Client, adminid string) bool {
+	res, err := conn.Get(ctx, "corradmin:" + adminid).Bool()
+	if err != nil { panic(err) }
+
+	return res
+}
