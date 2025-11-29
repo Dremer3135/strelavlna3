@@ -347,7 +347,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				mtype, ok := msg["mtype"]
 				if !ok { self <- Msg{UserError, id, self, "no mtype"}; break }
 				if mtype != MTypeText && mtype != MTypeGif && mtype != MTypeCopy && mtype != MTypePaste && mtype != MTypeFocus { self <- Msg{UserError, id, self, "invalid mtype"}; break }
-				if len(text) > 50 { self <- Msg{UserError, id, self, "too long"}; break }
+				// if len(text) > 50 { self <- Msg{UserError, id, self, "too long"}; break }
 				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, teamid, mtype, text, false, time.Now()}}
 
 			case "focus":
