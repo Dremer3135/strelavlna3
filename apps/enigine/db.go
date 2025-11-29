@@ -254,6 +254,9 @@ const (
 	MTypeBought = "bought"
 	MTypeSold = "sold"
 	MTypeSolved = "solved"
+	MTypePaste = "paste"
+	MTypeCopy = "copy"
+	MTypeFocus = "window-focus"
 )
 
 func pushTLine(conn *redis.Client, teamid, probid string, tla TLineAtom) {

@@ -230,6 +230,8 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				pl <- Msg{SolveProbReq, id, self, data}
 			}
 
+			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false}}
+
 			prob := getProb(conn, data.probid)
 			if strings.TrimSpace(data.text) == strings.TrimSpace(prob.Answer) {
 				money, err := solveProb(conn, id, data.probid)
@@ -321,8 +323,11 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				if !ok { self <- Msg{UserError, id, self, "no probid"}; break }
 				text, ok := msg["text"]
 				if !ok { self <- Msg{UserError, id, self, "no text"}; break }
+				mtype, ok := msg["mtype"]
+				if !ok { self <- Msg{UserError, id, self, "no mtype"}; break }
+				if mtype != MTypeText && mtype != MTypeGif && mtype != MTypeCopy && mtype != MTypePaste && mtype != MTypeFocus { self <- Msg{UserError, id, self, "invalid mtype"}; break }
 				if len(text) > 50 { self <- Msg{UserError, id, self, "too long"}; break }
-				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, id, MTypeText, text, false}}
+				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, id, mtype, text, false}}
 
 			case "focus":
 				probid, ok := msg["probid"]
