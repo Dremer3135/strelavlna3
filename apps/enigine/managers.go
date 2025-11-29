@@ -622,6 +622,7 @@ func adminManager(self chan Msg) {
 			}
 
 		case Results:
+			setState(conn, StateResults)
 			moneys := make(map[int][]string)
 		  for id := range teams {
 				money := getMoney(conn, id)
