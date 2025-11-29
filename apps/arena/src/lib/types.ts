@@ -15,8 +15,8 @@ export type CurrentState = {
     pricesBuy: number[],
     pricesSell: number[],
     procesSolve: number[],
-    start: Date,
-    end: Date,
+    start: Date | undefined,
+    end: Date | undefined,
     runningState: "before" | "running" | "after"
     rank: number,
     isAdmin?: boolean
