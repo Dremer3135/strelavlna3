@@ -112,7 +112,7 @@
       } else if (data.name === "written") {
         probs.update((e) => {
           Object.keys(e).forEach((k) => {
-            if (k === data.probid) {
+            if (k === data.teamid + ":" + data.probid) {
               e[k].chat.push({
                 origin: data.origin,
                 type: data.type,
@@ -125,8 +125,8 @@
         });
       } else if (data.name === "bought") {
         probs.update((e) => {
-          e[data.prob.id] = {
-            id: data.prob.id,
+          e[data.teamid + ":" + data.prob.id] = {
+            id: data.teamid + ":" + data.prob.id,
             name: data.prob.name,
             text: data.prob.text,
             answer: data.prob.answer,
