@@ -245,7 +245,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
 
 				for _, pl := range players {
-					pl <- Msg{SolveProb, id, self, IdMoneyMsg{data.probid, money}}
+					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.probid, money}}
 				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
@@ -278,7 +278,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() } }
 
 				for _, pl := range players {
-					pl <- Msg{SolveProb, id, self, IdMoneyMsg{data.prob, money}}
+					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.prob, money}}
 				}
 			}
 
