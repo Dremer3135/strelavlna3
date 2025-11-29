@@ -17,6 +17,9 @@ const (
 	StateBefore = "before"
 	StateRunning = "running"
 	StateAfter = "after"
+
+	DecisionCorrect = "correct"
+	DecisionIncorrect = "incorrect"
 )
 
 func parseTicketId(tid string) (teamid string, probid string) {
