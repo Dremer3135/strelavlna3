@@ -247,10 +247,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				for _, pl := range players {
 					pl <- Msg{SolveProb, id, self, IdMoneyMsg{data.probid, money}}
 				}
-			} else {
-				corr := getTCorr(conn, id, data.probid)
-				correctors[corr] <- Msg{SolveProb, id, self, data}
-			}
+			} // else {
+			// 	corr := getTCorr(conn, id, data.probid)
+			// 	correctors[corr] <- Msg{SolveProb, id, self, data}
+			// }
 
 		case WriteMsg:
 			data, ok := msg.data.(WriteMsgMsg)

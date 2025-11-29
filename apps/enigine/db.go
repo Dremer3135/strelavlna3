@@ -250,9 +250,9 @@ func (t *TLineAtom) fromString(s string) {
 const (
 	MSideAdmin = "admin"
 	MSidePlayer = "player"
-	MTypeText = "text"
+	MTypeText = "message"
 	MTypeGif = "gif"
-	MTypeSolve = "solve"
+	MTypeSolve = "answer"
 	MTypeGrade = "grade"
 	MTypeBought = "bought"
 	MTypeSold = "sold"
