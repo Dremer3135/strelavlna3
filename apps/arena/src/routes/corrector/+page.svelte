@@ -50,7 +50,7 @@
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
             id: prob.id,
-            name: tick.teamname + ": " + prob.name,
+            name: tick.team_name + ": " + prob.name,
             text: prob.text,
             answer: prob.answer,
             diff: prob.diff,
@@ -71,7 +71,7 @@
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
             id: prob.id,
-            name: prob.name,
+            name: prob.team_name,
             text: prob.text,
             answer: prob.answer,
             diff: prob.diff,
@@ -92,7 +92,7 @@
           let prob = tick.prob;
           nprobs[tick.teamid + ":" + prob.id] = {
             id: prob.id,
-            name: prob.name,
+            name: prob.team_name,
             text: prob.text,
             answer: prob.answer,
             diff: prob.diff,
