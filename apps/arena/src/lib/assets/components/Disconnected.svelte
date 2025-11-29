@@ -20,7 +20,7 @@
 
 <main>
     <h1>Spojení ztraceno{Array(dotCount).fill(".").join("")}</h1>
-    <p>Vyčkejte chvíly a obnovte stránku (F5)</p>
+    <p>Vyčkejte chvíli a obnovte stránku (F5)</p>
 </main>
 
 <style lang="scss">
