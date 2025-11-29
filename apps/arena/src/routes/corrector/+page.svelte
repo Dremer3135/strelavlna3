@@ -120,8 +120,8 @@
           Object.keys(e).forEach((k) => {
             if (k === data.teamid + ":" + data.probid) {
               e[k].chat.push({
-                origin: data.type,
-                type: data.solve ? "answer" : "message",
+                origin: data.origin,
+                type: data.type,
                 value: data.text,
                 sentTime: new Date(data.time),
               });
