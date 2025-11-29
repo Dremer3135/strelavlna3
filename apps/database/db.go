@@ -366,7 +366,14 @@ func addConstant(conn *redis.Client, varn string, value float64) {
 	if err != nil { panic(err) }
 }
 
-func getConstants(conn *redis.Client) {
-	err := conn.HGetAll(ctx, "constants").Err()
+func getConstants(conn *redis.Client) map[string]float64 {
+	resr, err := conn.HGetAll(ctx, "constants").Result()
 	if err != nil { panic(err) }
+	res := make(map[string]float64)
+	for k, v := range resr {
+		rv, _ := strconv.ParseFloat(v, 64)
+		res[k] = rv
+	}
+
+	return res
 }
