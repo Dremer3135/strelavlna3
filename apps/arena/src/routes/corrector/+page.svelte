@@ -165,13 +165,30 @@
   });
 
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
-    console.log("Message of type '" + message.type + "': " + message.value);
+    if (message.type === "grade") {
+      socket.send(JSON.stringify({
+        "name": "grade",
+        "ticketit": probId,
+        "decision": message.value,
+      }));
+      return;
+    }
+
+    socket.send(JSON.stringify({
+      "name": "write",
+      "ticketid": probId,
+      "message": message.value,
+      "mtype": message.type,
+    }));
+
+    // console.log("Message of type '" + message.type + "': " + message.value);
   }
   function handleFocus(probId: string) {
     socket.send(JSON.stringify({"name": "focus", "id": probId}));
     // console.log("Focusing:", probId);
   }
   function handleGrade(probId: string) {
+    socket.send(JSON.stringify({"name": "grade", "id": probId}));
     console.log("Grading:", probId);
   }
   function handleStart() {

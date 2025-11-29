@@ -127,7 +127,8 @@
 
 
         .left-panel {
-            width: 350px;
+            min-width: 350px;
+            max-width: 350px;
             display: flex;
             flex-direction: column;
 
