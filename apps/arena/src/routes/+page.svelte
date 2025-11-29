@@ -154,6 +154,9 @@
       } else if (data.name === "start") {
         currentState.update((e) => { return {...e, runningState: "running"}})
       }
+      console.log(data);
+      console.log(probs);
+      console.log(currentState);
     });
 
 

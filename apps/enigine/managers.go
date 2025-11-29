@@ -522,7 +522,7 @@ func adminManager(self chan Msg) {
 				corr := correctors[adminid]
 				corr <- Msg{BoughtProb, "", self, CorrTicket{teamid, getTeamName(conn, teamid), prob}}
 				setTCorr(conn, msg.from, prob.Id, adminid)
-				addCorrTicket(conn, adminid, msg.from, prob.Id)
+				addCorrTicket(conn, adminid, teamid, probid)
 			}
 
 		case PlayerJoinRequest:
