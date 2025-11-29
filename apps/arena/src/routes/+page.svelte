@@ -158,109 +158,109 @@
     });
 
 
-    probs.update(_ => {
-      return { 
-        "askhdj": {
-          id: "askhdj",
-          name: "Tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["s", "lalala"],
-          chat: []
-        },
-        "asjldh": {
-          id: "asjldh",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["lalala", "bablbamId"],
-          chat: [
-            {
-              origin: "recieved",
-              type: "message",
-              value: "Hello my friend!",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "message",
-              value: "Hi!",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "answer",
-              value: "Odpoved je lalala",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "grade",
-              value: "incorrect",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "sent",
-              type: "message",
-              value: "prosiiim",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-            {
-              origin: "recieved",
-              type: "grade",
-              value: "correct",
-              sentTime: new Date('2025-11-27T14:05:30Z')
-            },
-          ]
-        },
-        "ijfs": {
-          id: "ijfs",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
-        "alsAL": {
-          id: "alsAL",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: ["adf", "ads"],
-          chat: []
-        },
-        "PIJFSLKHBKJ": {
-          id: "PIJFSLKHBKJ",
-          name: "tohle je jmeno",
-          text: "tohle jetextulohy",
-          answer: "",
-          diff: "A",
-          images: [],
-          focusedBy: [],
-          chat: []
-        },
+    // probs.update(_ => {
+    //   return { 
+    //     "askhdj": {
+    //       id: "askhdj",
+    //       name: "Tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: ["s", "lalala"],
+    //       chat: []
+    //     },
+    //     "asjldh": {
+    //       id: "asjldh",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: ["lalala", "bablbamId"],
+    //       chat: [
+    //         {
+    //           origin: "recieved",
+    //           type: "message",
+    //           value: "Hello my friend!",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "sent",
+    //           type: "message",
+    //           value: "Hi!",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "sent",
+    //           type: "answer",
+    //           value: "Odpoved je lalala",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "recieved",
+    //           type: "grade",
+    //           value: "incorrect",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "sent",
+    //           type: "message",
+    //           value: "prosiiim",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //         {
+    //           origin: "recieved",
+    //           type: "grade",
+    //           value: "correct",
+    //           sentTime: new Date('2025-11-27T14:05:30Z')
+    //         },
+    //       ]
+    //     },
+    //     "ijfs": {
+    //       id: "ijfs",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: [],
+    //       chat: []
+    //     },
+    //     "alsAL": {
+    //       id: "alsAL",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: ["adf", "ads"],
+    //       chat: []
+    //     },
+    //     "PIJFSLKHBKJ": {
+    //       id: "PIJFSLKHBKJ",
+    //       name: "tohle je jmeno",
+    //       text: "tohle jetextulohy",
+    //       answer: "",
+    //       diff: "A",
+    //       images: [],
+    //       focusedBy: [],
+    //       chat: []
+    //     },
     
-      }
-    });
-    currentState.update(state => {
-      return {
-        teamName: "Bambuláci 4. trida",
-        money: 80,
-        myId: "bablbamId",
-        probsRemaining: [10, 2, -1],
-        pricesBuy: [10, 30, 80],
-        pricesSell: [10, 15, 40],
-        procesSolve: [15, 50, 200]
-      }
-    })
+    //   }
+    // });
+    // currentState.update(state => {
+    //   return {
+    //     teamName: "Bambuláci 4. trida",
+    //     money: 80,
+    //     myId: "bablbamId",
+    //     probsRemaining: [10, 2, -1],
+    //     pricesBuy: [10, 30, 80],
+    //     pricesSell: [10, 15, 40],
+    //     procesSolve: [15, 50, 200]
+    //   }
+    // })
   });
 
   function handleBuy(diff: string) {

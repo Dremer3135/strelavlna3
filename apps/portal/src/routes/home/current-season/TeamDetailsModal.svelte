@@ -16,6 +16,7 @@
       {#if team.player4email}<li>{team.player4email}</li>{/if}
       {#if team.player5email}<li>{team.player5email}</li>{/if}
     </ul>
+    <a href="https://sv.skrat.org/?token={team.token}" class="game-link">Herní odkaz</a>
     <button on:click={() => dispatch("close")}>Close</button>
   </div>
 </div>

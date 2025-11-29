@@ -13,10 +13,12 @@
     
     
     function updateClock() {
-        // console.log($currentState.start);
         if (!$currentState.start || ! $currentState.end) {
             timeValid = false;
+            console.log("piss");
             return;
+        } else {
+            timeValid = true;
         }
         if (Date.now() > $currentState.start.getTime()) {
             remaining = Math.abs($currentState.end.getTime() - Date.now());
