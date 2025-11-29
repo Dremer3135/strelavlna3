@@ -273,12 +273,15 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			data, ok := msg.data.(GradeProbMsg)
 		  if !ok { break }
 
+			corr := getTCorr(conn, id, data.prob)
+
 			if data.decision == DecisionCorrect {
 				money, err := solveProb(conn, id, data.prob)
 				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 				for _, pl := range players {
 					pl <- Msg{SolvedProb, id, self, IdMoneyMsg{data.prob, money}}
+					correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
 				}
 			}
 
@@ -290,7 +293,6 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
 
-			corr := getTCorr(conn, id, data.prob)
 			correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
 
 		case Start:
@@ -715,6 +717,16 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		  if !ok { break }
 		  err := ws.WriteJSON(map[string]string{
 				"name": "sold",
+				"teamid": msg.from,
+				"probid": data,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case SolvedProb:
+		  data, ok := msg.data.(string)
+		  if !ok { break }
+		  err := ws.WriteJSON(map[string]string{
+				"name": "solved",
 				"teamid": msg.from,
 				"probid": data,
 			})
