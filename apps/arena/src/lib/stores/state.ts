@@ -24,4 +24,4 @@ export const focusedProb = derived<[typeof probs, typeof currentState], Prob | u
     }
 );
 
-export const wsConnected = writable<boolean>(false);
+export const wsConnected = writable<boolean>(true);

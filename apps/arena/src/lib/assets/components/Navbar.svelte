@@ -17,7 +17,6 @@
     function updateClock() {
         if (!$currentState.start || ! $currentState.end) {
             timeValid = false;
-            console.log("piss");
             return;
         } else {
             timeValid = true;
