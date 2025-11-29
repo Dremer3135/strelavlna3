@@ -663,7 +663,6 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		  if !ok { break }
 		  teams[data.team] <- Msg{CorrGrade, id, self, data.prob}
 
-
 		case CorrGraded:
 		  data, ok := msg.data.(TeamProbMsg)
 		  if !ok { break }
