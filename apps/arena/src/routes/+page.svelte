@@ -114,8 +114,8 @@
           Object.keys(e).forEach((k) => {
             if (k === data.probid) {
               e[k].chat.push({
-                origin: data.type,
-                type: data.solve ? "answer" : "message",
+                origin: data.origin,
+                type: data.type,
                 value: data.text,
                 sentTime: data.time,
               });
