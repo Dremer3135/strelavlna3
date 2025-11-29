@@ -160,8 +160,8 @@
         currentState.update((e) => { return {...e, runningState: "running"}})
       }
       console.log(data);
-      console.log($probs);
-      console.log($currentState);
+      console.log(probs);
+      console.log(currentState);
     });
 
 
