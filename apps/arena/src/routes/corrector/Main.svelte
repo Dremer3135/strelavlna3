@@ -19,7 +19,7 @@
 	}: {
 		focus: (id: string) => void;
 		chat: (probId: string, message: Omit<MessageType, 'sentTime'>) => void;
-    start: () => void;
+        start: () => void;
 	} = $props();
 
 	const difficulties = ['A', 'B', 'C'];

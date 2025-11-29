@@ -4,6 +4,8 @@
     import { currentState } from "$lib/stores/state";
     import { onMount } from "svelte";
 
+    let { start, end }: { start: () => void; end: () => void } = $props();
+
     let remaining = $state(0);
     let timeValid = $state(false);
     
@@ -38,6 +40,10 @@
     <div class="logo">
         <img src={logo} alt="logo">
     </div>
+    {#if $currentState.isAdmin}
+        <button class="start" onclick={start}>Start</button>
+        <button class="End" onclick={end}>End</button>
+    {/if}
     <div class="timer">
         <h3>{hours}:{minutes}:{seconds}</h3>
     </div>

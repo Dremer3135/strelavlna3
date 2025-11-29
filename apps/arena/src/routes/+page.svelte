@@ -6,6 +6,7 @@
   import type { MessageType, CurrentState } from '$lib/types';
   import Waitroom from './Waitroom.svelte';
     import Disconnected from '$lib/assets/components/Disconnected.svelte';
+    import Navbar from '$lib/assets/components/Navbar.svelte';
 
   let { data } = $props();
 
@@ -297,6 +298,9 @@
   }
 </script>
 
+{#if $wsConnected}
+  <Navbar />
+{/if}
 <main>
   {#if $wsConnected}
     {#if $currentState.runningState === "before"}
