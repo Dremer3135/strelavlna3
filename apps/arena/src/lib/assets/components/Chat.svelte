@@ -37,10 +37,12 @@
     </div>
     <div class="content">
         {#each prob.chat as message, i}
+        {#if !((message.type == "copy" || message.type == "paste" || message.type == "window-focus") && !showAdvanced)}
             {#if i > 0 && prob.chat[i-1].origin != message.origin}
-            <div class="spacer"></div>
+                <div class="spacer"></div>
             {/if}
             <Message message={message} type={type} showAdvanced={showAdvanced} />
+        {/if}
         {/each}    
     </div>
     <div class="controls">

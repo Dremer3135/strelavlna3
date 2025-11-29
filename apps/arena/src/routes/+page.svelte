@@ -168,7 +168,7 @@
     }));
   }
   function handleChat(probId: string, message: Omit<MessageType, 'sentTime'>) {
-    // console.log("Message of type '" + message.type + "': " + message.value);
+    console.log("Message of type '" + message.type + "': " + message.value);
     console.log(`Writing ${probId} ${message}`);
     socket.send(JSON.stringify({
       "name": "write",
