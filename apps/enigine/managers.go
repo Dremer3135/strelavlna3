@@ -231,7 +231,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				pl <- Msg{SolveProbReq, id, self, data}
 			}
 
-			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false}}
+			self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false, time.Now()}}
 
 			prob := getProb(conn, data.probid)
 			if strings.TrimSpace(data.text) == strings.TrimSpace(prob.Answer) {
@@ -328,7 +328,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				if !ok { self <- Msg{UserError, id, self, "no mtype"}; break }
 				if mtype != MTypeText && mtype != MTypeGif && mtype != MTypeCopy && mtype != MTypePaste && mtype != MTypeFocus { self <- Msg{UserError, id, self, "invalid mtype"}; break }
 				if len(text) > 50 { self <- Msg{UserError, id, self, "too long"}; break }
-				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, id, mtype, text, false}}
+				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, id, mtype, text, false, time.Now()}}
 
 			case "focus":
 				probid, ok := msg["probid"]
@@ -578,8 +578,8 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				if !ok { self <- Msg{UserError, id, self, "no probid"}}
 			  text, ok := msg["text"]
 				if !ok { self <- Msg{UserError, id, self, "no text"}}
-			  self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, tid, MTypeText, text, true}}
-			  self <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, tid, MTypeText, text, true}}
+			  self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, tid, MTypeText, text, true, time.Now()}}
+			  self <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, tid, MTypeText, text, true, time.Now()}}
 
 			case "grade":
 			  tid, ok := msg["teamid"]

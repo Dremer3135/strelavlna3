@@ -832,6 +832,9 @@ func main() {
 				setStart(rdb, contest.GetDateTime("onlineStart").Time())
 				setEnd(rdb, contest.GetDateTime("onlineEnd").Time())
 
+				constants, err := e.App.FindAllRecords("constants")
+				if err != nil { return err }
+
 				rdb.Save(ctx).Result()
 
 				return e.String(200, "ok")
