@@ -133,7 +133,7 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 	}
 	addOwnedProb(conn, teamid, OwnedBought, diff, probid)
 	money -= price
-	setMoney(conn, teamid, price)
+	setMoney(conn, teamid, money)
 	setTState(conn, teamid, probid, OwnedBought)
 	pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
 	remprobs = make(map[string]int)

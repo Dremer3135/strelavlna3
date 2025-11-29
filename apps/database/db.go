@@ -360,3 +360,13 @@ func getCorrAdmin(conn *redis.Client, adminid string) bool {
 
 	return res
 }
+
+func addConstant(conn *redis.Client, varn string, value float64) {
+	err := conn.HSet(ctx, "constants", varn, value).Err()
+	if err != nil { panic(err) }
+}
+
+func getConstants(conn *redis.Client) {
+	err := conn.HGetAll(ctx, "constants").Err()
+	if err != nil { panic(err) }
+}
