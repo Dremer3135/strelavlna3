@@ -154,6 +154,8 @@
           currentState.update((e) => { return {...e, money: data.money, probsRemaining: [data.remprobs.A, data.remprobs.B, data.remprobs.C]}})
           return e;
         });
+      } else if (data.name === "start") {
+        currentState.update((e) => { return {...e, runningState: "running"}})
       }
     });
 
@@ -247,7 +249,7 @@
     //       focusedBy: [],
     //       chat: []
     //     },
-    
+    //
     //   }
     // });
     // currentState.update(state => {
