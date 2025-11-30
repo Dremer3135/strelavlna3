@@ -154,7 +154,7 @@
       } else if (data.name === "start") {
         currentState.update((e) => { return {...e, runningState: "running"}})
       } else if (data.name === "end") {
-        currentState.update((e) => { return {...e, runningState: "end"}})
+        currentState.update((e) => { return {...e, runningState: "after"}})
       } else if (data.name === "results") {
         currentState.update((e) => { return {...e, runningState: "results", money: data.money, rank: data.rank}})
       }
@@ -220,6 +220,8 @@
     {:else}
       <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
       <h2>Pokud jste v top 15, očekávejte email o informacích o prezenčním kole</h2>
+      <h2>Úlohy připravila třída 7.M</h2>
+      <h2 style="color: blue; font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Zážitek ze hry vám přináší tým Skrat</h2>
       <h2 style="color: red">Na závěrečnou obrazovku nezbyl budget (ne že by nějaký byl)</h2>
       <h2>Užijte si alespoň tyto obrázky koťátek</h2>
       {#each Array(7).fill(0) as _item, i}
