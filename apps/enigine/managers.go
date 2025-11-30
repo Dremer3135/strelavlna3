@@ -146,7 +146,7 @@ type ResultsMsg struct {
 	rank int
 }
 
-var whiteSpaceRegex = regexp.MustCompile(`\S+`)
+var whiteSpaceRegex = regexp.MustCompile(`\s+`)
 
 func checkAnswer(cans, tans string) bool {
   cans = whiteSpaceRegex.ReplaceAllLiteralString(cans, "")
