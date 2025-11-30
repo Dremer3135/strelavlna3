@@ -6,8 +6,8 @@
 
     const collors: string[] = ["#9500EB", "#EB0072", "#EB6E00", "#EBAD00"];
 
-    let width: number;
-    let height: number;
+    let width = $state(0);
+    let height = $state(0);
 
     let canvas: HTMLCanvasElement;
     let ctx: CanvasRenderingContext2D | null;
