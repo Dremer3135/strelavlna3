@@ -4,7 +4,7 @@
   import Main from './Main.svelte';
   import { probs } from '$lib/stores/probs';
   import { currentState, wsConnected } from '$lib/stores/state';
-  import type { MessageType } from '$lib/types';
+  import type { MessageType, ResultsAtom } from '$lib/types';
   import Disconnected from '$lib/assets/components/Disconnected.svelte';
   import Navbar from '$lib/assets/components/Navbar.svelte';
 
@@ -161,12 +161,16 @@
       } else if (data.name === "start") {
         currentState.update((e) => { return {...e, runningState: "running"}})
       } else if (data.name === "results") {
-        let nresults = {};
+        let nresults: Record<string, ResultsAtom> = {};
         for (let k of Object.keys(data.data)) {
           let rec = data.data[k];
           nresults[k] = {
+            teamName: rec.name,
+            rank: rec.rank,
+            money: rec.money,
           }
         }
+        currentState.update((e) => { return {...e, runningState: "results", results: nresults}})
       }
     });
 
@@ -221,7 +225,15 @@
 {/if}
 <main>
   {#if $wsConnected}
-    <Main chat={handleChat} focus={handleFocus} />
+    {#if $currentState.runningState == "results"}
+      <ul>
+        {#each Object.values($currentState.results ?? {}).toSorted((a, b) => a.rank - b.rank) as item}
+          <li>{item.rank}: {item.teamName} ({item.money})</li>
+        {/each}
+      </ul>
+    {:else}
+      <Main chat={handleChat} focus={handleFocus} />
+    {/if}
   {:else}
     <Disconnected/>
   {/if}
