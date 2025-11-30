@@ -222,6 +222,7 @@
       <h2>Pokud jste v top 15, očekávejte email o informacích o prezenčním kole</h2>
       <h2>Úlohy připravila třída 7.M</h2>
       <h2 style="color: blue; font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Zážitek ze hry vám přináší tým Skrat</h2>
+      <h2 style="color: green">Veškeré technické potíže způsobilo ChatGPT a Gemini...</h2>
       <h2 style="color: red">Na závěrečnou obrazovku nezbyl budget (ne že by nějaký byl)</h2>
       <h2>Užijte si alespoň tyto obrázky koťátek</h2>
       {#each Array(7).fill(0) as _item, i}
