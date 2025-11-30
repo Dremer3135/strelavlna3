@@ -219,7 +219,7 @@
       <h1>Čekáme na výsledky...</h1>
     {:else}
       <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
-      <h2>Pokud jste v top 15, očekávejte email o informacích o prezenčním kole</h2>
+      <h2>Pokud jste v top 15, {$currentState.rank > 15 ? "což nejste, " : ""}očekávejte email o informacích o prezenčním kole</h2> 
       <h2>Úlohy připravila třída 7.M</h2>
       <h2 style="color: blue; font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Zážitek ze hry vám přináší tým Skrat</h2>
       <h2 style="color: green">Veškeré technické potíže způsobilo ChatGPT a Gemini...</h2>
