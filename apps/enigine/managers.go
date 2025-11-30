@@ -146,7 +146,7 @@ type ResultsMsg struct {
 	rank int
 }
 
-var whiteSpaceRegex = regexp.MustCompile(`\\S+`)
+var whiteSpaceRegex = regexp.MustCompile(`\S+`)
 
 func checkAnswer(cans, tans string) bool {
   cans = whiteSpaceRegex.ReplaceAllLiteralString(cans, "")
@@ -331,7 +331,18 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 
 				go func(){
-					self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeGrade, DecisionCorrect, true, time.Now()}}
+					self <- Msg{WriteMsg,
+						id,
+						self,
+						WriteMsgMsg{
+							data.probid,
+							id,
+							MTypeGrade,
+							DecisionCorrect,
+							true,
+							time.Now(),
+						},
+						}
 				}()
 
 				corr, err := getTCorr(conn, id, data.probid)
@@ -341,6 +352,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 				if corr != "" {
 					correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
+				}
+				if corr != "" {
+					correctors[corr] <- Msg{SolvedProb, id, self, data.probid}
 				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
@@ -408,7 +422,19 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			// }
 
 			go func(){
-				self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
+				self <- Msg{
+					WriteMsg,
+					id,
+					self,
+					WriteMsgMsg{
+						data.prob,
+						data.team, 
+						MTypeGrade, 
+						data.decision,
+						true,
+						time.Now(),
+					},
+				}
 			}()
 
 			if corr != "" {
