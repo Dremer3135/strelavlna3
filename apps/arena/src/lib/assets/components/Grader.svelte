@@ -22,13 +22,13 @@
     <div class="actual">Správná odpověď: <span class="bold">{prob?.answer}</span></div>
     <div class="controls">
         <Button theme="yellow" disabled={!prob || isProbSolved(prob)} onclick={() => {
-            if (!prob) return;
+            if (!prob || isProbSolved(prob)) return;
             onAccept();
         }}>
             <p>Accept <span class="thin">(Shift + A)</span></p>
         </Button>
         <Button theme="pink" disabled={!prob || !isProbUngraded(prob) || isProbSolved(prob)} onclick={() => {
-            if (!prob || !isProbUngraded(prob)) return;
+            if (!prob || !isProbUngraded(prob) || isProbSolved(prob)) return;
             onReject();
         }}>
             <p>Reject <span class="thin">(Shift + R)</span></p>

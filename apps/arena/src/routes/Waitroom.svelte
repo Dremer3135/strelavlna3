@@ -53,7 +53,7 @@
 
     function updateCubes() {
         for (let cube of fallingCubes) {
-            cube.speed.y += 1000 * DT * DT;
+            cube.speed.y += 1000*cube.paralaxCof * DT * DT;
 
             cube.position.x += cube.speed.x * DT;
             cube.position.y += cube.speed.y * DT;
@@ -147,7 +147,7 @@
                 box-sizing: border-box;
                 box-shadow: 0px 0px 10px #F0F0F0;
                 border-radius: 5px;
-                padding: 5px 10px;
+                padding: 9px 25px;
                 color: color-mix(in srgb, var(--color-purple) 40%, black 60%);
             }
 
