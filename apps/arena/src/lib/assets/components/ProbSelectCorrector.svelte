@@ -13,7 +13,7 @@
 </script>
 
 <button class:selected={prob.focusedBy.includes($currentState.myId)} on:click={handleClick} class:solved={isProbSolved(prob)}>
-    <h2 class="name">{prob.name}</h2>
+    <h2 class="name">{prob.name.split(":")[1]}</h2>
     <div class="right">
         <h2 class="diff">[{prob.diff}]</h2>
         <div class="focus-indicator" class:unresolved={ hasProbChat(prob) ? prob.chat[prob.chat.length - 1].origin == "recieved" : false }></div>
