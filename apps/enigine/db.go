@@ -30,69 +30,77 @@ func parseTicketId(tid string) (teamid string, probid string) {
 	return
 }
 
-func getState(conn *redis.Client) string {
+func getState(conn *redis.Client) (string, error) {
 	res, err := conn.Get(ctx, "state").Result()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return StateBefore, nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }
 
-func setState(conn *redis.Client, state string) {
+func setState(conn *redis.Client, state string) error {
 	err := conn.Set(ctx, "state", state, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+	return err
 }
 
-func getStart(conn *redis.Client) time.Time {
+func getStart(conn *redis.Client) (time.Time, error) {
 	itime, err := conn.Get(ctx, "start").Int64()
-	if err != nil { panic(err) }
-
-	return time.UnixMilli(itime)
+	if err == redis.Nil {
+		return time.Now(), nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.UnixMilli(itime), nil
 }
 
-func setStart(conn *redis.Client, start time.Time) {
-	err := conn.Set(ctx, "start", start.UnixMilli(), time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setStart(conn *redis.Client, start time.Time) error {
+	return conn.Set(ctx, "start", start.UnixMilli(), time.Duration(0)).Err()
 }
 
-func getEnd(conn *redis.Client) time.Time {
+func getEnd(conn *redis.Client) (time.Time, error) {
 	itime, err := conn.Get(ctx, "end").Int64()
-	if err != nil { panic(err) }
-
-	return time.UnixMilli(itime)
+	if err == redis.Nil {
+		return time.Now(), nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.UnixMilli(itime), nil
 }
 
-func setEnd(conn *redis.Client, end time.Time) {
-	err := conn.Set(ctx, "end", end.UnixMilli(), time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setEnd(conn *redis.Client, end time.Time) error {
+	return conn.Set(ctx, "end", end.UnixMilli(), time.Duration(0)).Err()
 }
 
-func getCorrTickets(conn *redis.Client, corrid string) []string {
-	res, err := conn.SMembers(ctx, "corrtickets:" + corrid).Result()
-	if err != nil { panic(err) }
-
-	return res
+func getCorrTickets(conn *redis.Client, corrid string) ([]string, error) {
+	return conn.SMembers(ctx, "corrtickets:" + corrid).Result()
 }
 
-func addCorrTicket(conn *redis.Client, corrid, teamid, probid string) {
-	err := conn.SAdd(ctx, "corrtickets:" + corrid, teamid + ":" + probid).Err()
-	if err != nil { panic(err) }
+func addCorrTicket(conn *redis.Client, corrid, teamid, probid string) error {
+	return conn.SAdd(ctx, "corrtickets:" + corrid, teamid + ":" + probid).Err()
 }
 
-func clearCorrTickets(conn *redis.Client, corrid string) {
-	err := conn.Del(ctx, "corrtickets:" + corrid).Err()
-	if err != nil { panic(err) }
+func clearCorrTickets(conn *redis.Client, corrid string) error {
+	return conn.Del(ctx, "corrtickets:" + corrid).Err()
 }
 
-func getMoney(conn *redis.Client, teamid string) int {
+func getMoney(conn *redis.Client, teamid string) (int, error) {
 	m, err := conn.Get(ctx, "money:" + teamid).Int()
-	if err != nil { panic(err) }
-
-	return m
+	if err == redis.Nil {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return m, nil
 }
 
-func setMoney(conn *redis.Client, teamid string, money int) {
-	err := conn.Set(ctx, "money:" + teamid, money, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setMoney(conn *redis.Client, teamid string, money int) error {
+	return conn.Set(ctx, "money:" + teamid, money, time.Duration(0)).Err()
 }
 
 type Prob struct {
@@ -140,43 +148,47 @@ func (p *Prob) fromMap(m map[string]string) {
 	if m["images"] == "" { p.Images = []string{} }
 } 
 
-func getProb(conn *redis.Client, probid string) Prob {
+func getProb(conn *redis.Client, probid string) (Prob, error) {
 	pmap, err := conn.HGetAll(ctx, "prob:" + probid).Result()
-	if err != nil { panic(err) }
+	if err == redis.Nil {
+		return Prob{}, nil
+	}
+	if err != nil {
+		return Prob{}, err
+	}
 
 	res := Prob{}
 	res.fromMap(pmap)
 
-	return res
+	return res, nil
 }
 
-func setProb(conn *redis.Client, prob Prob) {
-	err := conn.HSet(ctx, "prob:" + prob.Id, prob.toMap()).Err()
-	if err != nil { panic(err) }
+func setProb(conn *redis.Client, prob Prob) error {
+	return conn.HSet(ctx, "prob:" + prob.Id, prob.toMap()).Err()
 }
 
-func getPlayToken(conn *redis.Client, token string) string {
+func getPlayToken(conn *redis.Client, token string) (string, error) {
 	id, err := conn.Get(ctx, "playtoken:" + token).Result()
-	if err == nil { return id }
-	if err == redis.Nil { return "" }
-	panic(err)
+	if err == redis.Nil {
+		return "", nil
+	}
+	return id, err
 }
 
-func setPlayToken(conn *redis.Client, token string, teamid string) {
-	err := conn.Set(ctx, "playtoken:" + token, teamid, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setPlayToken(conn *redis.Client, token string, teamid string) error {
+	return conn.Set(ctx, "playtoken:" + token, teamid, time.Duration(0)).Err()
 }
 
-func getCorrToken(conn *redis.Client, token string) string {
+func getCorrToken(conn *redis.Client, token string) (string, error) {
 	id, err := conn.Get(ctx, "corrtoken:" + token).Result()
-	if err == nil { return id }
-	if err == redis.Nil { return "" }
-	panic(err)
+	if err == redis.Nil {
+		return "", nil
+	}
+	return id, err
 }
 
-func setCorrToken(conn *redis.Client, token string, teamid string) {
-	err := conn.Set(ctx, "corrtoken:" + token, teamid, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setCorrToken(conn *redis.Client, token string, teamid string) error {
+	return conn.Set(ctx, "corrtoken:" + token, teamid, time.Duration(0)).Err()
 }
 
 const (
@@ -185,16 +197,19 @@ const (
 	PriceSolve = "solve"
 )
 
-func getPrice(conn *redis.Client, ptype string, diff string) int {
+func getPrice(conn *redis.Client, ptype string, diff string) (int, error) {
 	res, err := conn.Get(ctx, "price:" + ptype + ":" + diff).Int()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return res, nil
 }
 
-func setPrice(conn *redis.Client, ptype string, diff string, price int) {
-	err := conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setPrice(conn *redis.Client, ptype string, diff string, price int) error {
+	return conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0)).Err()
 }
 
 const (
@@ -204,28 +219,25 @@ const (
 	OwnedSolved = "solved"
 )
 
-func getOwnedProbs(conn *redis.Client, teamid, otype, diff string) []string {
-	res, err := conn.SMembers(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff).Result()
-	if err != nil { panic(err) }
-
-	return res
+func getOwnedProbs(conn *redis.Client, teamid, otype, diff string) ([]string, error) {
+	return conn.SMembers(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff).Result()
 }
 
-func popOwnedProb(conn *redis.Client, teamid, otype, diff string) string {
+func popOwnedProb(conn *redis.Client, teamid, otype, diff string) (string, error) {
 	res, err := conn.SPop(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff).Result()
-	if err == nil { return res }
-	if err == redis.Nil { return "" }
-	panic(err)
+	if err == redis.Nil {
+		return "", nil
+	}
+	return res, err
 }
 
-func addOwnedProb(conn *redis.Client, teamid, otype, diff, probid string) {
+func addOwnedProb(conn *redis.Client, teamid, otype, diff, probid string) error {
 	_, err := conn.SAdd(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff, probid).Result()
-	if err != nil { panic(err) }
+	return err
 }
 
-func moveOwnedProb(conn *redis.Client, teamid, diff, probid, srcotype, dstotype string) {
-	err := conn.SMove(ctx, "oprobs:" + teamid + ":" + srcotype + ":" + diff, "oprobs:" + teamid + ":" + dstotype + ":" + diff, probid).Err()
-	if err != nil { panic(err) }
+func moveOwnedProb(conn *redis.Client, teamid, diff, probid, srcotype, dstotype string) error {
+	return conn.SMove(ctx, "oprobs:" + teamid + ":" + srcotype + ":" + diff, "oprobs:" + teamid + ":" + dstotype + ":" + diff, probid).Err()
 }
 
 type TLineAtom struct {
@@ -239,14 +251,17 @@ func (t TLineAtom) String() string {
 	return t.Mside + ":" + t.Mtype + ":" + t.Msg + ":" + strconv.Itoa(int(t.Time.UnixMilli()))
 }
 
-func (t *TLineAtom) fromString(s string) {
+func (t *TLineAtom) fromString(s string) error {
 	sparts := strings.SplitN(s, ":", 4)
 	t.Mside = sparts[0]
 	t.Mtype = sparts[1]
 	t.Msg = sparts[2]
 	mtime, err := strconv.Atoi(sparts[3])
-	if err != nil { panic(err) }
+	if err != nil {
+		return err
+	}
 	t.Time = time.UnixMilli(int64(mtime))
+	return nil
 }
 
 const (
@@ -264,137 +279,155 @@ const (
 	MTypeFocus = "window-focus"
 )
 
-func pushTLine(conn *redis.Client, teamid, probid string, tla TLineAtom) {
-	err := conn.RPush(ctx, "tline:" + teamid + ":" + probid, tla.String()).Err()
-	if err != nil { panic(err) }
+func pushTLine(conn *redis.Client, teamid, probid string, tla TLineAtom) error {
+	return conn.RPush(ctx, "tline:" + teamid + ":" + probid, tla.String()).Err()
 }
 
-func readTLine(conn *redis.Client, teamid, probid string) []TLineAtom {
+func readTLine(conn *redis.Client, teamid, probid string) ([]TLineAtom, error) {
 	sres, err := conn.LRange(ctx, "tline:" + teamid + ":" + probid, 0, -1).Result()
-	if err != nil { panic(err) }
+	if err != nil {
+		return nil, err
+	}
 
 	res := make([]TLineAtom, len(sres))
 
 	for i, s := range sres {
 		var tla TLineAtom
-		tla.fromString(s)
+		if err := tla.fromString(s); err != nil {
+			return nil, err
+		}
 		res[i] = tla
 	}
-	
-	return res
+
+	return res, nil
 }
 
 // Owned
-func getTState(conn *redis.Client, teamid, probid string) string {
+func getTState(conn *redis.Client, teamid, probid string) (string, error) {
 	res, err := conn.Get(ctx, "tstate:" + teamid + ":" + probid).Result()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }
 
-func setTState(conn *redis.Client, teamid, probid, state string) {
-	err := conn.Set(ctx, "tstate:" + teamid + ":" + probid, state, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setTState(conn *redis.Client, teamid, probid, state string) error {
+	return conn.Set(ctx, "tstate:" + teamid + ":" + probid, state, time.Duration(0)).Err()
 }
 
-func getTCorr(conn *redis.Client, teamid, probid string) string {
+func getTCorr(conn *redis.Client, teamid, probid string) (string, error) {
 	res, err := conn.Get(ctx, "tcorr:" + teamid + ":" + probid).Result()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }
 
-func setTCorr(conn *redis.Client, teamid, probid, corr string) {
-	err := conn.Set(ctx, "tcorr:" + teamid + ":" + probid, corr, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setTCorr(conn *redis.Client, teamid, probid, corr string) error {
+	return conn.Set(ctx, "tcorr:" + teamid + ":" + probid, corr, time.Duration(0)).Err()
 }
 
-func getRank(conn *redis.Client, teamid string) int {
+func getRank(conn *redis.Client, teamid string) (int, error) {
 	res, err := conn.Get(ctx, "rank:" + teamid).Int()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return res, nil
 }
 
-func setRank(conn *redis.Client, teamid string, rank int) {
-	err := conn.Set(ctx, "rank:" + teamid, rank, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setRank(conn *redis.Client, teamid string, rank int) error {
+	return conn.Set(ctx, "rank:" + teamid, rank, time.Duration(0)).Err()
 }
 
-func getProbDiffValidity(conn *redis.Client, probid string) string {
+func getProbDiffValidity(conn *redis.Client, probid string) (string, error) {
 	res, err := conn.HGet(ctx, "prob:" + probid, "diff").Result()
-	if err == nil { return res }
-	if err == redis.Nil { return "" }
-	panic(err)
+	if err == redis.Nil {
+		return "", nil
+	}
+	return res, err
 }
 
-func getProbAnswerValidity(conn *redis.Client, probid string) string {
+func getProbAnswerValidity(conn *redis.Client, probid string) (string, error) {
 	res, err := conn.HGet(ctx, "prob:" + probid, "answer").Result()
-	if err == nil { return res }
-	if err == redis.Nil { return "" }
-	panic(err)
+	if err == redis.Nil {
+		return "", nil
+	}
+	return res, err
 }
 
-func getTeamName(conn *redis.Client, teamid string) string {
+func getTeamName(conn *redis.Client, teamid string) (string, error) {
 	res, err := conn.Get(ctx, "teamname:" + teamid).Result()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return res, nil
 }
 
-func setTeamName(conn *redis.Client, teamid string, name string) {
-	err := conn.Set(ctx, "teamname:" + teamid, name, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setTeamName(conn *redis.Client, teamid string, name string) error {
+	return conn.Set(ctx, "teamname:" + teamid, name, time.Duration(0)).Err()
 }
 
-func getNumberRemProbs(conn *redis.Client, teamid string, diff string) int {
+func getNumberRemProbs(conn *redis.Client, teamid string, diff string) (int, error) {
 	res, err := conn.SCard(ctx, "oprobs:" + teamid + ":" + OwnedFree + ":" + diff).Result()
-	if err != nil { panic(err) }
-
-	return int(res)
+	return int(res), err
 }
 
-func setTeams(conn *redis.Client, teams []string) {
+func setTeams(conn *redis.Client, teams []string) error {
 	teamsany := []any{}
 	for _, team := range teams {
 		teamsany = append(teamsany, team)
 	}
-	err := conn.SAdd(ctx, "teams", teamsany...).Err()
-	if err != nil { panic(err) }
+	return conn.SAdd(ctx, "teams", teamsany...).Err()
 }
 
-func getTeams(conn *redis.Client) []string {
-	res, err := conn.SMembers(ctx, "teams").Result()
-	if err != nil { panic(err) }
-
-	return res
+func getTeams(conn *redis.Client) ([]string, error) {
+	return conn.SMembers(ctx, "teams").Result()
 }
 
-func setCorrAdmin(conn *redis.Client, adminid string, admin bool) {
-	err := conn.Set(ctx, "corradmin:" + adminid, admin, time.Duration(0)).Err()
-	if err != nil { panic(err) }
+func setCorrAdmin(conn *redis.Client, adminid string, admin bool) error {
+	return conn.Set(ctx, "corradmin:" + adminid, admin, time.Duration(0)).Err()
 }
 
-func getCorrAdmin(conn *redis.Client, adminid string) bool {
+func getCorrAdmin(conn *redis.Client, adminid string) (bool, error) {
 	res, err := conn.Get(ctx, "corradmin:" + adminid).Bool()
-	if err != nil { panic(err) }
-
-	return res
+	if err == redis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return res, nil
 }
 
-func addConstant(conn *redis.Client, varn string, value float64) {
-	err := conn.HSet(ctx, "constants", varn, value).Err()
-	if err != nil { panic(err) }
+func addConstant(conn *redis.Client, varn string, value float64) error {
+	return conn.HSet(ctx, "constants", varn, value).Err()
 }
 
-func getConstants(conn *redis.Client) map[string]float64 {
+func getConstants(conn *redis.Client) (map[string]float64, error) {
 	resr, err := conn.HGetAll(ctx, "constants").Result()
-	if err != nil { panic(err) }
+	if err != nil {
+		return nil, err
+	}
 	res := make(map[string]float64)
 	for k, v := range resr {
-		rv, _ := strconv.ParseFloat(v, 64)
+		rv, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return nil, err
+		}
 		res[k] = rv
 	}
 
-	return res
+	return res, nil
 }
