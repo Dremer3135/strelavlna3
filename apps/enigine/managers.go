@@ -64,6 +64,10 @@ const (
 	Results
 )
 
+const (
+	writeWait = 10 * time.Second
+)
+
 // type BoughtProbMsg struct {
 // 	Id string `json:"id"`
 // 	Diff string `json:"diff"`
@@ -240,7 +244,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
 			corr := getTCorr(conn, id, probid)
-			correctors[corr] <- Msg{SoldProb, id, self, probid}
+			if corr != "" {
+				correctors[corr] <- Msg{SoldProb, id, self, probid}
+			}
 
 			for _, pl := range players {
 				select {
@@ -279,7 +285,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}()
 
 				corr := getTCorr(conn, id, data.probid)
-				correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
+				if corr != "" {
+					correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
+				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
 			// 	correctors[corr] <- Msg{SolveProb, id, self, data}
@@ -303,7 +311,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}
 
 			corr := getTCorr(conn, id, data.probid)
-			correctors[corr] <- Msg{WriteMsg, id, self, data}
+			if corr != "" {
+				correctors[corr] <- Msg{WriteMsg, id, self, data}
+			}
 
 		case CorrGrade:
 			data, ok := msg.data.(GradeProbMsg)
@@ -321,7 +331,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					default:
 					}
 				}
-				correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
+				if corr != "" {
+					correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
+				}
 			}
 
 			// pushTLine(conn, data.team, data.prob, TLineAtom{MSideAdmin, MTypeGrade, data.decision, time.Now()})
@@ -334,7 +346,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.prob, data.team, MTypeGrade, data.decision, true, time.Now()}}
 			}()
 
-			correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
+			if corr != "" {
+				correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
+			}
 
 		case Start:
 			for _, pl := range players {
@@ -445,6 +459,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case UserError:
 			data, ok := msg.data.(string)
 			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
 				"name": "error",
 				"error": data,
@@ -455,6 +470,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		  data, ok := msg.data.(InitLoad)
 			fmt.Printf("%v %v\n", ok, data)
 			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "initload",
 				"data": data,
@@ -465,6 +481,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case Focus:
 		  data, ok := msg.data.(PlayerFocusMsg)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
 				"name": "focus",
 				"playerid": data.playerid,
@@ -479,6 +496,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			if data.admin {
 				rtype = "recieved"
 			}
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "written",
 				"probid": data.probid,
@@ -492,6 +510,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case BoughtProb:
 		  data, ok := msg.data.(BoughtProbMsg)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "bought",
 				"prob": data.prob,
@@ -503,6 +522,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case SoldProb:
 		  data, ok := msg.data.(IdMoneyMsg)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
 				"name": "sold",
 				"probid": data.id,
@@ -513,6 +533,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case SolvedProb:
 		  data, ok := msg.data.(IdMoneyMsg)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
 				"name": "solved",
 				"probid": data.id,
@@ -534,12 +555,14 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		// 	if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case Start:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "start",
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case End:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "end",
 			})
@@ -548,6 +571,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case Results:
 		  data, ok := msg.data.(TeamMoneyResult)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "results",
 				"money": data.money,
@@ -792,6 +816,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case UserError:
 			data, ok := msg.data.(string)
 			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{"name": "error", "error": data})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -803,6 +828,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case CorrectorInitLoaded:
 		  data, ok := msg.data.(CorrInitLoad)
 			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 		  err := ws.WriteJSON(map[string]any{
 				"name": "initload",
 				"data": data,
@@ -812,6 +838,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case Focus:
 			data, ok := msg.data.(string)
 			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{"name": "focus", "id": data})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -828,6 +855,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case CorrGraded:
 		  data, ok := msg.data.(TeamProbMsg)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
 				"name": "graded",
 				"probid": data.prob,
@@ -842,6 +870,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 			if data.admin {
 				rtype = "sent"
 			}
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "written",
 				"probid": data.probid,
@@ -870,6 +899,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case SoldProb:
 		  data, ok := msg.data.(string)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 		  err := ws.WriteJSON(map[string]string{
 				"name": "sold",
 				"teamid": msg.from,
@@ -880,6 +910,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case SolvedProb:
 		  data, ok := msg.data.(string)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 		  err := ws.WriteJSON(map[string]string{
 				"name": "solved",
 				"teamid": msg.from,
@@ -890,6 +921,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case BoughtProb:
 		  data, ok := msg.data.(CorrTicket)
 		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "bought",
 				"teamid": data.TeamId,
@@ -899,6 +931,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case Start:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 		  err := ws.WriteJSON(map[string]string{
 				"name": "start",
 			})
