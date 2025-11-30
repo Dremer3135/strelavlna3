@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"slices"
 	"time"
@@ -32,17 +33,34 @@ type InitLoad struct {
 	SolveCost map[string]int `json:"solvecost"`
 }
 
-func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
-	state := getState(conn)
+func initLoad(conn *redis.Client, teamid string, playerid string) (InitLoad, error) {
 	res := InitLoad{}
-	res.State = state
+	var err error
+	res.State, err = getState(conn)
+	if err != nil {
+		return res, err
+	}
 
 	res.TeamId = teamid
-	res.TeamName = getTeamName(conn, teamid)
+	res.TeamName, err = getTeamName(conn, teamid)
+	if err != nil {
+		return res, err
+	}
 	res.PlayerId = playerid
-	res.Money = getMoney(conn, teamid)
-	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
-	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
+	res.Money, err = getMoney(conn, teamid)
+	if err != nil {
+		return res, err
+	}
+	start, err := getStart(conn)
+	if err != nil {
+		return res, err
+	}
+	res.Start = int(start.Sub(time.Now()).Milliseconds())
+	end, err := getEnd(conn)
+	if err != nil {
+		return res, err
+	}
+	res.End = int(end.Sub(time.Now()).Milliseconds())
 
 	res.BuyCost = make(map[string]int)
 	res.SellCost = make(map[string]int)
@@ -50,13 +68,33 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 
 	res.RemProbs = map[string]int{}
 	for _, diff := range DIFFS {
-		res.RemProbs[diff] = getNumberRemProbs(conn, teamid, diff)
+		if diff == "A" {
+			res.RemProbs[diff] = -1
+			continue
+		}
+		rem, err := getNumberRemProbs(conn, teamid, diff)
+		if err != nil {
+			return res, err
+		}
+		res.RemProbs[diff] = rem
 	}
 
 	for _, diff := range DIFFS {
-		res.BuyCost[diff] = getPrice(conn, PriceBuy, diff)
-		res.SellCost[diff] = getPrice(conn, PriceSell, diff)
-		res.SolveCost[diff] = getPrice(conn, PriceSolve, diff)
+		buyCost, err := getPrice(conn, PriceBuy, diff)
+		if err != nil {
+			return res, err
+		}
+		res.BuyCost[diff] = buyCost
+		sellCost, err := getPrice(conn, PriceSell, diff)
+		if err != nil {
+			return res, err
+		}
+		res.SellCost[diff] = sellCost
+		solveCost, err := getPrice(conn, PriceSolve, diff)
+		if err != nil {
+			return res, err
+		}
+		res.SolveCost[diff] = solveCost
 	}
 
 	res.Bought = make([]Prob, 0)
@@ -65,145 +103,292 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 
 	res.TLines = make(map[string][]TLineAtom)
 
-  if state == StateBefore {
-		return res
+  if res.State == StateBefore {
+		return res, nil
 	}
 
 	tlines := map[string][]TLineAtom{}
 
 	bought := make([]Prob, 0)
 	for _, d := range DIFFS {
-		l := getOwnedProbs(conn, teamid, OwnedBought, d)
+		l, err := getOwnedProbs(conn, teamid, OwnedBought, d)
+		if err != nil {
+			return res, err
+		}
 		for _, i := range l {
-			p := getProb(conn, i)
-			p.Answer = "<dobrej pokus>"
+			p, err := getProb(conn, i)
+			if err != nil {
+				return res, err
+			}
+p.Answer = "<dobrej pokus>"
 			p.Code = "<dobrej pokus>"
 			bought = append(bought, p)
-			tlines[i] = readTLine(conn, teamid, i)
+			tl, err := readTLine(conn, teamid, i)
+			if err != nil {
+				return res, err
+			}
+			tlines[i] = tl
 		}
 	}
 	res.Bought = bought
 
 	solved := make([]Prob, 0)
 	for _, d := range DIFFS {
-		l := getOwnedProbs(conn, teamid, OwnedSolved, d)
+		l, err := getOwnedProbs(conn, teamid, OwnedSolved, d)
+		if err != nil {
+			return res, err
+		}
 		for _, i := range l {
-			p := getProb(conn, i)
+			p, err := getProb(conn, i)
+			if err != nil {
+				return res, err
+			}
 			p.Answer = ""
 			p.Code = ""
 			solved = append(solved, p)
-			tlines[i] = readTLine(conn, teamid, i)
+			tl, err := readTLine(conn, teamid, i)
+			if err != nil {
+				return res, err
+			}
+			tlines[i] = tl
 		}
 	}
 	res.Solved = solved
 
 	sold := make([]Prob, 0)
 	for _, d := range DIFFS {
-		l := getOwnedProbs(conn, teamid, OwnedSold, d)
+		l, err := getOwnedProbs(conn, teamid, OwnedSold, d)
+		if err != nil {
+			return res, err
+		}
 		for _, i := range l {
-			p := getProb(conn, i)
+			p, err := getProb(conn, i)
+			if err != nil {
+				return res, err
+			}
 			p.Answer = ""
 			p.Code = ""
 			sold = append(sold, p)
-			tlines[i] = readTLine(conn, teamid, i)
+			tl, err := readTLine(conn, teamid, i)
+			if err != nil {
+				return res, err
+			}
+			tlines[i] = tl
 		}
 	}
 	res.Sold = sold
 
 	res.TLines = tlines
 
-	if state == StateAfter {
-		res.Rank = getRank(conn, teamid)
+	if res.State == StateAfter {
+		rank, err := getRank(conn, teamid)
+		if err != nil {
+			return res, err
+		}
+		res.Rank = rank
 	}
 
-	return res
+	return res, nil
+}
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randSeq(n int) string {
+    b := make([]rune, n)
+    for i := range b {
+        b[i] = letters[rand.Intn(len(letters))]
+    }
+    return string(b)
 }
 
 func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money int, remprobs map[string]int, err error) {
-	money = getMoney(conn, teamid)
-	price := getPrice(conn, PriceBuy, diff)
+	money, err = getMoney(conn, teamid)
+	if err != nil {
+		return
+	}
+	price, err := getPrice(conn, PriceBuy, diff)
+	if err != nil {
+		return
+	}
 	if money < price {
 		err = errors.New("not enough money")
 		return
 	}
-	probid := popOwnedProb(conn, teamid, OwnedFree, diff)
+	probid, err := popOwnedProb(conn, teamid, OwnedFree, diff)
+	if err != nil {
+		return
+	}
 	if probid == "" {
 		err = errors.New("not available")
 		return
 	}
-	prob = getProb(conn, probid)
+
+	prob, err = getProb(conn, probid)
+	if err != nil {
+		return
+	}
 	if prob.Auto {
-		genProb(conn, &prob)
+		err = genProb(conn, &prob)
+		if err != nil {
+			return
+		}
 		if prob.Infinite {
-			addOwnedProb(conn, teamid, OwnedFree, diff, probid)
+			err = addOwnedProb(conn, teamid, OwnedFree, diff, probid)
+			if err != nil {
+				return
+			}
+		}
+		prob.Id = prob.Id + "/" + randSeq(7)
+		err = setProb(conn, prob)
+		if err != nil {
+			return
 		}
 	}
-	addOwnedProb(conn, teamid, OwnedBought, diff, probid)
+	err = addOwnedProb(conn, teamid, OwnedBought, diff, prob.Id)
+	if err != nil {
+		return
+	}
 	money -= price
-	setMoney(conn, teamid, money)
-	setTState(conn, teamid, probid, OwnedBought)
+	err = setMoney(conn, teamid, money)
+	if err != nil {
+		return
+	}
+	err = setTState(conn, teamid, prob.Id, OwnedBought)
+	if err != nil {
+		return
+	}
 	// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
 	remprobs = make(map[string]int)
-	for _, diff := range DIFFS {
-		remprobs[diff] = getNumberRemProbs(conn, teamid, diff)
+	for _, d := range DIFFS {
+		var rem int
+		rem, err = getNumberRemProbs(conn, teamid, d)
+		if err != nil {
+			return
+		}
+		remprobs[d] = rem
 	}
 	return
 }
 
 func sellProb(conn *redis.Client, teamid, probid string) (money int, err error) {
-	diff := getProbDiffValidity(conn, probid)
+	diff, err := getProbDiffValidity(conn, probid)
+	if err != nil {
+		return 0, err
+	}
 	if diff == "" {
 		return 0, errors.New("not valid prob")
 	}
-	bought := getOwnedProbs(conn, teamid, OwnedBought, diff)
+	bought, err := getOwnedProbs(conn, teamid, OwnedBought, diff)
+	if err != nil {
+		return 0, err
+	}
 	if !slices.Contains(bought, probid) {
 		return 0, errors.New("not bought")
 	}
-	moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSold)
-	reward := getPrice(conn, PriceSell, diff)
-	money = getMoney(conn, teamid)
+	err = moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSold)
+	if err != nil {
+		return 0, err
+	}
+	reward, err := getPrice(conn, PriceSell, diff)
+	if err != nil {
+		return 0, err
+	}
+	money, err = getMoney(conn, teamid)
+	if err != nil {
+		return 0, err
+	}
 	money += reward
-	setMoney(conn, teamid, money)
-	setTState(conn, teamid, probid, OwnedSold)
+	err = setMoney(conn, teamid, money)
+	if err != nil {
+		return 0, err
+	}
+	err = setTState(conn, teamid, probid, OwnedSold)
+	if err != nil {
+		return 0, err
+	}
 	// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeBought, "", time.Now()})
 	return
 }
 
 func solveProb(conn *redis.Client, teamid, probid string) (money int, err error) {
-	diff := getProbDiffValidity(conn, probid)
+	diff, err := getProbDiffValidity(conn, probid)
+	if err != nil {
+		return 0, err
+	}
 	if diff == "" {
 		return 0, errors.New("not valid prob")
 	}
-	bought := getOwnedProbs(conn, teamid, OwnedBought, diff)
+	bought, err := getOwnedProbs(conn, teamid, OwnedBought, diff)
+	if err != nil {
+		return 0, err
+	}
 	if !slices.Contains(bought, probid) {
 		return 0, errors.New("not bought")
 	}
-	moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSolved)
-	reward := getPrice(conn, PriceSolve, diff)
-	money = getMoney(conn, teamid)
+	err = moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSold)
+	if err != nil {
+		return 0, err
+	}
+	reward, err := getPrice(conn, PriceSolve, diff)
+	if err != nil {
+		return 0, err
+	}
+	money, err = getMoney(conn, teamid)
+	if err != nil {
+		return 0, err
+	}
 	money += reward
-	setMoney(conn, teamid, money)
-	setTState(conn, teamid, probid, OwnedSolved)
+	err = setMoney(conn, teamid, money)
+	if err != nil {
+		return 0, err
+	}
+	err = setTState(conn, teamid, probid, OwnedSolved)
+	if err != nil {
+		return 0, err
+	}
 	// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
 	return
 }
 
 func autoGrade(conn *redis.Client, teamid, probid, answer string) (bool, error) {
-	ans := getProbAnswerValidity(conn, probid)
+	ans, err := getProbAnswerValidity(conn, probid)
+	if err != nil {
+		return false, err
+	}
 	if ans == "" {
 		return false, errors.New("prob not valid")
 	}
-	diff := getProbDiffValidity(conn, probid)
-	bought := getOwnedProbs(conn, teamid, OwnedBought, diff)
+	diff, err := getProbDiffValidity(conn, probid)
+	if err != nil {
+		return false, err
+	}
+	bought, err := getOwnedProbs(conn, teamid, OwnedBought, diff)
+	if err != nil {
+		return false, err
+	}
 	if !slices.Contains(bought, probid) {
 		return false, errors.New("prob not bought")
 	}
 	if ans == answer {
-		moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSolved)
-		reward := getPrice(conn, PriceSolve, diff)
-		money := getMoney(conn, teamid)
-		setMoney(conn, teamid, money + reward)
-		setTState(conn, teamid, probid, OwnedSolved)
+		err = moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSolved)
+		if err != nil {
+			return false, err
+		}
+		reward, err := getPrice(conn, PriceSolve, diff)
+		if err != nil {
+			return false, err
+		}
+		money, err := getMoney(conn, teamid)
+		if err != nil {
+			return false, err
+		}
+		err = setMoney(conn, teamid, money+reward)
+		if err != nil {
+			return false, err
+		}
+		err = setTState(conn, teamid, probid, OwnedSolved)
+		if err != nil {
+			return false, err
+		}
 		// pushTLine(conn, teamid, probid, TLineAtom{MSidePlayer, MTypeSolved, "", time.Now()})
 		return true, nil
 	}
@@ -228,55 +413,105 @@ type CorrTicket struct {
 	Prob Prob `json:"prob"`
 }
 
-func corrInitLoad(conn *redis.Client, id string) CorrInitLoad {
-	tickets := getCorrTickets(conn, id)
+func corrInitLoad(conn *redis.Client, id string) (CorrInitLoad, error) {
 	res := CorrInitLoad{
 		BoughtTickets: make(map[string]CorrTicket),
 		SolvedTickets: make(map[string]CorrTicket),
 		SoldTickets: make(map[string]CorrTicket),
 	}
+	var err error
 
-	res.State = getState(conn)
-	res.Start = int(getStart(conn).Sub(time.Now()).Milliseconds())
-	res.End = int(getEnd(conn).Sub(time.Now()).Milliseconds())
+	tickets, err := getCorrTickets(conn, id)
+	if err != nil {
+		return res, err
+	}
+
+	res.State, err = getState(conn)
+	if err != nil {
+		return res, err
+	}
+	start, err := getStart(conn)
+	if err != nil {
+		return res, err
+	}
+	res.Start = int(start.Sub(time.Now()).Milliseconds())
+	end, err := getEnd(conn)
+	if err != nil {
+		return res, err
+	}
+	res.End = int(end.Sub(time.Now()).Milliseconds())
 	res.Id = id
 
-	res.Admin = getCorrAdmin(conn, id)
+	res.Admin, err = getCorrAdmin(conn, id)
+	if err != nil {
+		return res, err
+	}
 
 	res.TLines = make(map[string][]TLineAtom)
 	
 	for _, tickid := range tickets {
 		teamid, probid := parseTicketId(tickid)
-		tstate := getTState(conn, teamid, probid)
-		res.TLines[tickid] = readTLine(conn, teamid, probid)
+		tstate, err := getTState(conn, teamid, probid)
+		if err != nil {
+			return res, err
+		}
+		res.TLines[tickid], err = readTLine(conn, teamid, probid)
+		if err != nil {
+			return res, err
+		}
 		if tstate == OwnedBought {
+			teamName, err := getTeamName(conn, teamid)
+			if err != nil {
+				return res, err
+			}
+			prob, err := getProb(conn, probid)
+			if err != nil {
+				return res, err
+			}
 			res.BoughtTickets[tickid] = CorrTicket{
-				TeamId: teamid,
-				TeamName: getTeamName(conn, teamid),
-				Prob: getProb(conn, probid),
+				TeamId:   teamid,
+				TeamName: teamName,
+				Prob:     prob,
 			}
 		}
 		if tstate == OwnedSolved {
+			teamName, err := getTeamName(conn, teamid)
+			if err != nil {
+				return res, err
+			}
+			prob, err := getProb(conn, probid)
+			if err != nil {
+				return res, err
+			}
 			res.SolvedTickets[tickid] = CorrTicket{
-				TeamId: teamid,
-				TeamName: getTeamName(conn, teamid),
-				Prob: getProb(conn, probid),
+				TeamId:   teamid,
+				TeamName: teamName,
+				Prob:     prob,
 			}
 		}
 		if tstate == OwnedSold {
+			teamName, err := getTeamName(conn, teamid)
+			if err != nil {
+				return res, err
+			}
+			prob, err := getProb(conn, probid)
+			if err != nil {
+				return res, err
+			}
 			res.SoldTickets[tickid] = CorrTicket{
-				TeamId: teamid,
-				TeamName: getTeamName(conn, teamid),
-				Prob: getProb(conn, probid),
+				TeamId:   teamid,
+				TeamName: teamName,
+				Prob:     prob,
 			}
 		}
 	}
 
-	return res
+	return res, nil
 }
 
 func genProb(conn *redis.Client, prob *Prob) error {
-	constsMap := getConstants(conn)
+	constsMap, err := getConstants(conn)
+	if err != nil { return err }
 	jbody, err := json.Marshal(struct{
 		Code string `json:"code"`
 		Text string `json:"text"`
@@ -295,7 +530,10 @@ func genProb(conn *redis.Client, prob *Prob) error {
 	if err != nil {
 		return err
 	}
-	resp, err := http.DefaultClient.Post("http://localhost:8000/run", "application/json", bytes.NewBuffer(jbody))
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Post("http://localhost:8000/run", "application/json", bytes.NewBuffer(jbody))
 	if err != nil {
 		return err
 	}

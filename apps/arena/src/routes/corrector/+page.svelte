@@ -41,6 +41,7 @@
           runningState: data.data.state,
           rank: -1,
           isAdmin: data.data.admin,
+          results: undefined,
         });
 
         let nprobs: any = {};
@@ -159,6 +160,13 @@
         });
       } else if (data.name === "start") {
         currentState.update((e) => { return {...e, runningState: "running"}})
+      } else if (data.name === "results") {
+        let nresults = {};
+        for (let k of Object.keys(data.data)) {
+          let rec = data.data[k];
+          nresults[k] = {
+          }
+        }
       }
     });
 
