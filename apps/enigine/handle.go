@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"slices"
 	"time"
@@ -119,6 +120,16 @@ func initLoad(conn *redis.Client, teamid string, playerid string) InitLoad {
 	return res
 }
 
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randSeq(n int) string {
+    b := make([]rune, n)
+    for i := range b {
+        b[i] = letters[rand.Intn(len(letters))]
+    }
+    return string(b)
+}
+
 func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money int, remprobs map[string]int, err error) {
 	money = getMoney(conn, teamid)
 	price := getPrice(conn, PriceBuy, diff)
@@ -131,6 +142,7 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 		err = errors.New("not available")
 		return
 	}
+
 	prob = getProb(conn, probid)
 	if prob.Auto {
 		genProb(conn, &prob)
@@ -138,6 +150,8 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 			addOwnedProb(conn, teamid, OwnedFree, diff, probid)
 		}
 	}
+	prob.Id = prob.Id + "/" + randSeq(7)
+	setProb(conn, prob)
 	addOwnedProb(conn, teamid, OwnedBought, diff, probid)
 	money -= price
 	setMoney(conn, teamid, money)

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -145,6 +146,22 @@ type ResultsMsg struct {
 	rank int
 }
 
+var whiteSpaceRegex = regexp.MustCompile(`\\S+`)
+
+func checkAnswer(cans, tans string) bool {
+  cans = whiteSpaceRegex.ReplaceAllLiteralString(cans, "")
+  tans = whiteSpaceRegex.ReplaceAllLiteralString(tans, "")
+	cans = strings.ReplaceAll(cans, ",", ".")
+	tans = strings.ReplaceAll(tans, ",", ".")
+	cf, errc := strconv.ParseFloat(cans, 64)
+	tf, errt := strconv.ParseFloat(tans, 64)
+	if errc == nil && errt == nil {
+	  if tf > cf * 0.99 && tf < cf * 1.01 { return true }
+	}
+	if cans == tans { return true }
+  return false
+}
+
 func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	players := map[string]chan Msg{}
 	conn := NewRdbConn()
@@ -269,7 +286,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}()
 
 			prob := getProb(conn, data.probid)
-			if strings.TrimSpace(data.text) == strings.TrimSpace(prob.Answer) {
+			if checkAnswer(data.text, prob.Answer) {
 				money, err := solveProb(conn, id, data.probid)
 				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
