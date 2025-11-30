@@ -237,13 +237,13 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 				return
 			}
 		}
+		prob.Id = prob.Id + "/" + randSeq(7)
+		err = setProb(conn, prob)
+		if err != nil {
+			return
+		}
 	}
-	prob.Id = prob.Id + "/" + randSeq(7)
-	err = setProb(conn, prob)
-	if err != nil {
-		return
-	}
-	err = addOwnedProb(conn, teamid, OwnedBought, diff, probid)
+	err = addOwnedProb(conn, teamid, OwnedBought, diff, prob.Id)
 	if err != nil {
 		return
 	}
@@ -252,7 +252,7 @@ func buyProb(conn *redis.Client, teamid string, diff string) (prob Prob, money i
 	if err != nil {
 		return
 	}
-	err = setTState(conn, teamid, probid, OwnedBought)
+	err = setTState(conn, teamid, prob.Id, OwnedBought)
 	if err != nil {
 		return
 	}

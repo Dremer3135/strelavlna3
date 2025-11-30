@@ -20,6 +20,7 @@ export type CurrentState = {
     runningState: "before" | "running" | "after" | "results"
     rank: number,
     isAdmin?: boolean
+    results?: Record<string, ResultsAtom>,
 }
 
 export type MessageType = {
@@ -27,4 +28,10 @@ export type MessageType = {
     type: "message" | "answer" | "grade" | "window-focus" | "copy" | "paste",
     value: string,
     sentTime: Date
+}
+
+export type ResultsAtom = {
+  teamName: string,
+  rank: number,
+  money: number,
 }
