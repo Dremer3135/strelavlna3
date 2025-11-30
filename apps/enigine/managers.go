@@ -665,7 +665,7 @@ func adminManager(self chan Msg) {
 				if adminid == "" { continue }
 				corr := correctors[adminid]
 				corr <- Msg{BoughtProb, "", self, CorrTicket{teamid, getTeamName(conn, teamid), prob}}
-				setTCorr(conn, msg.from, prob.Id, adminid)
+				setTCorr(conn, teamid, prob.Id, adminid)
 				addCorrTicket(conn, adminid, teamid, probid)
 			}
 			clearCorrTickets(conn, msg.from)
