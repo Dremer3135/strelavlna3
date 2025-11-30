@@ -79,9 +79,10 @@
 
         .name {
             font-family: 'Lexend';
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 600;
             color: color-mix(in srgb, var(--color-purple) 30%, black 70%);
+            margin: 0px;
             // color: black
         }
 
@@ -94,9 +95,10 @@
             
             .diff {
                 font-family: 'Lexend';
-                font-size: 22px;
+                font-size: 18px;
                 font-weight: 500;
                 transform: translateY(-1px);   
+                margin: 0px;
             }
 
             .focus-indicator {
