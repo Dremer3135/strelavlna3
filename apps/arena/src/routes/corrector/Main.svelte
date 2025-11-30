@@ -40,7 +40,7 @@
 				/>
 			{/each}
 			<div class="separator"></div>
-			{#each Object.values($probs).filter((prob) => hasProbChat(prob) && !isProbUngraded(prob)) && isProbSolved(prob)) as prob}  <!--  Chat started  -->
+			{#each Object.values($probs).filter((prob) => hasProbChat(prob) && !isProbUngraded(prob) && isProbSolved(prob)) as prob}  <!--  Chat started  -->
 				<ProbSelectCorrector
 					prob={prob}
 					onSelect={() => {
