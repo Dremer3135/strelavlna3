@@ -270,6 +270,13 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					default:
 					}
 				}
+
+				go func(){
+					self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeGrade, DecisionCorrect, true, time.Now()}}
+				}()
+
+				corr := getTCorr(conn, id, data.probid)
+				correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
 			// 	correctors[corr] <- Msg{SolveProb, id, self, data}

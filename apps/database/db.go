@@ -226,15 +226,15 @@ type TLineAtom struct {
 }
 
 func (t TLineAtom) String() string {
-	return t.Mside + ":" + t.Mtype + ":" + t.Msg + ":" + strconv.Itoa(int(t.Time.UnixMilli()))
+	return t.Mside + ":" + t.Mtype + ":" + strconv.Itoa(int(t.Time.UnixMilli())) + ":" + t.Msg
 }
 
 func (t *TLineAtom) fromString(s string) {
 	sparts := strings.SplitN(s, ":", 4)
 	t.Mside = sparts[0]
 	t.Mtype = sparts[1]
-	t.Msg = sparts[2]
-	mtime, err := strconv.Atoi(sparts[3])
+	t.Msg = sparts[3]
+	mtime, err := strconv.Atoi(sparts[2])
 	if err != nil { panic(err) }
 	t.Time = time.UnixMilli(int64(mtime))
 }
@@ -357,23 +357,6 @@ func setCorrAdmin(conn *redis.Client, adminid string, admin bool) {
 func getCorrAdmin(conn *redis.Client, adminid string) bool {
 	res, err := conn.Get(ctx, "corradmin:" + adminid).Bool()
 	if err != nil { panic(err) }
-
-	return res
-}
-
-func addConstant(conn *redis.Client, varn string, value float64) {
-	err := conn.HSet(ctx, "constants", varn, value).Err()
-	if err != nil { panic(err) }
-}
-
-func getConstants(conn *redis.Client) map[string]float64 {
-	resr, err := conn.HGetAll(ctx, "constants").Result()
-	if err != nil { panic(err) }
-	res := make(map[string]float64)
-	for k, v := range resr {
-		rv, _ := strconv.ParseFloat(v, 64)
-		res[k] = rv
-	}
 
 	return res
 }
