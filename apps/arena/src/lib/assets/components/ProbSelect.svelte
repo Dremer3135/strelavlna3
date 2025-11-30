@@ -1,7 +1,7 @@
 <script lang="ts">
     import { currentState } from "$lib/stores/state";
     import type { Prob } from "$lib/types";
-    import { isProbSolved } from "$lib/utils";
+    import { isProbSolved, isProbUngraded } from "$lib/utils";
 
     let { prob, onSelect }: { prob: Prob, onSelect?: () => void } = $props();
 
@@ -12,7 +12,7 @@
     }
 </script>
 
-<button class:selected={prob.focusedBy.includes($currentState.myId)} on:click={handleClick} class:solved={isProbSolved(prob)}>
+<button class:selected={prob.focusedBy.includes($currentState.myId)} on:click={handleClick} class:solved={isProbSolved(prob)} class:waiting={isProbUngraded(prob)}>
     <h2 class="name">{prob.name}</h2>
     <div class="right">
         <h2 class="diff">[{prob.diff}]</h2>
@@ -22,6 +22,12 @@
 
 <style lang="scss">
     button {
+        --theme-color: var(--color-purple);
+
+        &.waiting {
+            --theme-color: var(--color-orange);
+        }
+
         all: unset;
         cursor: pointer;
         display: flex;
@@ -30,14 +36,14 @@
         justify-content: space-between;
         padding: 10px 20px;
         padding-right: 13px;
-        border: 3px var(--color-purple) solid;
+        border: 3px var(--theme-color) solid;
         border-radius: 5px;
         width: 100%;
         box-sizing: border-box;
-        background-color: color-mix(in srgb, var(--color-purple) 5%, transparent 95%);
+        background-color: color-mix(in srgb, var(--theme-color) 5%, transparent 95%);
 
         &.selected {
-            background-color: var(--color-purple);
+            background-color: var(--theme-color);
             color: white;
         }
 
@@ -81,7 +87,7 @@
             font-family: 'Lexend';
             font-size: 22px;
             font-weight: 700;
-            color: color-mix(in srgb, var(--color-purple) 30%, black 70%);
+            color: color-mix(in srgb, var(--theme-color) 30%, black 70%);
             // color: black
         }
 
@@ -103,7 +109,7 @@
                 width: 15px;
                 height: 15px;
                 border-radius: 3px;
-                background-color: var(--color-purple);
+                background-color: var(--theme-color);
 
                 opacity: 0;
 
