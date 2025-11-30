@@ -543,6 +543,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case WsError:
 			data, ok := msg.data.(error)
 			if !ok { break }
+			fmt.Printf("WSERROR: %v\n", data)
 			ws.Close()
 			team <- Msg{PlayerLeft, id, self, data}
 			break chanloop
@@ -978,6 +979,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		case WsError:
 			data, ok := msg.data.(error)
 			if !ok { break }
+			fmt.Printf("WSERROR: %v\n", data)
 			ws.Close()
 			admins <- Msg{CorrectorLeft, id, self, data}
 			break chanloop
