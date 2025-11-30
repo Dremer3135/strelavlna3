@@ -209,7 +209,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					break
 				}
 			} 
-			if adminid == "" { break }
+			if adminid == "" {
+				msg.callback <- Msg{UserError, id, self, "no corrector"}
+				break
+			}
 			corr := correctors[adminid]
 			corr <- Msg{BoughtProb, "", self, CorrTicket{id, tname, prob}}
 
@@ -538,7 +541,7 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 
 		case End:
 			err := ws.WriteJSON(map[string]any{
-				"name": "start",
+				"name": "end",
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
@@ -635,7 +638,7 @@ func adminManager(self chan Msg) {
 						break
 					}
 				} 
-				if adminid == "" { break }
+				if adminid == "" { continue }
 				corr := correctors[adminid]
 				corr <- Msg{BoughtProb, "", self, CorrTicket{teamid, getTeamName(conn, teamid), prob}}
 				setTCorr(conn, msg.from, prob.Id, adminid)
