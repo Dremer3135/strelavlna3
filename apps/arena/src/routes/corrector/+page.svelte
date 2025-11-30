@@ -115,7 +115,7 @@
           currentProbs[data.id].focusedBy.push($currentState.myId);  // add focus to specific prob
           return currentProbs;
         });
-      } else if (data.name === "written") {
+      } else if (data.name === "written") { 
         probs.update((e) => {
           Object.keys(e).forEach((k) => {
             if (k === data.teamid + ":" + data.probid) {
@@ -201,6 +201,10 @@
   function handleResults() {
     socket.send(JSON.stringify({"name": "results"}));
   }
+
+  $effect(() => {
+    console.log("lalalala:O", Object.values($probs));
+  });
 </script>
 
 
