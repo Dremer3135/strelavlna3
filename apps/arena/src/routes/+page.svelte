@@ -7,6 +7,7 @@
   import Waitroom from './Waitroom.svelte';
     import Disconnected from '$lib/assets/components/Disconnected.svelte';
     import Navbar from '$lib/assets/components/Navbar.svelte';
+    import Paused from '$lib/assets/components/Paused.svelte';
 
   let { data } = $props();
 
@@ -211,6 +212,7 @@
 {/if}
 <main>
   {#if $wsConnected}
+    <Paused isPaused={true} />
     {#if $currentState.runningState === "before"}
       <Waitroom />
     {:else if $currentState.runningState === "running"}

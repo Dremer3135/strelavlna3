@@ -31,6 +31,7 @@
     </a>
     
     <a href="/home/about_us" class="nav-element nav2">O nás</a>
+    <a href="/constants" target="_blank" class="nav-element nav2">Tabulky konstant</a>
     <a href="/home/current-season" class="nav-element nav3">Aktuální ročník</a>
     <a href="/home/archive" class="nav-element nav4">Archiv</a>
     <a href="/home/rules" class="nav-element nav5">Pravidla</a>
