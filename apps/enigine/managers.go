@@ -170,7 +170,8 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	correctors := map[string]chan Msg{}
 	for {
 		fmt.Printf("TEAM %s\n", tname)
-		msg, ok := <- self
+		select {
+		case msg, ok := <- self:
 		fmt.Printf("team: %#v\n", msg)
 		if !ok {
 			admins <- Msg{TeamChanError, id, self, ok}
@@ -496,6 +497,8 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
+		}
+		default:
 		}
 	}
 }
