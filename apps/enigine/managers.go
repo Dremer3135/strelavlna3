@@ -748,14 +748,14 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 		case Pause:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "pause",
+				"name": "paused",
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case Resume:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "resume",
+				"name": "resumed",
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
