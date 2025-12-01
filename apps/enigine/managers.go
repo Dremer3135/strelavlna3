@@ -172,9 +172,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	conn := NewRdbConn()
 	correctors := map[string]chan Msg{}
 	for {
-		fmt.Printf("TEAM %s\n", tname)
-		select {
-		case msg, ok := <- self:
+		msg, ok := <- self
 		fmt.Printf("team: %#v\n", msg)
 		if !ok {
 			admins <- Msg{TeamChanError, id, self, ok}
@@ -512,8 +510,6 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
-		}
-		default:
 		}
 	}
 }
