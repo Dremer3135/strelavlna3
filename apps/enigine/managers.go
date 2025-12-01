@@ -63,6 +63,11 @@ const (
 	Start
 	End
 	Results
+	Pause
+	Resume
+
+	GhostTick
+	RecoverGhost
 )
 
 const (
@@ -280,13 +285,15 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			money, err := sellProb(conn, id, probid)
 			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
-			corr, err := getTCorr(conn, id, probid)
+			corrid, err := getTCorr(conn, id, probid)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if corr != "" {
-				correctors[corr] <- Msg{SoldProb, id, self, probid}
+			if corrid != "" {
+				corr, ok := correctors[corrid]
+				if !ok { corr = correctors["ghost"] }
+				corr <- Msg{SoldProb, id, self, probid}
 			}
 
 			for _, pl := range players {
@@ -345,16 +352,20 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 						}
 				}()
 
-				corr, err := getTCorr(conn, id, data.probid)
+				corrid, err := getTCorr(conn, id, data.probid)
 				if err != nil {
 					msg.callback <- Msg{ServerError, id, self, "db error"}
 					break
 				}
-				if corr != "" {
-					correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
+				if corrid != "" {
+					corr, ok := correctors[corrid]
+					if !ok { corr = correctors["ghost"] }
+					corr <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
 				}
-				if corr != "" {
-					correctors[corr] <- Msg{SolvedProb, id, self, data.probid}
+				if corrid != "" {
+					corr, ok := correctors[corrid]
+					if !ok { corr = correctors["ghost"] }
+					corr <- Msg{SolvedProb, id, self, data.probid}
 				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
@@ -381,20 +392,22 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
-			corr, err := getTCorr(conn, id, data.probid)
+			corrid, err := getTCorr(conn, id, data.probid)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if corr != "" {
-				correctors[corr] <- Msg{WriteMsg, id, self, data}
+			if corrid != "" {
+				corr, ok := correctors[corrid]
+				if !ok { corr = correctors["ghost"] }
+				corr <- Msg{WriteMsg, id, self, data}
 			}
 
 		case CorrGrade:
 			data, ok := msg.data.(GradeProbMsg)
 		  if !ok { break }
 
-			corr, err := getTCorr(conn, id, data.prob)
+			corrid, err := getTCorr(conn, id, data.prob)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
@@ -410,8 +423,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					default:
 					}
 				}
-				if corr != "" {
-					correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
+				if corrid != "" {
+					corr, ok := correctors[corrid]
+					if !ok { corr = correctors["ghost"] }
+					corr <- Msg{SolvedProb, id, self, data.prob}
 				}
 			}
 
@@ -437,8 +452,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}()
 
-			if corr != "" {
-				correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
+			if corrid != "" {
+				corr, ok := correctors[corrid]
+				if !ok { corr = correctors["ghost"] }
+				corr <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
 			}
 
 		case Start:
@@ -453,6 +470,22 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			for _, pl := range players {
 				select {
 				case pl <- Msg{End, id, self, nil}:
+				default:
+				}
+			}
+
+		case Pause:
+			for _, pl := range players {
+				select {
+				case pl <- Msg{Pause, id, self, nil}:
+				default:
+				}
+			}
+
+		case Resume:
+			for _, pl := range players {
+				select {
+				case pl <- Msg{Resume, id, self, nil}:
 				default:
 				}
 			}
@@ -670,6 +703,20 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
+		case Pause:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name": "pause",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case Resume:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name": "resume",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
 		case Results:
 		  data, ok := msg.data.(TeamMoneyResult)
 		  if !ok { break }
@@ -704,7 +751,10 @@ func adminManager(self chan Msg) {
 	teams := map[string]chan Msg{}
 	correctors := map[string]chan Msg{}
 	conn := NewRdbConn()
+	gchan := make(chan Msg, 1000)
+	correctors["ghost"] = gchan
 	for {
+		fmt.Printf("ADMIN\n")
 		msg := <- self
 		fmt.Printf("admin: %#v\n", msg)
 		switch msg.tp {
@@ -726,6 +776,13 @@ func adminManager(self chan Msg) {
 				default:
 				}
 			}
+			tchan <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{"ghost", gchan}}
+		  for id, corr := range correctors {
+				select {
+				case tchan <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{id, corr}}:
+				default:
+				}
+			}
 
 		case TeamChanError:
 			tchan := make(chan Msg, 1000)
@@ -741,8 +798,53 @@ func adminManager(self chan Msg) {
 			data, ok := msg.data.(CorrectorJoinedReqMsg)
 		  if !ok { break }
 			cchan := make(chan Msg, 1000)
-		  go correctorManager(data.Conn, cchan, self, data.Id, teams)
+		  go correctorManager(data.Conn, cchan, self, data.Id)
 		  correctors[data.Id] = cchan
+		  for id, ch := range teams {
+				cchan <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, ch}}
+			}
+	    // gchan <- Msg{RecoverGhost, "", self, cchan}
+			tickets, err := getCorrTickets(conn, "ghost")
+			if err != nil {
+				fmt.Printf("admin error: %v\n", err)
+				continue
+			}
+		  for _, t := range tickets {
+				teamid, probid := parseTicketId(t)
+				tstate, err := getTState(conn, teamid, probid)
+				if err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+				if tstate != OwnedBought { continue }
+				prob, err := getProb(conn, probid)
+				if err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+				adminid := ""
+				for _, a := range prob.Queue {
+					_, ok := correctors[a]
+					if ok {
+						adminid = a
+						break
+					}
+				} 
+				if adminid == "" {
+					adminid = "ghost"
+				}
+				if err := setTCorr(conn, teamid, prob.Id, adminid); err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+				if err := addCorrTicket(conn, adminid, teamid, probid); err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+			}
+			if err := clearCorrTickets(conn, "ghost"); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+			}
 			iload, err := corrInitLoad(conn, data.Id)
 			if err != nil {
 				cchan <- Msg{ServerError, "", self, "could not load initial data"}
@@ -792,7 +894,9 @@ func adminManager(self chan Msg) {
 						break
 					}
 				} 
-				if adminid == "" { continue }
+				if adminid == "" {
+					adminid = "ghost"
+				}
 				corr := correctors[adminid]
 				tname, err := getTeamName(conn, teamid)
 				if err != nil {
@@ -855,9 +959,45 @@ func adminManager(self chan Msg) {
 				default:
 				}
 			}
+		
+		case Pause:
+		  if err := setState(conn, StatePaused); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+				continue
+			}
+		  for _, team := range teams {
+				select {
+				case team <- Msg{Pause, "", self, nil}:
+				default:
+				}
+			}
+		  for _, corr := range correctors {
+				select {
+				case corr <- Msg{Pause, "", self, nil}:
+				default:
+				}
+			}
+
+		case Resume:
+		  if err := setState(conn, StateRunning); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+				continue
+			}
+		  for _, team := range teams {
+				select {
+				case team <- Msg{Resume, "", self, nil}:
+				default:
+				}
+			}
+		  for _, corr := range correctors {
+				select {
+				case corr <- Msg{Resume, "", self, nil}:
+				default:
+				}
+			}
 
 		case Results:
-		setState(conn, StateResults)
+			setState(conn, StateResults)
 			moneys := make(map[int][]string)
 			for id := range teams {
 				money, err := getMoney(conn, id)
@@ -920,7 +1060,8 @@ type ManyTeamMoneyResult struct {
 	money int
 }
 
-func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id string, teams map[string]chan Msg) {
+func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id string) {
+	teams := make(map[string]chan Msg)
 	go func() {
 		for {
 			var msg map[string]string
@@ -964,10 +1105,17 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 			case "results":
 			  admins <- Msg{Results, id, self, nil}
 
+			case "pause":
+			  admins <- Msg{Pause, id, self, nil}
+
+			case "resume":
+			  admins <- Msg{Resume, id, self, nil}
+
 			}
 		}
 	}()
 	chanloop: for {
+		fmt.Printf("CORRECTOR\n")
 		msg, ok := <- self
 		fmt.Printf("corr: %#v\n", msg)
 		if !ok {

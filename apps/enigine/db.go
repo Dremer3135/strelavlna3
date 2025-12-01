@@ -18,6 +18,7 @@ const (
 	StateRunning = "running"
 	StateAfter = "after"
 	StateResults = "results"
+	StatePaused = "paused"
 
 	DecisionCorrect = "correct"
 	DecisionIncorrect = "incorrect"

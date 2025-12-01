@@ -213,6 +213,12 @@
   function handleResults() {
     socket.send(JSON.stringify({"name": "results"}));
   }
+  function handlePause() {
+    socket.send(JSON.stringify({"name": "pause"}));
+  }
+  function handleResume() {
+    socket.send(JSON.stringify({"name": "resume"}));
+  }
 
   $effect(() => {
     console.log("lalalala:O", Object.values($probs));
@@ -221,7 +227,7 @@
 
 
 {#if $wsConnected}
-  <Navbar start={handleStart} end={handleEnd} results={handleResults}/>
+  <Navbar start={handleStart} end={handleEnd} results={handleResults} pause={handlePause} resume={handleResume}/>
 {/if}
 <main>
   {#if $wsConnected}

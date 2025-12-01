@@ -17,7 +17,7 @@ export type CurrentState = {
     procesSolve: number[],
     start: Date | undefined,
     end: Date | undefined,
-    runningState: "before" | "running" | "after" | "results"
+    runningState: "before" | "running" | "after" | "results" | "paused"
     rank: number,
     isAdmin?: boolean
     results?: Record<string, ResultsAtom>,

@@ -5,9 +5,9 @@
   import { currentState, wsConnected } from '$lib/stores/state';
   import type { MessageType, CurrentState } from '$lib/types';
   import Waitroom from './Waitroom.svelte';
-    import Disconnected from '$lib/assets/components/Disconnected.svelte';
-    import Navbar from '$lib/assets/components/Navbar.svelte';
-    import Paused from '$lib/assets/components/Paused.svelte';
+  import Disconnected from '$lib/assets/components/Disconnected.svelte';
+  import Navbar from '$lib/assets/components/Navbar.svelte';
+  import Paused from '$lib/assets/components/Paused.svelte';
 
   let { data } = $props();
 
@@ -158,7 +158,13 @@
         currentState.update((e) => { return {...e, runningState: "after"}})
       } else if (data.name === "results") {
         currentState.update((e) => { return {...e, runningState: "results", money: data.money, rank: data.rank}})
+      } else if (data.name === "paused") {
+        currentState.update((e) => { return {...e, runningState: "paused"}})
+      } else if (data.name === "resumed") {
+        currentState.update((e) => { return {...e, runningState: "running"}})
       }
+
+
       // console.log(data);
       // console.log($probs);
       // console.log($currentState);
@@ -212,14 +218,13 @@
 {/if}
 <main>
   {#if $wsConnected}
-    <Paused isPaused={true} />
     {#if $currentState.runningState === "before"}
       <Waitroom />
     {:else if $currentState.runningState === "running"}
       <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
     {:else if $currentState.runningState === "after"}
       <h1>Čekáme na výsledky...</h1>
-    {:else}
+    {:else if $currentState.runningState === "results"}
       <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
       <h2>Pokud jste v top 15, {$currentState.rank > 15 ? "což nejste, " : ""}očekávejte email o informacích o prezenčním kole</h2> 
       <h2>Úlohy připravila třída 7.M</h2>
@@ -233,6 +238,8 @@
       <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
       <!-- <Waitroom /> -->
       <!-- <h1>Soutěž skončila. Děkujeme za účast!</h1> -->
+    {:else}
+      <Paused isPaused={true} />
     {/if}
   {:else}
     <Disconnected/>
