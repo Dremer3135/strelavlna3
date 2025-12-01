@@ -747,29 +747,11 @@ type CorrectorJoinedMsg struct{
 	Chan chan Msg
 }
 
-func ghostManager(self chan Msg) {
-	buf := make([]Msg, 0, 100)
-	for {
-		msg := <- self
-		if msg.tp == RecoverGhost {
-			c, ok := msg.data.(chan Msg)
-			if !ok { continue }
-			for _, m := range buf {
-				c <- m
-			}
-			buf = buf[0:0]
-			continue
-		}
-		buf = append(buf, msg)
-	}
-}
-
 func adminManager(self chan Msg) {
 	teams := map[string]chan Msg{}
 	correctors := map[string]chan Msg{}
 	conn := NewRdbConn()
 	gchan := make(chan Msg, 1000)
-	go ghostManager(gchan)
 	correctors["ghost"] = gchan
 	for {
 		fmt.Printf("ADMIN\n")
