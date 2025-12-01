@@ -215,9 +215,11 @@
   }
   function handlePause() {
     socket.send(JSON.stringify({"name": "pause"}));
+    console.log("pause");
   }
   function handleResume() {
     socket.send(JSON.stringify({"name": "resume"}));
+    console.log("resume");
   }
 
   $effect(() => {
