@@ -63,6 +63,8 @@ const (
 	Start
 	End
 	Results
+	Pause
+	Resume
 )
 
 const (
@@ -457,6 +459,22 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
+		case Pause:
+			for _, pl := range players {
+				select {
+				case pl <- Msg{Pause, id, self, nil}:
+				default:
+				}
+			}
+
+		case Resume:
+			for _, pl := range players {
+				select {
+				case pl <- Msg{Resume, id, self, nil}:
+				default:
+				}
+			}
+
 		case Results:
 			data, ok := msg.data.(TeamMoneyResult)
 		  if !ok { break }
@@ -670,6 +688,20 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
+		case Pause:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name": "pause",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case Resume:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name": "resume",
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
 		case Results:
 		  data, ok := msg.data.(TeamMoneyResult)
 		  if !ok { break }
@@ -855,9 +887,45 @@ func adminManager(self chan Msg) {
 				default:
 				}
 			}
+		
+		case Pause:
+		  if err := setState(conn, StatePaused); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+				continue
+			}
+		  for _, team := range teams {
+				select {
+				case team <- Msg{Pause, "", self, nil}:
+				default:
+				}
+			}
+		  for _, corr := range correctors {
+				select {
+				case corr <- Msg{Pause, "", self, nil}:
+				default:
+				}
+			}
+
+		case Resume:
+		  if err := setState(conn, StateRunning); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+				continue
+			}
+		  for _, team := range teams {
+				select {
+				case team <- Msg{Resume, "", self, nil}:
+				default:
+				}
+			}
+		  for _, corr := range correctors {
+				select {
+				case corr <- Msg{Resume, "", self, nil}:
+				default:
+				}
+			}
 
 		case Results:
-		setState(conn, StateResults)
+			setState(conn, StateResults)
 			moneys := make(map[int][]string)
 			for id := range teams {
 				money, err := getMoney(conn, id)
@@ -963,6 +1031,12 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 
 			case "results":
 			  admins <- Msg{Results, id, self, nil}
+
+			case "pause":
+			  admins <- Msg{Pause, id, self, nil}
+
+			case "resume":
+			  admins <- Msg{Resume, id, self, nil}
 
 			}
 		}
