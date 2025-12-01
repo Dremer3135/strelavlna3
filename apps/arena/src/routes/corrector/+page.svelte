@@ -213,6 +213,12 @@
   function handleResults() {
     socket.send(JSON.stringify({"name": "results"}));
   }
+  function handlePause() {
+    socket.send(JSON.stringify({"name": "pause"}));
+  }
+  function handleResume() {
+    socket.send(JSON.stringify({"name": "resume"}));
+  }
 
   $effect(() => {
     console.log("lalalala:O", Object.values($probs));

@@ -169,6 +169,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	conn := NewRdbConn()
 	correctors := map[string]chan Msg{}
 	for {
+		fmt.Printf("TEAM %s\n", tname)
 		msg, ok := <- self
 		fmt.Printf("team: %#v\n", msg)
 		if !ok {
@@ -737,6 +738,7 @@ func adminManager(self chan Msg) {
 	correctors := map[string]chan Msg{}
 	conn := NewRdbConn()
 	for {
+		fmt.Printf("ADMIN\n")
 		msg := <- self
 		fmt.Printf("admin: %#v\n", msg)
 		switch msg.tp {
@@ -1042,6 +1044,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		}
 	}()
 	chanloop: for {
+		fmt.Printf("CORRECTOR\n")
 		msg, ok := <- self
 		fmt.Printf("corr: %#v\n", msg)
 		if !ok {
