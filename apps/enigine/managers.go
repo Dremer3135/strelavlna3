@@ -65,6 +65,9 @@ const (
 	Results
 	Pause
 	Resume
+
+	GhostTick
+	RecoverGhost
 )
 
 const (
@@ -284,13 +287,15 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			money, err := sellProb(conn, id, probid)
 			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
 
-			corr, err := getTCorr(conn, id, probid)
+			corrid, err := getTCorr(conn, id, probid)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if corr != "" {
-				correctors[corr] <- Msg{SoldProb, id, self, probid}
+			if corrid != "" {
+				corr, ok := correctors[corrid]
+				if !ok { corr = correctors["ghost"] }
+				corr <- Msg{SoldProb, id, self, probid}
 			}
 
 			for _, pl := range players {
@@ -349,16 +354,20 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 						}
 				}()
 
-				corr, err := getTCorr(conn, id, data.probid)
+				corrid, err := getTCorr(conn, id, data.probid)
 				if err != nil {
 					msg.callback <- Msg{ServerError, id, self, "db error"}
 					break
 				}
-				if corr != "" {
-					correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
+				if corrid != "" {
+					corr, ok := correctors[corrid]
+					if !ok { corr = correctors["ghost"] }
+					corr <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
 				}
-				if corr != "" {
-					correctors[corr] <- Msg{SolvedProb, id, self, data.probid}
+				if corrid != "" {
+					corr, ok := correctors[corrid]
+					if !ok { corr = correctors["ghost"] }
+					corr <- Msg{SolvedProb, id, self, data.probid}
 				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
@@ -385,20 +394,22 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
-			corr, err := getTCorr(conn, id, data.probid)
+			corrid, err := getTCorr(conn, id, data.probid)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if corr != "" {
-				correctors[corr] <- Msg{WriteMsg, id, self, data}
+			if corrid != "" {
+				corr, ok := correctors[corrid]
+				if !ok { corr = correctors["ghost"] }
+				corr <- Msg{WriteMsg, id, self, data}
 			}
 
 		case CorrGrade:
 			data, ok := msg.data.(GradeProbMsg)
 		  if !ok { break }
 
-			corr, err := getTCorr(conn, id, data.prob)
+			corrid, err := getTCorr(conn, id, data.prob)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
@@ -414,8 +425,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					default:
 					}
 				}
-				if corr != "" {
-					correctors[corr] <- Msg{SolvedProb, id, self, data.prob}
+				if corrid != "" {
+					corr, ok := correctors[corrid]
+					if !ok { corr = correctors["ghost"] }
+					corr <- Msg{SolvedProb, id, self, data.prob}
 				}
 			}
 
@@ -441,8 +454,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}()
 
-			if corr != "" {
-				correctors[corr] <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
+			if corrid != "" {
+				corr, ok := correctors[corrid]
+				if !ok { corr = correctors["ghost"] }
+				corr <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
 			}
 
 		case Start:
@@ -736,10 +751,30 @@ type CorrectorJoinedMsg struct{
 	Chan chan Msg
 }
 
+func ghostManager(self chan Msg) {
+	buf := make([]Msg, 0, 100)
+	for {
+		msg := <- self
+		if msg.tp == RecoverGhost {
+			c, ok := msg.data.(chan Msg)
+			if !ok { continue }
+			for _, m := range buf {
+				c <- m
+			}
+			buf = buf[0:0]
+			continue
+		}
+		buf = append(buf, msg)
+	}
+}
+
 func adminManager(self chan Msg) {
 	teams := map[string]chan Msg{}
 	correctors := map[string]chan Msg{}
 	conn := NewRdbConn()
+	gchan := make(chan Msg, 1000)
+	go ghostManager(gchan)
+	correctors["ghost"] = gchan
 	for {
 		fmt.Printf("ADMIN\n")
 		msg := <- self
@@ -763,6 +798,13 @@ func adminManager(self chan Msg) {
 				default:
 				}
 			}
+			tchan <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{"ghost", gchan}}
+		  for id, corr := range correctors {
+				select {
+				case tchan <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{id, corr}}:
+				default:
+				}
+			}
 
 		case TeamChanError:
 			tchan := make(chan Msg, 1000)
@@ -778,8 +820,11 @@ func adminManager(self chan Msg) {
 			data, ok := msg.data.(CorrectorJoinedReqMsg)
 		  if !ok { break }
 			cchan := make(chan Msg, 1000)
-		  go correctorManager(data.Conn, cchan, self, data.Id, teams)
+		  go correctorManager(data.Conn, cchan, self, data.Id)
 		  correctors[data.Id] = cchan
+		  for id, ch := range teams {
+				cchan <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, ch}}
+			}
 			iload, err := corrInitLoad(conn, data.Id)
 			if err != nil {
 				cchan <- Msg{ServerError, "", self, "could not load initial data"}
@@ -792,6 +837,7 @@ func adminManager(self chan Msg) {
 				default:
 				}
 			}
+	    gchan <- Msg{RecoverGhost, "", self, cchan}
 
 		case CorrectorLeft:
 			_, ok := msg.data.(error)
@@ -829,7 +875,9 @@ func adminManager(self chan Msg) {
 						break
 					}
 				} 
-				if adminid == "" { continue }
+				if adminid == "" {
+					adminid = "ghost"
+				}
 				corr := correctors[adminid]
 				tname, err := getTeamName(conn, teamid)
 				if err != nil {
@@ -993,7 +1041,8 @@ type ManyTeamMoneyResult struct {
 	money int
 }
 
-func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id string, teams map[string]chan Msg) {
+func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id string) {
+	teams := make(map[string]chan Msg)
 	go func() {
 		for {
 			var msg map[string]string
