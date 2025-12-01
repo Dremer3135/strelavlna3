@@ -15,7 +15,6 @@
         <LoadingAnimation color="black"/>
       </div>
     </div>
-
   </div>
 {/if}
 

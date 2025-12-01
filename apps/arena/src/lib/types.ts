@@ -21,6 +21,7 @@ export type CurrentState = {
     rank: number,
     isAdmin?: boolean
     results?: Record<string, ResultsAtom>,
+    isPaused: boolean,
 }
 
 export type MessageType = {
