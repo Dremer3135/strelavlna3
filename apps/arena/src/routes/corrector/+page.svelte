@@ -140,7 +140,12 @@
             diff: data.prob.diff,
             images: data.prob.images,
             focusedBy: [],
-            chat: [],
+            chat: data.tlines[data.probid].map((e: any) => {return {
+              origin: e.mside === "admin" ? "sent" : "recieved",
+              type: e.mtype,
+              value: e.msg,
+              sentTime: new Date(e.time),
+            }}),
             owned: "bought",
           };
           return e;
@@ -221,6 +226,9 @@
     socket.send(JSON.stringify({"name": "resume"}));
     console.log("resume");
   }
+  function handleChMoney(tid: string, mode: string, amount: number) {
+    socket.send(JSON.stringify({"name": "chmoney", "teamid": tid, "mode": mode, "amount": amount}));
+  }
 
   $effect(() => {
     console.log("lalalala:O", Object.values($probs));
@@ -229,7 +237,7 @@
 
 
 {#if $wsConnected}
-  <Navbar start={handleStart} end={handleEnd} results={handleResults} pause={handlePause} resume={handleResume}/>
+  <Navbar start={handleStart} end={handleEnd} results={handleResults} pause={handlePause} resume={handleResume} chmoney={handleChMoney}/>
 {/if}
 <main>
   {#if $wsConnected}

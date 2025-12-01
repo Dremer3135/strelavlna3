@@ -162,7 +162,10 @@
         currentState.update((e) => { return {...e, runningState: "paused"}})
       } else if (data.name === "resumed") {
         currentState.update((e) => { return {...e, runningState: "running"}})
+      } else if (data.name === "chmoney") {
+        currentState.update((e) => { return {...e, money: data.money}})
       }
+
 
 
       // console.log(data);
