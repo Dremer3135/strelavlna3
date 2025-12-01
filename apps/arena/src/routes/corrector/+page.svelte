@@ -220,9 +220,11 @@
   }
   function handlePause() {
     socket.send(JSON.stringify({"name": "pause"}));
+    console.log("pause");
   }
   function handleResume() {
     socket.send(JSON.stringify({"name": "resume"}));
+    console.log("resume");
   }
   function handleChMoney(tid: string, mode: string, amount: number) {
     socket.send(JSON.stringify({"name": "chmoney", "teamid": tid, "mode": mode, "amount": amount}));
