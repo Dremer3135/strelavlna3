@@ -4,7 +4,19 @@
     import { currentState } from "$lib/stores/state";
     import { onMount } from "svelte";
 
-    let { start, end, results }: { start?: () => void; end?: () => void, results?: () => void } = $props();
+    let {
+      start,
+      end,
+      results,
+      pause,
+      resume,
+    }: {
+      start?: () => void,
+      end?: () => void,
+      results?: () => void,
+      pause?: () => void,
+      resume?: () => void,
+    } = $props();
 
     let remaining = $state(0);
     let timeValid = $state(false);
@@ -43,6 +55,8 @@
         <button class="start" onclick={start}>Start</button>
         <button class="End" onclick={end}>End</button>
         <button class="results" onclick={results}>Results</button>
+        <button class="pause" onclick={pause}>Pause</button>
+        <button class="resume" onclick={resume}>Resume</button>
     {/if}
     <div class="timer">
         <h3>{hours}:{minutes}:{seconds}</h3>

@@ -227,7 +227,7 @@
 
 
 {#if $wsConnected}
-  <Navbar start={handleStart} end={handleEnd} results={handleResults}/>
+  <Navbar start={handleStart} end={handleEnd} results={handleResults} pause={handlePause} resume={handleResume}/>
 {/if}
 <main>
   {#if $wsConnected}

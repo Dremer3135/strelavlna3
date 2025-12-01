@@ -825,6 +825,48 @@ func adminManager(self chan Msg) {
 		  for id, ch := range teams {
 				cchan <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, ch}}
 			}
+	    // gchan <- Msg{RecoverGhost, "", self, cchan}
+			tickets, err := getCorrTickets(conn, "ghost")
+			if err != nil {
+				fmt.Printf("admin error: %v\n", err)
+				continue
+			}
+		  for _, t := range tickets {
+				teamid, probid := parseTicketId(t)
+				tstate, err := getTState(conn, teamid, probid)
+				if err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+				if tstate != OwnedBought { continue }
+				prob, err := getProb(conn, probid)
+				if err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+				adminid := ""
+				for _, a := range prob.Queue {
+					_, ok := correctors[a]
+					if ok {
+						adminid = a
+						break
+					}
+				} 
+				if adminid == "" {
+					adminid = "ghost"
+				}
+				if err := setTCorr(conn, teamid, prob.Id, adminid); err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+				if err := addCorrTicket(conn, adminid, teamid, probid); err != nil {
+					fmt.Printf("admin error: %v\n", err)
+					continue
+				}
+			}
+			if err := clearCorrTickets(conn, "ghost"); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+			}
 			iload, err := corrInitLoad(conn, data.Id)
 			if err != nil {
 				cchan <- Msg{ServerError, "", self, "could not load initial data"}
@@ -837,7 +879,6 @@ func adminManager(self chan Msg) {
 				default:
 				}
 			}
-	    gchan <- Msg{RecoverGhost, "", self, cchan}
 
 		case CorrectorLeft:
 			_, ok := msg.data.(error)
