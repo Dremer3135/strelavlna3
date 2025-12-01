@@ -177,6 +177,7 @@
 					}}
 				/>
 				<AnswerInput
+                    prob={$focusedProb}
 					disabled={isProbUngraded($focusedProb) || isProbSolved($focusedProb)}
 					placeholder={getProbLastAnswer($focusedProb) !== undefined
 						? (getProbLastAnswer($focusedProb) as string)

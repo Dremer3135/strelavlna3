@@ -11,6 +11,7 @@
 	import { getProbLastAnswer, hasProbChat, isProbSolved, isProbUngraded } from '$lib/utils';
     import ProbSelectCorrector from '$lib/assets/components/ProbSelectCorrector.svelte';
     import Grader from '$lib/assets/components/Grader.svelte';
+    import { goto } from '$app/navigation';
 
 	let {
 		focus,
@@ -22,9 +23,28 @@
 
 	const difficulties = ['A', 'B', 'C'];
 
+    function gotoNextUngraded() {
+        const ungradedProbs = Object.values($probs).filter((prob) => isProbUngraded(prob));
+        if (ungradedProbs.length === 0) return;
+
+        const currentFocusedId = $focusedProb ? $focusedProb.id : null;
+        let startIndex = 0;
+        if (currentFocusedId) {
+            const currentIndex = ungradedProbs.findIndex((prob) => prob.id === currentFocusedId);
+            startIndex = (currentIndex + 1) % ungradedProbs.length;
+        }
+
+        focus(ungradedProbs[startIndex].id);
+
+    }
+
 </script>
 
-<main>
+<main onkeypress={(e) => {
+    if (e.shiftKey && e.key === "N") {
+        gotoNextUngraded();
+    }
+}}>
 	<div class="left-panel">
 		<!-- <div class="team-stats">
 			<h2 class="name">{$currentState.teamName}</h2>
@@ -74,17 +94,6 @@
 			<div class="prob">
 				<ProbContent
 					content={{...$focusedProb, answer: undefined}}
-					onCopy={(text: string) => {
-						console.log('copying');
-
-						if (!$focusedProb) return;
-
-						chat($focusedProb.id, {
-							type: 'copy',
-							value: text,
-							origin: 'sent'
-						});
-					}}
 				/>
 				<Grader answer={getProbLastAnswer($focusedProb) ?? ""} prob={$focusedProb} onAccept={() => {
 						chat($focusedProb.id, {
@@ -92,6 +101,7 @@
 							type: "grade",
 							value: "correct"
 						});
+                        gotoNextUngraded();
 					}} 
 					onReject={() => {
 						chat($focusedProb.id, {
@@ -99,6 +109,7 @@
 							type: "grade",
 							value: "incorrect"
 						});
+                        gotoNextUngraded();
 					}}
 				/>
 			</div>

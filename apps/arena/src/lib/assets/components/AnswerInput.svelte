@@ -1,12 +1,19 @@
 <script lang="ts">
-    let { submitAnswer, disabled, placeholder, onPaste }: { submitAnswer: (answer: string) => void, disabled: boolean, placeholder: string, onPaste?: (data: string) => void } = $props();
+    import { isProbSolved } from "$lib/utils";
+
+    let { prob, submitAnswer, disabled, placeholder, onPaste }: { prob: any, submitAnswer: (answer: string) => void, disabled: boolean, placeholder: string, onPaste?: (data: string) => void } = $props();
 
     let answer: string = $state("");
+
+    $effect(() => {
+        prob;
+        answer = "";
+    });
 
 </script>
 
 <main>
-    <input type="text" placeholder={placeholder} class:disabled={disabled} bind:value={answer} onkeydown={(e) => {
+    <input type="text" placeholder={placeholder} class:disabled={disabled} bind:value={answer} class:placeholder-invisible={isProbSolved(prob)} onkeydown={(e) => {
         if (e.key == "Enter") {
             if (disabled) return;
             submitAnswer(answer);
@@ -18,7 +25,8 @@
         if (pastedText && onPaste) {
             onPaste(pastedText);
         }
-    }}>
+    }}
+    disabled={disabled}/>
 </main>
 
 <style lang="scss">
@@ -33,7 +41,7 @@
             cursor: text;
             flex-grow: 1;
             box-sizing: border-box;
-            background-color: #FAFAFA;
+            background-color: #F0F0F0;
             border: 3px #CCCCCC solid;
             padding: 7px 15px;
             font-family: 'Lexend';
@@ -44,6 +52,16 @@
             &:focus:not(.disabled) {
                 border-color: var(--color-purple);
                 background-color: color-mix(in srgb, var(--color-purple) 5%, transparent 95%);
+            }
+
+            &.disabled {
+                background-color: #FAFAFA;
+                border-color: #EEEEEE;
+                cursor: not-allowed;
+            }
+
+            &.placeholder-invisible::placeholder {
+                opacity: 0;
             }
 
 
