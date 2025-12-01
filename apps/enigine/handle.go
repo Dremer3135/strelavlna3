@@ -411,6 +411,7 @@ type CorrTicket struct {
 	TeamId string `json:"team_id"`
 	TeamName string `json:"team_name"`
 	Prob Prob `json:"prob"`
+	TLines map[string][]TLineAtom `json:"tlines"`
 }
 
 func corrInitLoad(conn *redis.Client, id string) (CorrInitLoad, error) {

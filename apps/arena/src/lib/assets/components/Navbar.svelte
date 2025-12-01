@@ -10,12 +10,14 @@
       results,
       pause,
       resume,
+      chmoney,
     }: {
       start?: () => void,
       end?: () => void,
       results?: () => void,
       pause?: () => void,
       resume?: () => void,
+      chmoney?: (tid: string, mode: string, amount: number) => void,
     } = $props();
 
     let remaining = $state(0);
@@ -44,6 +46,10 @@
         setInterval(updateClock, 1000);
     });
 
+    let chmoneytid = $state("");
+    let chmoneymode = $state("");
+    let chmoneyamount = $state(0);
+
 
 </script>
 
@@ -57,6 +63,15 @@
         <button class="results" onclick={results}>Results</button>
         <button class="pause" onclick={pause}>Pause</button>
         <button class="resume" onclick={resume}>Resume</button>
+        <input type="text" bind:value={chmoneytid}>
+        <select bind:value={chmoneymode}>
+          <option value="=">=</option>
+          <option value="+">+</option>
+          <option value="-">-</option>
+        </select>
+        <input type="number" value={chmoneyamount}>
+        <button class="resume" onclick={(_) => chmoney ? chmoney(chmoneytid, chmoneymode, chmoneyamount) : null}>SetMoney</button>
+    
     {/if}
     <div class="timer">
         <h3>{hours}:{minutes}:{seconds}</h3>
