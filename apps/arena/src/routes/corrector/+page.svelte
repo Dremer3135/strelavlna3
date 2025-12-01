@@ -140,7 +140,7 @@
             diff: data.prob.diff,
             images: data.prob.images,
             focusedBy: [],
-            chat: data.tlines[data.probid].map((e: any) => {return {
+            chat: data.tlines[data.prob.id].map((e: any) => {return {
               origin: e.mside === "admin" ? "sent" : "recieved",
               type: e.mtype,
               value: e.msg,
