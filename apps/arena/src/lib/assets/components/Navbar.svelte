@@ -73,6 +73,7 @@
         <button class="resume" onclick={(_) => chmoney ? chmoney(chmoneytid, chmoneymode, chmoneyamount) : null}>SetMoney</button>
     {:else}
         <a href="https://strela-vlna.gchd.cz/constants" target="_blank" class="constants-link">tabulky hodnot</a>
+        <a href="https://strela-vlna.gchd.cz/pricelist" target="_blank" class="constants-link">Ceník</a>
     {/if}
     
     <div class="timer">
