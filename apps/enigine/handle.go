@@ -68,10 +68,6 @@ func initLoad(conn *redis.Client, teamid string, playerid string) (InitLoad, err
 
 	res.RemProbs = map[string]int{}
 	for _, diff := range DIFFS {
-		if diff == "A" {
-			res.RemProbs[diff] = -1
-			continue
-		}
 		rem, err := getNumberRemProbs(conn, teamid, diff)
 		if err != nil {
 			return res, err

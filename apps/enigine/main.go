@@ -71,6 +71,23 @@ func main() {
 		achan <- Msg{CorrectorJoined, "", mchan, CorrectorJoinedReqMsg{corrid, conn}}
 	})
 
+	http.HandleFunc("/ws/admin", func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		corrid, err := rdb.Get(ctx, "corrtoken:" + token).Result()
+		if err != nil {
+			http.Error(w, "invalid token", 400)
+			return
+		}
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		fmt.Println(corrid)
+		achan <- Msg{AdminJoined, "", mchan, CorrectorJoinedReqMsg{corrid, conn}}
+	})
+
 	// http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
 	// 	token := r.URL.Query().Get("token")
 	// 	_, err := rdb.Get(ctx, "playtoken:" + token).Result()

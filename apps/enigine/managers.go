@@ -25,6 +25,11 @@ const (
 	CorrectorJoined
 	CorrectorLeft // error
 
+	AdminJoined
+	AdminLeft
+
+	TeamMonitorUpdate
+
 	PlayerLeft // error
 	PlayerJoined
 	PlayerInitLoaded
@@ -179,6 +184,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	players := map[string]chan Msg{}
 	conn := NewRdbConn()
 	correctors := map[string]chan Msg{}
+	monitors := map[string]chan Msg{}
 	for {
 		msg, ok := <- self
 		fmt.Printf("team: %#v\n", msg)
@@ -229,6 +235,16 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			data, ok := msg.data.(string)
 	    if !ok { break }
 		  delete(correctors, data)
+
+		case AdminJoined:
+			data, ok := msg.data.(CorrectorJoinedMsg)
+	    if !ok { break }
+			monitors[data.Id] = data.Chan
+
+		case AdminLeft:
+			data, ok := msg.data.(string)
+	    if !ok { break }
+		  delete(monitors, data)
 		
 		case BuyProb:
 			diff, ok := msg.data.(string)
@@ -284,6 +300,16 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 			}
 
+			for _, mon := range monitors {
+				select {
+				case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+				default:
+				}
+			}
+		  
+
+		
+
 		case SellProb:
 			probid, ok := msg.data.(string)
 		  if !ok { break }
@@ -312,6 +338,13 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			for _, pl := range players {
 				select {
 				case pl <- Msg{SoldProb, id, self, IdMoneyMsg{probid, money}}:
+				default:
+				}
+			}
+
+			for _, mon := range monitors {
+				select {
+				case mon <- Msg{TeamMonitorUpdate, id, self, money}:
 				default:
 				}
 			}
@@ -380,6 +413,12 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					if !ok { corr = correctors["ghost"] }
 					corr <- Msg{SolvedProb, id, self, data.probid}
 				}
+				for _, mon := range monitors {
+					select {
+					case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+					default:
+					}
+				}
 			} // else {
 			// 	corr := getTCorr(conn, id, data.probid)
 			// 	correctors[corr] <- Msg{SolveProb, id, self, data}
@@ -440,6 +479,12 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					corr, ok := correctors[corrid]
 					if !ok { corr = correctors["ghost"] }
 					corr <- Msg{SolvedProb, id, self, data.prob}
+				}
+				for _, mon := range monitors {
+					select {
+					case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+					default:
+					}
 				}
 			}
 
@@ -799,9 +844,71 @@ type CorrectorJoinedMsg struct{
 	Chan chan Msg
 }
 
+func monitorManager(self chan Msg, ws *websocket.Conn, admins chan Msg, id string) {
+	chanloop: for {
+		msg, ok := <- self
+		fmt.Printf("client: %#v\n", msg)
+		if !ok {
+			ws.Close()
+			admins <- Msg{PlayerLeft, id, self, errors.New("chan closed")}
+			break
+		}
+		switch msg.tp {
+
+		case WsError:
+			data, ok := msg.data.(error)
+			if !ok { break }
+			fmt.Printf("WSERROR: %v\n", data)
+			ws.Close()
+			admins <- Msg{PlayerLeft, id, self, data}
+			break chanloop
+
+		case UserError:
+			data, ok := msg.data.(string)
+			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]string{
+				"name": "error",
+				"error": data,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case ServerError:
+			data, ok := msg.data.(string)
+			if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]string{
+				"name": "error",
+				"error": data,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+
+		case TeamMonitorUpdate:
+		  data, ok := msg.data.(int)
+		  if !ok { break }
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name": "tchange",
+				"teamid": msg.from,
+				"money": data,
+			})
+			if err != nil { self <- Msg{WsError, id, self, err} }
+		
+		}
+	}
+} 
+
+type TeamMonitorUpdateMsg struct {
+	money int
+	bought []int
+	sold []int
+	solved []int
+}
+
 func adminManager(self chan Msg) {
 	teams := map[string]chan Msg{}
 	correctors := map[string]chan Msg{}
+	admins := map[string]chan Msg{}
 	conn := NewRdbConn()
 	gchan := make(chan Msg, 1000)
 	correctors["ghost"] = gchan
@@ -863,28 +970,19 @@ func adminManager(self chan Msg) {
 			}
 		  for _, t := range tickets {
 				teamid, probid := parseTicketId(t)
-				tstate, err := getTState(conn, teamid, probid)
-				if err != nil {
-					fmt.Printf("admin error: %v\n", err)
-					continue
-				}
 				prob, err := getProb(conn, probid)
 				if err != nil {
 					fmt.Printf("admin error: %v\n", err)
 					continue
 				}
 				adminid := ""
-				if tstate != OwnedBought {
-					adminid = prob.Queue[0]
-				} else {
-					for _, a := range prob.Queue {
-						_, ok := correctors[a]
-						if ok {
-							adminid = a
-							break
-						}
-					} 
-				}
+				for _, a := range prob.Queue {
+					_, ok := correctors[a]
+					if ok {
+						adminid = a
+						break
+					}
+				} 
 				if adminid == "" {
 					adminid = "ghost"
 				}
@@ -909,6 +1007,30 @@ func adminManager(self chan Msg) {
 		  for _, ch := range teams {
 				select {
 				case ch <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{data.Id, cchan}}:
+				default:
+				}
+			}
+
+		case AdminJoined:
+		  data, ok := msg.data.(CorrectorJoinedReqMsg)
+		  if !ok { break }
+			adchan := make(chan Msg, 1000)
+		  admins[data.Id] = adchan
+			go monitorManager(adchan, data.Conn, self, data.Id)
+		  for _, ch := range teams {
+				select {
+				case ch <- Msg{AdminJoined, "", self, CorrectorJoinedMsg{data.Id, adchan}}:
+				default:
+				}
+			}
+
+		case AdminLeft:
+		  data, ok := msg.data.(string)
+		  if !ok { break }
+		  delete(admins, data)
+		  for _, ch := range teams {
+				select {
+				case ch <- Msg{AdminLeft, "", self, data}:
 				default:
 				}
 			}

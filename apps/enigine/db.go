@@ -382,6 +382,7 @@ func setTeamName(conn *redis.Client, teamid string, name string) error {
 
 func getNumberRemProbs(conn *redis.Client, teamid string, diff string) (int, error) {
 	res, err := conn.SCard(ctx, "oprobs:" + teamid + ":" + OwnedFree + ":" + diff).Result()
+	if diff == "A" { return -1, nil } // TODO: quickfix
 	return int(res), err
 }
 
