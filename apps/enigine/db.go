@@ -253,15 +253,18 @@ func (t TLineAtom) String() string {
 }
 
 func (t *TLineAtom) fromString(s string) error {
-	sparts := strings.SplitN(s, ":", 4)
+	sparts := strings.Split(s, ":")
 	t.Mside = sparts[0]
 	t.Mtype = sparts[1]
-	t.Msg = sparts[2]
-	mtime, err := strconv.Atoi(sparts[3])
+	mtime, err := strconv.Atoi(sparts[len(sparts)-1])
 	if err != nil {
 		return err
 	}
 	t.Time = time.UnixMilli(int64(mtime))
+	t.Msg = ""
+	for _, mpart := range sparts[2:len(sparts)-1] {
+		t.Msg += mpart
+	}
 	return nil
 }
 
