@@ -40,5 +40,5 @@
     <br>
     <button onclick={start}>Start</button>
     <br>
-    <button onclick={End}>End</button>
+    <button onclick={end}>End</button>
 </main>
