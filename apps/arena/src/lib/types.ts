@@ -37,6 +37,7 @@ export type ResultsAtom = {
 }
 
 export type AdminViewedTeam = {
+    teamid: string,
     money: number,
     name: string,
     bought: number[],
