@@ -4,13 +4,24 @@
   import type { ConstantsResponse } from '$lib/pocketbase-types';
   import { Latex } from 'shared';
 
+  function groupBy<T>(items: Iterable<T>, callbackfn: (element: T, index: number) => string | number): Record<string | number, T[]> {
+    return Array.from(items).reduce((acc: Record<string | number, T[]>, element, index) => {
+        const key = callbackfn(element, index);
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(element);
+        return acc;
+    }, {});
+  }
+
   let constants: Record<string, ConstantsResponse> = $derived(Object.fromEntries(data.constants.map((c) => [c.id, c])));
 
 
   // initialData.map((c) => [c.id, { constant: c, edit: {} }])
 
   let groupedConstantIds = $derived(Object.fromEntries(Object.entries(
-    Object.groupBy(
+    groupBy(
           Object.entries(constants),
           (item) => item[1].group ?? "Nezarazeno"
       )
