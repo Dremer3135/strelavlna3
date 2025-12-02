@@ -203,10 +203,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				msg.callback <- Msg{UserError, id, self, "join"}
 				break
 			}
-			if len(players) >= 5 {
-				msg.callback <- Msg{UserError, id, self, "join"}
-				break
-			}
+			// if len(players) >= 5 {
+			// 	msg.callback <- Msg{UserError, id, self, "join"}
+			// 	break
+			// }
 			plidi := 0
 			plid := "0"
 			for {
@@ -221,7 +221,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			iload, err := initLoad(conn, id, plid)
 			if err != nil {
-				plchan <- Msg{ServerError, id, self, "could not load initial data"}
+				plchan <- Msg{ServerError, id, self, err.Error()}
 				break
 			}
 		  plchan <- Msg{PlayerInitLoaded, id, self, iload}
