@@ -35,3 +35,11 @@ export type ResultsAtom = {
   rank: number,
   money: number,
 }
+
+export type AdminViewedTeam = {
+    money: number,
+    name: string,
+    bought: number[],
+    solved: number[],
+    sold: number[],
+}
