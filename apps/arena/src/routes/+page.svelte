@@ -41,7 +41,7 @@
           start: new Date(Date.now() + data.data.start),
           end: new Date(Date.now() + data.data.end),
           runningState: data.data.state,
-          rank: -1,
+          rank: data.rank,
         });
 
         let nprobs: any = {};

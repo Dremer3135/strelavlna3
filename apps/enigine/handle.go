@@ -176,7 +176,8 @@ p.Answer = "<dobrej pokus>"
 
 	res.TLines = tlines
 
-	if res.State == StateAfter {
+	res.Rank = -1
+	if res.State == StateResults {
 		rank, err := getRank(conn, teamid)
 		if err != nil {
 			return res, err
@@ -320,7 +321,7 @@ func solveProb(conn *redis.Client, teamid, probid string) (money int, err error)
 	if !slices.Contains(bought, probid) {
 		return 0, errors.New("not bought")
 	}
-	err = moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSold)
+	err = moveOwnedProb(conn, teamid, diff, probid, OwnedBought, OwnedSolved)
 	if err != nil {
 		return 0, err
 	}
