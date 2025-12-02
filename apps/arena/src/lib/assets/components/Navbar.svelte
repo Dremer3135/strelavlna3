@@ -71,8 +71,10 @@
         </select>
         <input type="number" value={chmoneyamount}>
         <button class="resume" onclick={(_) => chmoney ? chmoney(chmoneytid, chmoneymode, chmoneyamount) : null}>SetMoney</button>
-    
+    {:else}
+        <a href="https://strela-vlna.gchd.cz/constants" target="_blank" class="constants-link">tabulky hodnot</a>
     {/if}
+    
     <div class="timer">
         <h3>{hours}:{minutes}:{seconds}</h3>
     </div>
@@ -109,6 +111,19 @@
                 font-weight: 700;
                 color: white;
                 margin: 0px;
+            }
+        }
+
+        .constants-link {
+            all: unset;
+            cursor: pointer;
+            font-family: 'Lexend';
+            font-weight: 500;
+            font-size: 14px;
+            color: white;
+
+            &:hover {
+                text-decoration: underline;
             }
         }
     }
