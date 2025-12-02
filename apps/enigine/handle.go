@@ -176,6 +176,7 @@ p.Answer = "<dobrej pokus>"
 
 	res.TLines = tlines
 
+	res.Rank = -1
 	if res.State == StateResults {
 		rank, err := getRank(conn, teamid)
 		if err != nil {
