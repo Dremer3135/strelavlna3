@@ -34,11 +34,11 @@
           <h2>Časový harmonogram</h2>
 					<div class="org-timetable">
           	<div class="blue-left">
-          		<h3>9:45</h3>
+          		<h3>9:40</h3>
           		<p class="f-18">Žáci by v den konání soutěže měli být připraveni u svých počítačů. V tuto dobu také začíná YouTubový stream, na který by se měl připojit alespoň jeden člen každého týmu.</p>
           	</div>
           	<div class="blue-left">
-          		<h3>9:45 - ∼9:58</h3>
+          		<h3>9:40 - ∼9:58</h3>
           		<p class="f-18">V průběhu streamu mají žáci možnost zeptat se na jakoukoliv otázku ohledně pravidel, která si na již zmíněném streamu projdeme.</p>
           	</div>
           	<div class="blue-left">
@@ -46,11 +46,11 @@
           		<p class="f-18">Začátek soutěže. Žáci mohou začít řešit úlohy. Časový limit pro soutěž je 120 minut. Po tuto dobu by bylo vhodné kontrolovat žáky (viz. “Pravidla v průběhu soutěže”).</p>
           	</div>
           	<div class="blue-left">
-          		<h3>12:00</h3>
+          		<h3>11:30</h3>
           		<p class="f-18">Konec soutěže. Po skončení soutěže prosíme soutěžící, aby nezavírali webovou stránku, na kterém soutěžili. Na tomto okně uvidí své celkové výsledky a data. Prosíme všechny soutěžící, aby vyplnili dotazník týkající se uplynulé soutěže (Tento dotazník je pro nás naprosto klíčový, protože nám dává velké množství informací potřebné ke zlepšení soutěže na další roky). Zároveň by se alespoň jeden ze soutěžících měl opět připojit na YouTubový stream.</p>
           	</div>
           	<div class="blue-left">
-          	  <h3>12:20</h3>
+          	  <h3>12:00</h3>
           	  <p class="f-18">Vyhlášení soutěže. Toto vyhlášení proběhne opět na streamu, nejlepších 15 týmů se kvalifikuje do finálového kola, které se pořádá na naší škole. Pokud se vaši soutěžící stanou jedním z těchto týmů, prosíme, abyste co nejdříve potvrdili/odmítli svou účast ve finálovém kole - v případě Vaší neúčasti dostanou šanci týmy s horším umístěním (16., 17., 18., …).</p>
           	</div>
 					</div>

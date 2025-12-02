@@ -316,6 +316,12 @@ $effect(() => {
     <canvas class="header2" width="660" height="300" id="this_year_canvas" bind:this={canvas}></canvas>
 </div>
 <div id="main">
+    <div class="result-section">
+        <h1>Výsledky 2025</h1>
+        <div class="buttons">
+            <a href="/home/results"><button class="result-button">Pražská střela online</button></a>
+        </div>
+    </div>
     <div class="main-a-content">
     <!-- <p style="text-align: center;">
         <b style="color: red; font-size: 18px; font-weight: bold;">Upozornění:</b> Pokud vám nepřišel email s herním odkazem, napište na strela-vlna@gchd.cz a my vám pošleme nový.
@@ -355,7 +361,7 @@ $effect(() => {
     <div class="grid-main-b">
     <h1 class="section-title m-b0">Harmonogram</h1>
     <div class="blue-left main-b-element m-b1">
-        <h2>9:45</h2>
+        <h2>9:40</h2>
         <p class="f-18">Spuštění úvodního streamu na <a href="https://www.youtube.com/channel/UC8hsjufLjcGySi79GDzqJGg" class="link" target="_blank">YouTube</a></p>
     </div>
     <div class="blue-left main-b-element m-b2">
@@ -376,6 +382,45 @@ $effect(() => {
 
     
 <style>
+    .result-button{
+    cursor: pointer;
+    font-family: 'Lexend';
+    font-size: 20px;
+    font-weight: 500;
+    padding: 10px;  
+    padding-inline: 12px;
+    color: white;
+    border-radius: 10px;
+    background-color: var(--color-blue);
+    padding-top: 7px;
+    width: 250px;
+    margin: auto;
+    transition: all 0.3s ease-out;
+}
+
+.buttons{
+    display: flex;
+    justify-content: start;
+    gap: 2vw;
+    padding-bottom: 20px;
+    padding-top: 10px;
+    margin-left: 50px;
+}
+
+.result-button:hover{
+    background-color: #3c1fe2;
+    box-shadow: 0px 0px 20px 0px #907cff7e;
+    transition: all 0s;
+}
+
+
+.result-section{
+      padding-left: 15%;
+    padding-right: 5%;
+    background-color: white;
+    padding-top: 20px;
+    padding-bottom: 60px;
+}
 
 
     .blue-background{

@@ -7,7 +7,7 @@
 					<div class="det-list">
 						<h2>Cíl hry</h2>
 						<p class="blue-left">
-							Cílem obou soutěží je získat co největší počet bodů - v případě našich soutěží DopplerCoinů (DC). Po skončení času budou týmy seřazeny právě podle DopplerCoinů - ne podle počtu vlastněných či vyřešených úloh či jakéhokoliv jiného kritéria.
+							Cílem obou soutěží je získat co největší počet bodů - v případě našich soutěží DopplerCoinů (DC). Po skončení času budou týmy seřazeny právě podle DopplerCoinů - ne podle počtu vlastněných či vyřešených úloh či jakéhokoliv jiného kritéria. Při shodnosti počtu DopplerCoinů rozhoduje počet vyřešených úloh kategorie C.
 						</p>
 					</div>
 				</div>
@@ -15,7 +15,7 @@
 					<div class="det-list">
 						<h2>Herní systém</h2>
 						<p class="blue-left">
-							Systém obou soutěží je v zásadě stejný - liší se pouze sada úloh. Hlavním úkolem soutěžících je vyřešit co nejvíce úloh a tím získat co nejvíce DopplerCoinů. Samotná soutěž trvá 120 minut
+							Systém obou soutěží je v zásadě stejný - liší se pouze sada úloh. Hlavním úkolem soutěžících je vyřešit co nejvíce úloh a tím získat co nejvíce DopplerCoinů. Samotná soutěž trvá 90 minut.
 						</p>
 						<div class="det-list2">
 							<h2>Úlohy</h2>
@@ -33,11 +33,28 @@
 							</p>
 						</div>
 						<div class="det-list2">
+							<h2>Odpovědi na úlohy</h2>
+							<div class="blue-left ans">
+								<span class="f-20">Na všechny úlohy se odpovídá jednotným formátem, a to:</span>
+								<ul>
+									<li>Při potřebě výsledek zaokrouhlit zaokrouhlujte vždy <b>právě na 2</b> desetinná místa</li>
+									<ul>
+										<li>Pokud by zaokrouhlením výsledek vyšel 0 (např. 0,000267), zaokrouhlete na 2 platné cifry (0,00027)</li>
+									</ul>
+									<li>Výsledek pište vždy <b>bez jednotek</b></li>
+									<li>Pro úlohy s <b>více než jednou otázkou</b> použijte k rozdělení <b>středník</b> (;) a <b>mezeru</b> (22; 24,5)</li>
+									<li>Pro slovní úlohy odpovídejte <b>pouze řešením</b> (Anička vydělala nejvíce, Beata nejméně -> Anička; Beata)</li>
+									<li>Zlomky, mocniny a odmocniny vyjádřete <b>desetinným číslem</b> (2/7 -> 0,29)</li>
+								</ul>
+							</div>
+						</div>
+						<div class="det-list2">
 							<h2>Prodávání úloh</h2>
 							<p class="blue-left">
 								Pokud se vám stane, že úlohu nejste schopni vyřešit, nabízí se možnost ji prodat. Tímto krokem se úlohy zbavíte a dostanete zpět část její kupní ceny (~50%). Tento krok se obzvláště vyplatí ke konci soutěže - pokud víte, že úlohu nevyřešíte, dostanete alespoň nějaké DC zpět.
 							</p>
 						</div>
+						
 						<div class="det-list2">
 							<h2>Technická podpora</h2>
 							<p class="blue-left">
@@ -77,21 +94,25 @@
 						</p>
 					</div>
 				</div>
-				<div class="white-section">
+				<!-- <div class="white-section">
 					<div class="det-list">
 						<h2>Další informace</h2>
 						<p class="blue-left">
 							Doporučujeme se podívat také na video, které blíže vysvětluje hráčskou interface. Najdete ho zde v průběhu tohoto měsíce.
 						</p>
 					</div>
-				</div>
+				</div> -->
       </div>
 <style>
     #main{
     font-family: 'Lexend';
+	
 }
 .f-18{
     font-size: 18px;
+}
+ul{
+	line-height: 1.8em;
 }
 .gray-section{
     padding-left: 20%;
@@ -111,12 +132,13 @@
     border-left: 4px var(--color-blue) solid;
     border-radius: 4px;
     padding-left: 10px;
+	line-height: 1.5em;
 }
 .det-title{
     margin-left: 10%;
 }
 
-.det-list p, .det-list3 div{
+.det-list p, .det-list3 div, .ans{
     margin-left: 50px;
     padding-top: 15px;
     padding-bottom: 15px;

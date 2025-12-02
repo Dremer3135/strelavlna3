@@ -7,8 +7,9 @@
         <div class="white-section">
           <h1 class="rules-title">Přehled pravidel</h1>     
           <div class="buttons">
-            <a href="../home/rules/details"><button class="rules-button">Podrobná pravidla</button></a>
-            <a href="../home/rules/instructions"><button class="rules-button">Pokyny k organizaci</button></a>
+            <a href="/home/rules/details"><button class="rules-button">Podrobná pravidla</button></a>
+            <a href="/home/rules/instructions"><button class="rules-button">Pokyny k organizaci</button></a>
+            <a href="/home/rules/terms_and_conditions"><button class="rules-button">Smluvní podmínky</button></a>
           </div>
           <div class="rules-list">
             <h2>Kdo může soutěžit?</h2>
