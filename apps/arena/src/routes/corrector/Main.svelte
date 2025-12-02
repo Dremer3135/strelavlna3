@@ -51,7 +51,7 @@
 			<h3 class="money">{$currentState.money} DC</h3>
 		</div> -->
 		<div class="prob-selector">
-			{#each Object.values($probs).filter((prob) => isProbUngraded(prob)) as prob}  <!--  Ungraded  -->
+			{#each Object.values($probs).filter((prob) => isProbUngraded(prob) && !isProbSolved(prob)) as prob}  <!--  Ungraded  -->
 				<ProbSelectCorrector
 					prob={prob}
 					onSelect={() => {
