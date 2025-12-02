@@ -56,7 +56,7 @@
             images: prob.images,
             focusedBy: [],
             chat: data.data.tlines[prob.id].map((e: any) => {return {
-              origin: e.mside === "admin" ? "sent" : "recieved",
+              origin: e.mside === "admin" ? "recieved" : "sent",
               type: e.mtype,
               value: e.msg,
               sentTime: new Date(e.time),
@@ -75,7 +75,7 @@
             images: prob.images,
             focusedBy: [],
             chat: data.data.tlines[prob.id].map((e: any) => {return {
-              origin: e.mside === "admin" ? "sent" : "recieved",
+              origin: e.mside === "admin" ? "recieved" : "sent",
               type: e.mtype,
               value: e.msg,
               sentTime: new Date(e.time),
@@ -94,7 +94,7 @@
             images: prob.images,
             focusedBy: [],
             chat: data.data.tlines[prob.id].map((e: any) => {return {
-              origin: e.mside === "admin" ? "sent" : "recieved",
+              origin: e.mside === "admin" ? "recieved" : "sent",
               type: e.mtype,
               value: e.msg,
               sentTime: new Date(e.time),
