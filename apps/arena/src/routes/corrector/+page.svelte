@@ -227,7 +227,7 @@
     console.log("resume");
   }
   function handleChMoney(tid: string, mode: string, amount: number) {
-    socket.send(JSON.stringify({"name": "chmoney", "teamid": tid, "mode": mode, "amount": amount}));
+    socket.send(JSON.stringify({"name": "chmoney", "teamid": tid, "mode": mode, "amount": amount.toString()}));
   }
 
   $effect(() => {
