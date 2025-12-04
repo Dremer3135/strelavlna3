@@ -39,7 +39,7 @@ export type ResultsAtom = {
 export type AdminViewedTeam = {
     teamid: string,
     money: number,
-    name: string,
+    teamname: string,
     bought: number[],
     solved: number[],
     sold: number[],
