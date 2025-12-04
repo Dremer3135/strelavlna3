@@ -38,6 +38,7 @@
                     <thead> 
                         <tr>
                             <td>Název</td>
+                            <td>Popis</td>
                             <td>Symbol</td>
                             <td>Hodnota</td>
                             <td>Jednotka</td>
@@ -48,6 +49,9 @@
                             <tr>
                                 <td class="name">
                                     <Latex text={constants[constantId].name} />
+                                </td>
+                                <td class="description">
+                                    <Latex text={constants[constantId].desc} />
                                 </td>
                                 <td class="symbol">
                                     <Latex text={constants[constantId].symbol} />
