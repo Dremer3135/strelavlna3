@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 
 </script>
 
@@ -226,6 +226,7 @@
         <tr><td>192.</td><td>Valeč Benfika</td><td>-67</td></tr>
     </tbody>
     </table>
+
 </div>
 
 <style>

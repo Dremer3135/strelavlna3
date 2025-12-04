@@ -319,7 +319,8 @@ $effect(() => {
     <div class="result-section">
         <h1>Výsledky 2025</h1>
         <div class="buttons">
-            <a href="/home/results"><button class="result-button">Pražská střela online</button></a>
+            <a href="/home/results/strela-2025-online"><button class="result-button">Pražská střela online</button></a>
+            <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
         </div>
     </div>
     <div class="main-a-content">
@@ -382,7 +383,7 @@ $effect(() => {
 
     
 <style>
-    .result-button{
+.result-button{
     cursor: pointer;
     font-family: 'Lexend';
     font-size: 20px;
@@ -393,7 +394,7 @@ $effect(() => {
     border-radius: 10px;
     background-color: var(--color-blue);
     padding-top: 7px;
-    width: 250px;
+    width: 270px;
     margin: auto;
     transition: all 0.3s ease-out;
 }
