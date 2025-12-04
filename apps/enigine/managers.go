@@ -180,6 +180,11 @@ func checkAnswer(cans, tans string) bool {
   return false
 }
 
+type TeamNameMoneyMsg struct {
+	name string
+	money int
+}
+
 func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	players := map[string]chan Msg{}
 	conn := NewRdbConn()
@@ -302,7 +307,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			for _, mon := range monitors {
 				select {
-				case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+				case mon <- Msg{TeamMonitorUpdate, id, self, TeamNameMoneyMsg{tname, money}}:
 				default:
 				}
 			}
@@ -344,7 +349,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			for _, mon := range monitors {
 				select {
-				case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+				case mon <- Msg{TeamMonitorUpdate, id, self, TeamNameMoneyMsg{tname, money}}:
 				default:
 				}
 			}
@@ -415,7 +420,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 				for _, mon := range monitors {
 					select {
-					case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+					case mon <- Msg{TeamMonitorUpdate, id, self, TeamNameMoneyMsg{tname, money}}:
 					default:
 					}
 				}
@@ -482,7 +487,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 				for _, mon := range monitors {
 					select {
-					case mon <- Msg{TeamMonitorUpdate, id, self, money}:
+					case mon <- Msg{TeamMonitorUpdate, id, self, TeamNameMoneyMsg{tname, money}}:
 					default:
 					}
 				}
@@ -884,13 +889,14 @@ func monitorManager(self chan Msg, ws *websocket.Conn, admins chan Msg, id strin
 			if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case TeamMonitorUpdate:
-		  data, ok := msg.data.(int)
+		  data, ok := msg.data.(TeamNameMoneyMsg)
 		  if !ok { break }
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "tchange",
 				"teamid": msg.from,
-				"money": data,
+				"money": data.money,
+				"teamname": data.name,
 			})
 			if err != nil { self <- Msg{WsError, id, self, err} }
 		

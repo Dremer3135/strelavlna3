@@ -14,6 +14,7 @@ import (
 	"net/mail"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/pocketbase/dbx"
@@ -368,6 +369,110 @@ func main() {
 
 			team.Set("finalEmail", false)
 			team.Set("token", token)
+			err = app.Save(team)
+			if err != nil {
+				app.Logger().Error("team save failed", "err", err)
+			}
+		},
+	)
+
+	app.Cron().MustAdd(
+		"between_mail",
+		"* * * * *",
+		func() {
+			teams := []*core.Record{}
+
+			err := app.RecordQuery("teams").
+				AndWhere(dbx.Not(dbx.HashExp{"rank": ""})).
+				AndWhere(dbx.HashExp{"betweenEmail": false}).
+				OrderBy("created").
+				Limit(1).
+				All(&teams)
+
+			if len(teams) < 1 {
+				return
+			}
+
+			team := teams[0]
+
+			if err != nil {
+				app.Logger().Error("team query failed", "err", err)
+				return
+			}
+
+			text := core.Record{}
+
+			tmpname := "mail_between"
+			if team.GetInt("rank") <= 15 {
+				tmpname = "mail_advancing"
+			}
+
+			err = app.RecordQuery("texts").
+				AndWhere(dbx.HashExp{"name": tmpname}).
+				Limit(1).
+				One(&text)
+
+			if err != nil {
+				app.Logger().Error("text query failed", "err", err)
+				return
+			}
+
+			contest, err := app.FindRecordById("contests", team.GetString("contest"))
+			if err != nil {
+				app.Logger().Error("texttempl query failed", "err", err)
+				return
+			}
+
+			var renbuf bytes.Buffer
+			tmpl, err := template.New("reg_confirm").Parse(text.GetString("text"))
+			if err != nil {
+				app.Logger().Error("texttempl query failed", "err", err)
+				return
+			}
+			err = tmpl.Execute(&renbuf, struct{
+				CompName,
+				TeamName,
+				Rank string
+			}{
+				contest.GetString("name"),
+				team.GetString("name"),
+				strconv.Itoa(team.GetInt("rank")),
+			})
+			if err != nil {
+				app.Logger().Error("templ failed", "err", err)
+				return
+			}
+
+			teacher, err := app.FindRecordById("teachers", team.GetString("teacher"))
+			if err != nil {
+				app.Logger().Error("teacher failed", "err", err)
+				return
+			}
+
+			msg := renbuf.String()
+
+			err = app.NewMailClient().Send(&mailer.Message{
+				From: mail.Address{
+					Address: "strela-vlna@gchd.cz",
+					Name: "Střela Vlna",
+				},
+				To: []mail.Address{ {Address: teacher.GetString("email")}, },
+				Cc: []mail.Address{
+					{Address: team.GetString("player1email")},
+					{Address: team.GetString("player2email")},
+					{Address: team.GetString("player3email")},
+					{Address: team.GetString("player4email")},
+					{Address: team.GetString("player5email")},
+				},
+				Subject: "Děkujeme za účast v " + contest.GetString("name"),
+				HTML: msg,
+			})
+			if err != nil {
+				app.Logger().Error("mail failed", "err", err)
+				return
+			}
+
+			team.Set("betweenEmail", true)
 			err = app.Save(team)
 			if err != nil {
 				app.Logger().Error("team save failed", "err", err)
