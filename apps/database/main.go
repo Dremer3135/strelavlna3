@@ -383,7 +383,7 @@ func main() {
 			teams := []*core.Record{}
 
 			err := app.RecordQuery("teams").
-				AndWhere(dbx.Not(dbx.HashExp{"rank": ""})).
+				AndWhere(dbx.Not(dbx.HashExp{"rank": 0})).
 				AndWhere(dbx.HashExp{"betweenEmail": false}).
 				OrderBy("created").
 				Limit(1).

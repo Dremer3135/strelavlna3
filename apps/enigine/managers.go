@@ -1304,7 +1304,7 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				if !ok { self <- Msg{UserError, id, self, "no teamid"}; break}
 			  mode, ok := msg["mode"]
 				if !ok { self <- Msg{UserError, id, self, "no mode"}; break}
-			  amounts, ok := msg["mode"]
+			  amounts, ok := msg["amount"]
 				if !ok { self <- Msg{UserError, id, self, "no amount"}; break}
 				amount, err := strconv.Atoi(amounts)
 				if err != nil { self <- Msg{UserError, id, self, err.Error()}; break}
