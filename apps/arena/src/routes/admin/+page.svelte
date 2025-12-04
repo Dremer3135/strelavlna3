@@ -43,11 +43,13 @@
 <main>
   {#each sortedTeams as [id, team]}
     {#key id}
-      <div class="team">
+      <button class="team" onclick={() => {
+        navigator.clipboard.writeText(team.teamid);
+      }}>
         <!-- <h3>{team.name}</h3> -->
         <p>{team.money}</p>
-        <p class="id">{team.teamid}</p>
-      </div>
+        <p class="id">{team.teamname}</p>
+      </button>
     {/key}
   {/each}
 </main>
@@ -60,10 +62,15 @@
     gap: 15px;
 
     .team {
+      all: unset;
+      cursor: pointer;
+      overflow: visible;
+      position: relative;
       display: flex;
       border: var(--color-yellow) 3px solid;
       background-color: color-mix(in srgb, var(--color-yellow) 5%, transparent 95%);
       padding: 10px 20px;
+      box-sizing: border-box;
       border-radius: 5px;
       animation: boom 1s cubic-bezier(0.215, 0.610, 0.355, 1) forwards;
 
@@ -82,15 +89,26 @@
       }
 
       .id {
-        display: none;
+        position: absolute;
+        bottom: 0px;
+        left: 50%;
+        transform: translate(-50%, 0%);
+        opacity: 0;
+        transition: all cubic-bezier(0.215, 0.610, 0.355, 1) 0.3s;
+        background-color: var(--color-yellow);
+        box-shadow: 0px 0px 0px 5px white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        box-sizing: border-box;
+        text-wrap: nowrap;
+        font-size: 11px;
+        pointer-events: none;
       }
 
       &:hover{
-        p {
-          display: none;          
-        }
         .id {
-         display: block;
+          opacity: 1;
+          transform: translate(-50%, calc(100% + 15px));
         }
       }
     }
