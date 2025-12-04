@@ -38,6 +38,8 @@
 
   let sortedTeams = $derived(Object.entries($adminViewedTeams).sort(([, a], [, b]) => b.money - a.money));
 
+  let searchedTeamId = $state("");
+
 </script>
 
 <main>
@@ -45,16 +47,21 @@
     {#key id}
       <button class="team" onclick={() => {
         navigator.clipboard.writeText(team.teamid);
-      }}>
+      }} class:selected={searchedTeamId == team.teamid}>
         <!-- <h3>{team.name}</h3> -->
         <p>{team.money}</p>
         <p class="id">{team.teamname}</p>
       </button>
     {/key}
-  {/each}
+    {/each}
+    
 </main>
+<input type="text" bind:value={searchedTeamId}>
 
 <style lang="scss">
+  input {
+    width: 400px;
+  }
   main {
     padding: 100px;
     display: flex;
@@ -73,6 +80,13 @@
       box-sizing: border-box;
       border-radius: 5px;
       animation: boom 1s cubic-bezier(0.215, 0.610, 0.355, 1) forwards;
+
+      &.selected {
+        border-color: var(--color-orange) !important;
+        background-color: var(--color-orange) !important;
+        color: white !important;
+        // background-color: red !important;
+      }
 
       h3 {
         font-family: 'Lexend';
