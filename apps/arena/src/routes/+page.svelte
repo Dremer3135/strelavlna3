@@ -8,6 +8,7 @@
   import Disconnected from '$lib/assets/components/Disconnected.svelte';
   import Navbar from '$lib/assets/components/Navbar.svelte';
   import Paused from '$lib/assets/components/Paused.svelte';
+    import Results from '$lib/assets/components/Results.svelte';
 
   let { data } = $props();
 
@@ -222,13 +223,16 @@
 <main>
   {#if $wsConnected}
     {#if $currentState.runningState === "before"}
-      <Waitroom />
+      <Waitroom type="before"/>
     {:else if $currentState.runningState === "running"}
       <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} />
     {:else if $currentState.runningState === "after"}
-      <h1>Čekáme na výsledky...</h1>
+      <!-- <h1>Čekáme na výsledky...</h1> -->
+      <Waitroom type="waiting-for-results"/>
     {:else if $currentState.runningState === "results"}
-      <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
+      <Waitroom type="results"/>
+      <!-- <Results/> -->
+      <!-- <h1>GG, skončili jste {$currentState.rank}. s {$currentState.money} body</h1>
       <h2>Pokud jste v top 15, {$currentState.rank > 15 ? "což nejste, " : ""}očekávejte email o informacích o prezenčním kole</h2> 
       <h2>Úlohy připravila třída 7.M</h2>
       <h2 style="color: blue; font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Zážitek ze hry vám přináší tým Skrat</h2>
@@ -237,7 +241,7 @@
       <h2>Užijte si alespoň tyto obrázky koťátek</h2>
       {#each Array(7).fill(0) as _item, i}
         <img src="https://cataas.com/cat?t={i}" alt="kočka">
-      {/each}
+      {/each} -->
       <!-- <Main buy={handleBuy} chat={handleChat} sell={handleSell} focus={handleFocus} solve={handleSolve} /> -->
       <!-- <Waitroom /> -->
       <!-- <h1>Soutěž skončila. Děkujeme za účast!</h1> -->

@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import skrat from "$lib/assets/images/SKRAT.svg";
+    let { type }: { type: "before" | "waiting-for-results" | "results" } = $props();
+    import { currentState } from "$lib/stores/state";
 
     const DT = 1/60;
 
@@ -108,8 +110,33 @@
     xOftsetTarget = (e.clientX - width) / 5;
 }}>
     <div class="title">
-        <h1>Vyčkejte na začátek soutěže</h1>
+        {#if type == "before"}
+            <h1>Vyčkejte na začátek soutěže</h1>
+        {:else if type == "waiting-for-results"}
+            <h1>Právě vyhodnocujeme výsledky</h1>
+        {:else}
+            <h1>{$currentState.teamName}</h1>
+        {/if}
     </div>
+    {#if type=="results"}
+        <div class="results">
+            <div class="stats">
+                <div class="rank property-wrapper">
+                    <h2 class="value">{$currentState.rank}.</h2>
+                    <p class="name">Umístění</p>
+                </div>
+                <div class="money property-wrapper">
+                    <h2 class="value">{$currentState.money}</h2>
+                    <p class="name">Body</p>
+                </div>
+            </div>
+            {#if $currentState.rank > 15}
+                <h2 class="message">Pokud jste se umístili v top 15, dostanete potvrzující email s dalšími instrukcemi o postupu do finálového kola</h2>
+            {:else}
+                <h2 class="message">Vypadá to, že jste se umístili v top 15! Očekávejte tedy potvrzující email s dalšími instrukcemi o postupu do finálového kola</h2>
+            {/if}
+        </div>
+    {/if}
     <div class="credits">
         <img src={skrat} alt="credits to skrat team" onmouseenter={() => { creditsHovered = true; }} onmouseleave={() => { creditsHovered = false; }}>
         <div class="content" class:hovered={creditsHovered}>
@@ -130,8 +157,11 @@
         flex-direction: column;
         align-items: center;
         height: 100%;
-        background-color: white;
-        
+
+        canvas {
+            z-index: -1;
+        }
+
         .title {
             position: absolute;
             top: 50px;
@@ -223,6 +253,78 @@
                         transform: translateY(0px);
                     }
                 }
+            }
+        }
+
+        .results {
+            position: absolute;
+            top: 200px;
+
+            .stats {
+                position: relative;
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-evenly;
+    
+                .property-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                    justify-content: center;
+                    align-items: center;
+                    padding-top: 100px;
+                    backdrop-filter: blur(3px);
+                    background-color: #F0F0F030;
+                    box-sizing: border-box;
+                    box-shadow: 0px 0px 10px #F0F0F0;
+                    border-radius: 5px;
+                    padding: 9px 25px;
+    
+                    .value {
+                        font-family: 'Lexend';
+                        font-size: 60px;
+                        margin: 0px;
+                        padding: 10px 60px;
+    
+                        border-bottom: 3px color-mix(in srgb, var(--color-purple) 30%, black 70%) dashed;
+                    }
+    
+                    .name {
+                        font-family: 'Fredoka';
+                        font-size: 25px;
+                        color: color-mix(in srgb, var(--color-purple) 30%, black 70%);
+                        font-weight: 500;
+                        margin: 0px;
+                    }
+                }
+    
+    
+    
+                .money {
+                    .value {
+                        color: var(--color-pink);
+                    }
+                }
+                .rank {
+                    .value {
+                        color: var(--color-yellow);
+                    }
+                }
+            }
+    
+            .message {
+                margin-top: 70px;
+                font-family: 'Fredoka';
+                font-weight: 500;
+                color: color-mix(in srgb, var(--color-purple) 30%, black 70%);
+                backdrop-filter: blur(3px);
+                background-color: #F0F0F030;
+                box-sizing: border-box;
+                box-shadow: 0px 0px 10px #F0F0F0;
+                border-radius: 5px;
+                padding: 9px 25px;
             }
         }
     }
