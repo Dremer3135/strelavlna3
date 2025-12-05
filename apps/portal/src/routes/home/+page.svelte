@@ -320,6 +320,7 @@ $effect(() => {
         <h1>Výsledky 2025</h1>
         <div class="buttons">
             <a href="/home/results/strela-2025-online"><button class="result-button">Pražská střela online</button></a>
+            <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova Vlna online</button></a>
             <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
         </div>
     </div>
