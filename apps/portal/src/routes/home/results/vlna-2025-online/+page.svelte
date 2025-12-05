@@ -607,18 +607,47 @@
 </div>
 
 <style>
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		margin-top: 1rem;
-	}
-	th,
-	td {
-		padding: 0.5rem;
-		border: 1px solid #ccc;
-	}
-	th {
-		background-color: #f0f0f0;
-		font-weight: bold;
-	}
+    #main {
+        font-family: 'Lexend';
+    }
+    .f-18{
+    font-size: 18px;
+    }
+    h1{
+        font-size: 40px;
+        padding-left: 15%;
+    }
+    table{
+        margin: auto;
+        border: 2px solid var(--color-blue);
+        border-radius: 5px;
+        padding-inline: 2%;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-bottom: 60px;
+    }
+    td{
+        padding-block: 1%;
+        padding-inline: 10px;
+    }
+    th{
+        padding-block: 1%;
+        padding-inline: 10px;
+        padding-bottom: 10px;
+    }
+    .white-section{
+        padding-left: 25%;
+        background-color: white;
+        padding-top: 20px;
+        padding-bottom: 40px;
+        padding-right: 15%;
+    }
+    .blue-left {
+        border-left: 4px var(--color-blue) solid;
+        border-radius: 4px;
+        padding-left: 10px;
+    }
+    .white-section p{
+        line-height: 1.6em;
+    }
 </style>
