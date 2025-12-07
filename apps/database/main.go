@@ -598,6 +598,8 @@ func main() {
 
 			fname := string(bres)
 
+			fmt.Printf(fname)
+
 			return e.FileFS(os.DirFS("/"), strings.TrimPrefix(fname, "/"))
 		})
 

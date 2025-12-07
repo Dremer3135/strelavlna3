@@ -23,7 +23,7 @@ DVI_FILE="${TEMP_DIR}/problem.dvi"
 PNG_FILE="${TEMP_DIR}/problem.png"
 
 # Ensure the temporary directory and its contents are cleaned up when the script exits.
-trap 'rm -rf "$TEMP_DIR"' EXIT
+# trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # If the base files path exists and is a directory, copy its contents.
 if [ -d "$BASE_FILES_PATH" ]; then
