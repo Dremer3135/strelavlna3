@@ -584,12 +584,14 @@ func main() {
 			papers := renbuf.String()
 			papers = html.UnescapeString(papers)
 
-			fmt.Println([]string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", prob.BaseFilesPath(), papers})
+			args := []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers}
+
+			fmt.Printf("%#v\n", args)
 
 			bres, err := (&exec.Cmd{
 				// Stdout: os.Stdout,
 				Path: "/bin/bash",
-				Args: []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers},
+				Args: args,
 			}).Output()
 			if err != nil { return err }
 
