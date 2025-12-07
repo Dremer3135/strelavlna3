@@ -8,11 +8,13 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/mail"
 	"os"
+	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -558,6 +560,43 @@ func main() {
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
+		e.Router.GET("/api/paperprob", func(e *core.RequestEvent) error {
+			id := e.Request.URL.Query().Get("id")
+			prob, err := e.App.FindRecordById("probs", id)
+			if err != nil { return err }
+			ntext, nans, err := genProb(e.App, id)
+			if err != nil { return err }
+			prob.Set("text", ntext)
+			prob.Set("answer", nans)
+
+			bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_box_templ.tex")
+			if err != nil { return err }
+
+			tmpl, err := template.New("box_probs_papers").Parse(string(bts))
+			if err != nil { return err }
+
+			renbuf := bytes.Buffer{}
+			err = tmpl.Execute(&renbuf, struct{
+				Text string
+				Imgs []string
+			}{prob.GetString("text"), prob.GetStringSlice("images")})
+			if err != nil { return err }
+
+			papers := renbuf.String()
+			papers = html.UnescapeString(papers)
+
+			bres, err := (&exec.Cmd{
+				Stdout: os.Stdout,
+				Path: "/bin/sh",
+				Args: []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", prob.BaseFilesPath(), papers},
+			}).Output()
+			if err != nil { return err }
+
+			fname := string(bres)
+
+			return e.FileFS(os.DirFS("/"), fname)
+		})
+
 		e.Router.POST("/api/code", func(e *core.RequestEvent) error {
 			data := struct{
 				Id string `json:"id"`
@@ -715,6 +754,7 @@ func main() {
 			"/api/papers",
 			func(e *core.RequestEvent) error {
 				id := e.Request.URL.Query().Get("id")
+				filter := e.Request.URL.Query().Get("filter")
 
 				contest, err := e.App.FindRecordById("contests", id)
 				if err != nil { return err }
@@ -728,7 +768,7 @@ func main() {
 				err = json.Unmarshal([]byte(sconfig), &config)
 				if err != nil { return err }
 
-				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", id))
+				probs, err := e.App.FindRecordsByFilter("probs", filter, "created", -1, 0)
 				if err != nil { return err }
 
 				fmt.Println(len(probs))

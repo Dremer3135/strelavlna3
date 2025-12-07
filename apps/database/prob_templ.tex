@@ -20,25 +20,11 @@
 
 \begin{longtable}{|c|c|}
 \hline
-{{range $idx, $prob := .}}
-  \parbox[t]{0.49\textwidth}{\sf\large\textbf{\Ovalbox{ {{.Diff}} } {{.Name}} } \hfill\small {{.Index}} \\ \\
-  \normalsize { {{.Text}} } \\
-  {{range $jdx, $img := .Img}}
-    \includegraphics[width=0.49\textwidth]{ {{$img}} }  \\ 
-  {{end}}
-  % {{if not (eq .AuthorSocials "")}}
-  \vfill \center{ Autor úlohy: {{.AuthorName}} \hfill \\ }
-  % {{end}}
-  \vfill \center{ {{.TeamName}} \hfill {{.Id}} \\ } }
-  {{if iseven $idx}}
-    \\ \hline
-  {{else}}
-    &
-  {{end}}
+\normalsize { {{.Text}} } \\
+{{range $jdx, $img := .Imgs}}
+  \includegraphics[width=0.49\textwidth]{ {{$img}} }  \\ 
 {{end}}
-{{if not (iseven (len .))}}
-  \\
-{{end}}
+\\ \hline
 \hline
 \end{longtable}
 \end{center}

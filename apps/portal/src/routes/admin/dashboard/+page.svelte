@@ -2,8 +2,9 @@
     import { pocketbase } from "$lib/pocketbase";
 
     let paperid = $state("");
+    let paperfilter = $state("");
     async function genPapers() {
-      await pocketbase.send("/api/papers", {query: {id: paperid}})
+      await pocketbase.send("/api/papers", {query: {id: paperid, filter: paperfilter}})
     }
 
     let sql = $state("");
@@ -30,6 +31,7 @@
         You are admin!!!!!!
     </h1>
     <input type="text" bind:value={paperid}>
+    <input type="text" bind:value={paperfilter}>
     <button onclick={genPapers}>GenPapers</button>
     <br>
     <input type="text" bind:value={sql}>
