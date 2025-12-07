@@ -588,12 +588,13 @@ func main() {
 
 			fmt.Printf("%#v\n", args)
 
-			bres, err := (&exec.Cmd{
-				// Stdout: os.Stdout,
-				Path: "/bin/bash",
-				Args: args,
-			}).Output()
-			if err != nil { return err }
+			cmd := exec.Command(args[0], args[1:]...)
+			var stderr bytes.Buffer
+			cmd.Stderr = &stderr
+			bres, err := cmd.Output()
+			if err != nil {
+				return fmt.Errorf("cmd.Output: %w: %s", err, stderr.String())
+			}
 
 			fname := string(bres)
 
