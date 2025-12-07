@@ -584,6 +584,8 @@ func main() {
 			papers := renbuf.String()
 			papers = html.UnescapeString(papers)
 
+			fmt.Println([]string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", prob.BaseFilesPath(), papers})
+
 			bres, err := (&exec.Cmd{
 				// Stdout: os.Stdout,
 				Path: "/bin/bash",
