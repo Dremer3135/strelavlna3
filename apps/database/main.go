@@ -14,6 +14,7 @@ import (
 	"net/mail"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -596,11 +597,14 @@ func main() {
 				return fmt.Errorf("cmd.Output: %w: %s", err, stderr.String())
 			}
 
-			fname := string(bres)
+			fname := strings.TrimSpace(string(bres)) // Remove potential newline
 
-			fmt.Printf(fname)
+			// Extract directory and base filename
+			dir := filepath.Dir(fname)
+			base := filepath.Base(fname)
 
-			return e.FileFS(os.DirFS("/"), strings.TrimPrefix(fname, "/"))
+			// Serve the file from the specific temporary directory
+			return e.FileFS(os.DirFS(dir), base)
 		})
 
 		e.Router.POST("/api/code", func(e *core.RequestEvent) error {
