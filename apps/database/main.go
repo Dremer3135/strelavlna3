@@ -568,7 +568,7 @@ func main() {
 			prob.Set("text", ntext)
 			prob.Set("answer", nans)
 
-			bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_box_templ.tex")
+			bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_templ_box.tex")
 			if err != nil { return err }
 
 			tmpl, err := template.New("box_probs_papers").Parse(string(bts))
