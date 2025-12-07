@@ -8,7 +8,6 @@ import (
 	"html"
 	"html/template"
 	"io"
-	"io/fs"
 	"log"
 	"math/rand"
 	"net/http"
