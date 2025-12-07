@@ -598,7 +598,7 @@ func main() {
 
 			fname := string(bres)
 
-			return e.FileFS(os.DirFS("/"), fname)
+			return e.FileFS(os.DirFS("/"), strings.TrimPrefix(fname, "/"))
 		})
 
 		e.Router.POST("/api/code", func(e *core.RequestEvent) error {
