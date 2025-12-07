@@ -589,7 +589,7 @@ func main() {
 			bres, err := (&exec.Cmd{
 				// Stdout: os.Stdout,
 				Path: "/bin/bash",
-				Args: []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", prob.BaseFilesPath(), papers},
+				Args: []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers},
 			}).Output()
 			if err != nil { return err }
 
