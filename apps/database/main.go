@@ -585,7 +585,7 @@ func main() {
 			papers = html.UnescapeString(papers)
 
 			bres, err := (&exec.Cmd{
-				Stdout: os.Stdout,
+				// Stdout: os.Stdout,
 				Path: "/bin/sh",
 				Args: []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", prob.BaseFilesPath(), papers},
 			}).Output()
