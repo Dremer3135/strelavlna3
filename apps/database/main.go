@@ -579,7 +579,10 @@ func main() {
 			err = tmpl.Execute(&renbuf, struct{
 				Text string
 				Imgs []string
-			}{prob.GetString("text"), prob.GetStringSlice("images")})
+				Diff string
+				Name string
+				Index int
+			}{prob.GetString("text"), prob.GetStringSlice("images"), prob.GetString("diff"), prob.GetString("name"), -1})
 			if err != nil { return err }
 
 			papers := renbuf.String()
