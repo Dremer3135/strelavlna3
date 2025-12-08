@@ -587,6 +587,8 @@ func main() {
 
 			papers := renbuf.String()
 			papers = html.UnescapeString(papers)
+			papers = strings.ReplaceAll(papers, "%", "\\%")
+			papers = strings.ReplaceAll(papers, "°", "\\degree")
 
 			args := []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers}
 
