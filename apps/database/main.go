@@ -39,11 +39,25 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var printSocketChan = make(chan PrinterProb, 100)
+var printSocketChan1 = make(chan PrinterProb, 100)
+var printSocketChan2 = make(chan PrinterProb, 100)
 
-func printingSocketLoop(conn *websocket.Conn) {
+func printingSocketLoop1(conn *websocket.Conn) {
 	for {
-		prob, ok := <- printSocketChan
+		prob, ok := <- printSocketChan1
+		if !ok {
+			conn.WriteJSON(map[string]any{
+				"error": "chan closed",
+			})
+			break
+		}
+		conn.WriteJSON(prob)
+	}
+}
+
+func printingSocketLoop2(conn *websocket.Conn) {
+	for {
+		prob, ok := <- printSocketChan2
 		if !ok {
 			conn.WriteJSON(map[string]any{
 				"error": "chan closed",
@@ -736,18 +750,30 @@ func main() {
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
 
-		e.Router.GET("/api/printsocket", func(e *core.RequestEvent) error {
+		e.Router.GET("/api/printsocket1", func(e *core.RequestEvent) error {
 			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
 			if err != nil { return err }
-			go printingSocketLoop(conn)
+			go printingSocketLoop1(conn)
+			return nil
+		})
+
+		e.Router.GET("/api/printsocket2", func(e *core.RequestEvent) error {
+			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
+			if err != nil { return err }
+			go printingSocketLoop2(conn)
 			return nil
 		})
 
 		e.Router.GET("/api/printrprob", func(e *core.RequestEvent) error {
+			printid := e.Request.URL.Query().Get("id")
 			probs, err := e.App.FindAllRecords("probs")
 			if err != nil { return err }
 			prob := probs[rand.Intn(len(probs))]
-			printSocketChan <- PrinterProb{
+			ch := printSocketChan1
+			if printid == "2" {
+				ch = printSocketChan2
+			}
+			ch <- PrinterProb{
 				Diff: prob.GetString("diff"),
 				Name: prob.GetString("name"),
 				Id: prob.Id,
