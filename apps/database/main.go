@@ -29,8 +29,38 @@ import (
 	"github.com/pocketbase/pocketbase/tools/mailer"
 	"github.com/pocketbase/pocketbase/tools/security"
 
+	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+var printSocketChan = make(chan PrinterProb, 100)
+
+func printingSocketLoop(conn *websocket.Conn) {
+	for {
+		prob, ok := <- printSocketChan
+		if !ok {
+			conn.WriteJSON(map[string]any{
+				"error": "chan closed",
+			})
+			break
+		}
+		conn.WriteJSON(prob)
+	}
+}
+
+type PrinterProb struct {
+	Diff string
+	Name string
+	Id string
+	TeamName string
+	Code string
+}
 
 type PaperProb struct {
   Diff string
@@ -705,6 +735,27 @@ func main() {
 				Id string `json:"id"`
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
+
+		e.Router.GET("/api/printsocket", func(e *core.RequestEvent) error {
+			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
+			if err != nil { return err }
+			go printingSocketLoop(conn)
+			return nil
+		})
+
+		e.Router.GET("/api/printrprob", func(e *core.RequestEvent) error {
+			probs, err := e.App.FindAllRecords("probs")
+			if err != nil { return err }
+			prob := probs[rand.Intn(len(probs))]
+			printSocketChan <- PrinterProb{
+				Diff: prob.GetString("diff"),
+				Name: prob.GetString("name"),
+				Id: prob.Id,
+				TeamName: "Bambuláci",
+				Code: "676767",
+			}
+			return e.String(200, "ok")
+		})
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
 		//
