@@ -634,7 +634,7 @@ func main() {
 			papers = strings.ReplaceAll(papers, "%", "\\%")
 			papers = strings.ReplaceAll(papers, "°", "\\degree")
 
-			for _, img := range prob.GetStringSlice("slice") {
+			for _, img := range prob.GetStringSlice("images") {
 				papers = strings.ReplaceAll(papers, " " + img + " ", img)
 			}
 
