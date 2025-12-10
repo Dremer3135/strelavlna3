@@ -633,7 +633,6 @@ func main() {
 			papers = html.UnescapeString(papers)
 			papers = strings.ReplaceAll(papers, "%", "\\%")
 			papers = strings.ReplaceAll(papers, "°", "\\degree")
-			papers = strings.ReplaceAll(papers, "\\", "\\textbackslash{}")
 			papers = strings.ReplaceAll(papers, "{", "\\{")
 			papers = strings.ReplaceAll(papers, "}", "\\}")
 			papers = strings.ReplaceAll(papers, "&", "\\&")
