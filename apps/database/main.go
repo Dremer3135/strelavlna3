@@ -770,6 +770,7 @@ func main() {
 			if err != nil { return err }
 			prob := probs[rand.Intn(len(probs))]
 			ch := printSocketChan1
+			fmt.Printf("%#v\n", printid)
 			if printid == "2" {
 				ch = printSocketChan2
 			}
