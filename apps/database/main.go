@@ -631,15 +631,12 @@ func main() {
 
 			papers := renbuf.String()
 			papers = html.UnescapeString(papers)
-			// papers = strings.ReplaceAll(papers, "%", "\\%")
-			// papers = strings.ReplaceAll(papers, "°", "\\degree")
-			// papers = strings.ReplaceAll(papers, "{", "\\{")
-			// papers = strings.ReplaceAll(papers, "}", "\\}")
-			// papers = strings.ReplaceAll(papers, "&", "\\&")
-			// papers = strings.ReplaceAll(papers, "^", "\\^{}")
-			// papers = strings.ReplaceAll(papers, "#", "\\#")
-			// papers = strings.ReplaceAll(papers, "_", "\\_")
-			// papers = strings.ReplaceAll(papers, "$", "\\$")
+			papers = strings.ReplaceAll(papers, "%", "\\%")
+			papers = strings.ReplaceAll(papers, "°", "\\degree")
+
+			for _, img := range prob.GetStringSlice("slice") {
+				papers = strings.ReplaceAll(papers, " " + img + " ", img)
+			}
 
 			args := []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers}
 
