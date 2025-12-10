@@ -39,32 +39,34 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var printSocketChan1 = make(chan PrinterProb, 100)
-var printSocketChan2 = make(chan PrinterProb, 100)
-
-func printingSocketLoop1(conn *websocket.Conn) {
-	for {
-		prob, ok := <- printSocketChan1
-		if !ok {
-			conn.WriteJSON(map[string]any{
-				"error": "chan closed",
-			})
-			break
-		}
-		conn.WriteJSON(prob)
-	}
+var printSocketChanMap = map[string]chan PrinterProb{
+	"1": make(chan PrinterProb, 100),
+	"2": make(chan PrinterProb, 100),
+	"3": make(chan PrinterProb, 100),
 }
 
-func printingSocketLoop2(conn *websocket.Conn) {
-	for {
-		prob, ok := <- printSocketChan2
-		if !ok {
-			conn.WriteJSON(map[string]any{
-				"error": "chan closed",
-			})
-			break
+func printingSocketLoop(index string) func(*websocket.Conn) {
+	ch := printSocketChanMap[index]
+	return func(conn *websocket.Conn) {
+		clchan := make(chan bool)
+		go func(){
+			conn.ReadMessage()
+			clchan <- true
+		}()
+		loop: for {
+			select {
+			case <-clchan:
+				break loop
+			case prob, ok := <- ch:
+				if !ok {
+					conn.WriteJSON(map[string]any{
+						"error": "chan closed",
+					})
+					break loop
+				}
+				conn.WriteJSON(prob)
+			}
 		}
-		conn.WriteJSON(prob)
 	}
 }
 
@@ -754,17 +756,11 @@ func main() {
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
 
-		e.Router.GET("/api/printsocket1", func(e *core.RequestEvent) error {
+		e.Router.GET("/api/printsocket", func(e *core.RequestEvent) error {
+			printid := e.Request.URL.Query().Get("id")
 			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
 			if err != nil { return err }
-			go printingSocketLoop1(conn)
-			return nil
-		})
-
-		e.Router.GET("/api/printsocket2", func(e *core.RequestEvent) error {
-			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
-			if err != nil { return err }
-			go printingSocketLoop2(conn)
+			go printingSocketLoop(printid)(conn)
 			return nil
 		})
 
@@ -773,12 +769,7 @@ func main() {
 			probs, err := e.App.FindAllRecords("probs")
 			if err != nil { return err }
 			prob := probs[rand.Intn(len(probs))]
-			ch := printSocketChan1
-			fmt.Printf("%#v\n", printid)
-			if printid == "2" {
-				ch = printSocketChan2
-			}
-			ch <- PrinterProb{
+			printSocketChanMap[printid] <- PrinterProb{
 				Diff: prob.GetString("diff"),
 				Name: prob.GetString("name"),
 				Id: prob.Id,
