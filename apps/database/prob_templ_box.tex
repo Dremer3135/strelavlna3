@@ -6,6 +6,7 @@
 \setlength{\textheight}{27.5cm}
 \setlength{\textwidth}{19.0cm}
 \usepackage{longtable}
+\usepackage{tgbonum}
 \usepackage{fancybox}
 \usepackage{textcomp}
 \usepackage{amsmath}
@@ -21,7 +22,7 @@
 \begin{longtable}{|c|c|}
 \hline
 \parbox[t]{0.49\textwidth}{
-\normalsize { {{.Text}} } \\
+  \LARGE{ {{.Text}} } \\
 {{range $jdx, $img := .Imgs}}
   \includegraphics[width=0.49\textwidth]{ {{$img}} }  \\ 
 {{end}}

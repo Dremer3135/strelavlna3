@@ -49,7 +49,7 @@ fi
 
 # Convert the DVI file to a tight-fitting PNG.
 # We also run this from inside the temp directory.
-(cd "$TEMP_DIR" && dvipng -T tight -o "$PNG_FILE" "$DVI_FILE" > /dev/null 2>&1)
+(cd "$TEMP_DIR" && dvipng -D 149 -T tight -o "$PNG_FILE" "$DVI_FILE" > /dev/null 2>&1)
 
 # Check if the PNG file was created.
 if [ ! -f "$PNG_FILE" ]; then

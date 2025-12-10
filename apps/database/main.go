@@ -39,32 +39,34 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var printSocketChan1 = make(chan PrinterProb, 100)
-var printSocketChan2 = make(chan PrinterProb, 100)
-
-func printingSocketLoop1(conn *websocket.Conn) {
-	for {
-		prob, ok := <- printSocketChan1
-		if !ok {
-			conn.WriteJSON(map[string]any{
-				"error": "chan closed",
-			})
-			break
-		}
-		conn.WriteJSON(prob)
-	}
+var printSocketChanMap = map[string]chan PrinterProb{
+	"1": make(chan PrinterProb, 100),
+	"2": make(chan PrinterProb, 100),
+	"3": make(chan PrinterProb, 100),
 }
 
-func printingSocketLoop2(conn *websocket.Conn) {
-	for {
-		prob, ok := <- printSocketChan2
-		if !ok {
-			conn.WriteJSON(map[string]any{
-				"error": "chan closed",
-			})
-			break
+func printingSocketLoop(index string) func(*websocket.Conn) {
+	ch := printSocketChanMap[index]
+	return func(conn *websocket.Conn) {
+		clchan := make(chan bool)
+		go func(){
+			conn.ReadMessage()
+			clchan <- true
+		}()
+		loop: for {
+			select {
+			case <-clchan:
+				break loop
+			case prob, ok := <- ch:
+				if !ok {
+					conn.WriteJSON(map[string]any{
+						"error": "chan closed",
+					})
+					break loop
+				}
+				conn.WriteJSON(prob)
+			}
 		}
-		conn.WriteJSON(prob)
 	}
 }
 
@@ -215,6 +217,14 @@ func latexEscape(s string) string {
   res = strings.ReplaceAll(res, `$`, `\$`)
   res = strings.ReplaceAll(res, `<br>`, `\n`)
   return res
+}
+
+type TeamGameData struct {
+	Money int
+	Free []string
+	Bought []string
+	Solved []string
+	Sold []string
 }
 
 func main() {
@@ -604,6 +614,233 @@ func main() {
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
+		e.Router.GET("/api/setgamedata", func(e *core.RequestEvent) error {
+			teamf := e.Request.URL.Query().Get("teamf")
+			probf := e.Request.URL.Query().Get("probf")
+
+			probs, err := e.App.FindRecordsByFilter("probs", probf, "created", -1, 0)
+			if err != nil { return err }
+
+			teams, err := e.App.FindRecordsByFilter("teams", teamf, "created", -1, 0)
+			if err != nil { return err }
+
+			gamedata := TeamGameData{100, []string{}, []string{}, []string{}, []string{}}
+
+			for _, prob := range probs {
+				gamedata.Free = append(gamedata.Free, prob.Id)
+			}
+
+			for _, team := range teams {
+				team.Set("inPersonGameData", gamedata)
+				err := e.App.Save(team)
+				if err != nil { return err }
+			}
+
+			return nil
+
+		}).BindFunc(requireAdminAuth())
+
+		e.Router.GET("/api/buyprob", func(e *core.RequestEvent) error {
+			teamid := e.Request.URL.Query().Get("team")
+			diff := e.Request.URL.Query().Get("diff")
+			printid := e.Request.URL.Query().Get("printer")
+
+			err := e.App.RunInTransaction(func(txApp core.App) error {
+
+				team, err := txApp.FindRecordById("teams", teamid)
+				if err != nil { return err }
+
+				gamedata := TeamGameData{}
+				err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+				if err != nil { return err }
+
+				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
+				if err != nil { return err }
+
+				sconfig := contest.GetString("config")
+				config := struct{
+					Buy map[string]int
+					Sell map[string]int
+					Solve map[string]int
+				}{}
+				err = json.Unmarshal([]byte(sconfig), &config)
+				if err != nil { return err }
+
+				if gamedata.Money < config.Buy[diff] {
+					return errors.New("not enough money")
+				}
+
+				var prob *core.Record
+
+				for range len(gamedata.Free) {
+					probid := gamedata.Free[rand.Intn(len(gamedata.Free))]
+					prob, err = txApp.FindRecordById("probs", probid)
+					if err != nil { return err }
+					if prob.GetString("diff") == diff { break }
+				}
+
+				if prob == nil {
+					return errors.New("no probs left")
+				}
+
+				text, ans := prob.GetString("text"), prob.GetString("answer")
+
+				if prob.GetBool("auto") {
+					text, ans, err = genProb(txApp, prob.Id)
+					if err != nil { return err }
+				}
+
+				coll, err := txApp.FindCollectionByNameOrId("tickets")
+				if err != nil { return err }
+
+				tick := core.NewRecord(coll)
+
+				tick.Set("team", teamid)
+				tick.Set("prob", prob.Id)
+				tick.Set("code", security.RandomString(7))
+				tick.Set("text", text)
+				tick.Set("answer", ans)
+
+				err = txApp.Save(tick)
+				if err != nil { return err }
+
+				if !prob.GetBool("infinite") {
+					gamedata.Free = slices.DeleteFunc(gamedata.Free, func(a string) bool { return a == prob.Id })
+				}
+				gamedata.Bought = append(gamedata.Bought, prob.Id)
+
+				gamedata.Money -= config.Buy[diff]
+
+				datab, err := json.Marshal(gamedata)
+				if err != nil { return err }
+
+				team.Set("inPersonGameData", string(datab))
+
+				err = txApp.Save(team)
+				if err != nil { return err }
+
+				printSocketChanMap[printid] <- PrinterProb{
+					Diff: prob.GetString("diff"),
+					Name: prob.GetString("name"),
+					Id: prob.Id,
+					TeamName: team.GetString("name"),
+					Code: tick.GetString("code"),
+				}
+				return nil
+			})
+
+			if err != nil { return e.String(400, err.Error()) }
+
+			return e.String(200, "ok")
+		})
+
+		e.Router.GET("/api/getans", func(e *core.RequestEvent) error {
+			tickid := e.Request.URL.Query().Get("id")
+
+			tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
+			if err != nil { return err }
+
+			return e.String(200, tick.GetString("answer"))
+		})
+
+		e.Router.GET("/api/grade", func(e *core.RequestEvent) error {
+			tickid := e.Request.URL.Query().Get("id")
+
+			err := e.App.RunInTransaction(func(txApp core.App) error {
+				tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
+				if err != nil { return err }
+
+				team, err := e.App.FindRecordById("teams", tick.GetString("team"))
+				if err != nil { return err }
+
+				gamedata := TeamGameData{}
+				err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+				if err != nil { return err }
+
+				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
+				if err != nil { return err }
+
+				sconfig := contest.GetString("config")
+				config := struct{
+					Buy map[string]int
+					Sell map[string]int
+					Solve map[string]int
+				}{}
+				err = json.Unmarshal([]byte(sconfig), &config)
+				if err != nil { return err }
+
+				gamedata.Bought = slices.DeleteFunc(gamedata.Bought, func(a string) bool { return a == tick.GetString("prob") })
+				gamedata.Solved = append(gamedata.Solved, tick.GetString("prob"))
+
+				prob, err := txApp.FindRecordById("probs", tick.GetString("prob"))
+				if err != nil { return err }
+				gamedata.Money += config.Solve[prob.GetString("diff")]
+
+				datab, err := json.Marshal(gamedata)
+				if err != nil { return err }
+
+				team.Set("inPersonGameData", string(datab))
+
+				err = e.App.Save(team)
+				if err != nil { return err }
+
+				return nil
+			})
+
+			if err != nil { return e.String(400, err.Error()) }
+
+			return e.String(200, "ok")
+		})
+
+		e.Router.GET("/api/sell", func(e *core.RequestEvent) error {
+			tickid := e.Request.URL.Query().Get("id")
+
+			err := e.App.RunInTransaction(func(txApp core.App) error {
+				tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
+				if err != nil { return err }
+
+				team, err := e.App.FindRecordById("teams", tick.GetString("team"))
+				if err != nil { return err }
+
+				gamedata := TeamGameData{}
+				err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+				if err != nil { return err }
+
+				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
+				if err != nil { return err }
+
+				sconfig := contest.GetString("config")
+				config := struct{
+					Buy map[string]int
+					Sell map[string]int
+					Solve map[string]int
+				}{}
+				err = json.Unmarshal([]byte(sconfig), &config)
+				if err != nil { return err }
+
+				gamedata.Bought = slices.DeleteFunc(gamedata.Bought, func(a string) bool { return a == tick.GetString("prob") })
+				gamedata.Sold = append(gamedata.Sold, tick.GetString("prob"))
+
+				prob, err := txApp.FindRecordById("probs", tick.GetString("prob"))
+				if err != nil { return err }
+				gamedata.Money += config.Sell[prob.GetString("diff")]
+
+				datab, err := json.Marshal(gamedata)
+				if err != nil { return err }
+
+				team.Set("inPersonGameData", string(datab))
+
+				err = e.App.Save(team)
+				if err != nil { return err }
+
+				return nil
+			})
+
+			if err != nil { return e.String(400, err.Error()) }
+
+			return e.String(200, "ok")
+		})
+
 		e.Router.GET("/api/paperprob", func(e *core.RequestEvent) error {
 			id := e.Request.URL.Query().Get("id")
 			prob, err := e.App.FindRecordById("probs", id)
@@ -633,6 +870,10 @@ func main() {
 			papers = html.UnescapeString(papers)
 			papers = strings.ReplaceAll(papers, "%", "\\%")
 			papers = strings.ReplaceAll(papers, "°", "\\degree")
+
+			for _, img := range prob.GetStringSlice("images") {
+				papers = strings.ReplaceAll(papers, " " + img + " ", img)
+			}
 
 			args := []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers}
 
@@ -750,17 +991,11 @@ func main() {
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
 
-		e.Router.GET("/api/printsocket1", func(e *core.RequestEvent) error {
+		e.Router.GET("/api/printsocket", func(e *core.RequestEvent) error {
+			printid := e.Request.URL.Query().Get("id")
 			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
 			if err != nil { return err }
-			go printingSocketLoop1(conn)
-			return nil
-		})
-
-		e.Router.GET("/api/printsocket2", func(e *core.RequestEvent) error {
-			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
-			if err != nil { return err }
-			go printingSocketLoop2(conn)
+			go printingSocketLoop(printid)(conn)
 			return nil
 		})
 
@@ -769,12 +1004,7 @@ func main() {
 			probs, err := e.App.FindAllRecords("probs")
 			if err != nil { return err }
 			prob := probs[rand.Intn(len(probs))]
-			ch := printSocketChan1
-			fmt.Printf("%#v\n", printid)
-			if printid == "2" {
-				ch = printSocketChan2
-			}
-			ch <- PrinterProb{
+			printSocketChanMap[printid] <- PrinterProb{
 				Diff: prob.GetString("diff"),
 				Name: prob.GetString("name"),
 				Id: prob.Id,
