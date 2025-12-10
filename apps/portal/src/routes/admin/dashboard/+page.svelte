@@ -7,6 +7,12 @@
       await pocketbase.send("/api/papers", {query: {id: paperid, filter: paperfilter}})
     }
 
+    let tfilter = $state("");
+    let pfilter = $state("");
+    async function setGameData() {
+      await pocketbase.send("/api/setgamedata", {query: {teamf: tfilter, probf: pfilter}})
+    }
+
     let sql = $state("");
     async function sendSql() {
       await pocketbase.send("/api/sql", {body: sql, method: "POST"})
@@ -33,6 +39,10 @@
     <input type="text" bind:value={paperid}>
     <input type="text" bind:value={paperfilter}>
     <button onclick={genPapers}>GenPapers</button>
+    <br>
+    <input type="text" bind:value={tfilter}>
+    <input type="text" bind:value={pfilter}>
+    <button onclick={setGameData}>SetGameData</button>
     <br>
     <input type="text" bind:value={sql}>
     <button onclick={sendSql}>SendSql</button>
