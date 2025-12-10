@@ -18,10 +18,9 @@ LATEX_CONTENT=$2
 TEMP_DIR=$(mktemp -d)
 
 # Define the full paths for our files within the temp directory.
-TEX_FILE="${TEMP_DIR}/problem.tex"
-DVI_FILE="${TEMP_DIR}/problem.dvi"
-PNG_FILE="${TEMP_DIR}/problem.png"
-
+TEX_FILE="${TEMP_DIR}/problem.tex"                                                           
+PDF_FILE="${TEMP_DIR}/problem.pdf"                                                           
+PNG_FILE="${TEMP_DIR}/problem.png" 
 # Ensure the temporary directory and its contents are cleaned up when the script exits.
 # trap 'rm -rf "$TEMP_DIR"' EXIT
 
@@ -35,21 +34,21 @@ fi
 # Write the LaTeX content passed as an argument into the .tex file.
 echo "$LATEX_CONTENT" > "$TEX_FILE"
 
-# Run the latex compiler. We run this inside the temporary directory
-# so that latex can find the image files.
-(cd "$TEMP_DIR" && latex -interaction=nonstopmode "$TEX_FILE" > /dev/null 2>&1)
-
-# Check if the DVI file was created. If not, latex failed.
-if [ ! -f "$DVI_FILE" ]; then
-    echo "Error: latex compilation failed. No DVI file produced." >&2
-    # For debugging, you can check the log file in the temp dir.
-    # cat "${TEMP_DIR}/problem.log" >&2
-    exit 1
-fi
-
-# Convert the DVI file to a tight-fitting PNG.
-# We also run this from inside the temp directory.
-(cd "$TEMP_DIR" && dvipng -D 512 -T tight -o "$PNG_FILE" "$DVI_FILE" > /dev/null 2>&1)
+# Run the pdflatex compiler. We run this inside the temporary directory                         
+# so that pdflatex can find the image files.                                                    
+(cd "$TEMP_DIR" && pdflatex -interaction=nonstopmode "$TEX_FILE" > /dev/null 2>&1)              
+                                                                                             
+# Check if the PDF file was created. If not, pdflatex failed.                                   
+if [ ! -f "$PDF_FILE" ]; then                                                                
+    echo "Error: pdflatex compilation failed. No PDF file produced." >&2                        
+    # For debugging, you can check the log file in the temp dir.                             
+    # cat "${TEMP_DIR}/problem.log" >&2                                                      
+    exit 1                                                                                   
+fi                                                                                           
+                                                                                             
+# Convert the PDF file to a tight-fitting PNG.                                               
+# We also run this from inside the temp directory.                                           
+(cd "$TEMP_DIR" && convert -density 300 "$PDF_FILE" -quality 90 "$PNG_FILE" > /dev/null 2>&1)
 
 # Check if the PNG file was created.
 if [ ! -f "$PNG_FILE" ]; then
