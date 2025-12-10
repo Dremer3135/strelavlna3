@@ -633,6 +633,14 @@ func main() {
 			papers = html.UnescapeString(papers)
 			papers = strings.ReplaceAll(papers, "%", "\\%")
 			papers = strings.ReplaceAll(papers, "°", "\\degree")
+			papers = strings.ReplaceAll(papers, "\\", "\\textbackslash{}")
+			papers = strings.ReplaceAll(papers, "{", "\\{")
+			papers = strings.ReplaceAll(papers, "}", "\\}")
+			papers = strings.ReplaceAll(papers, "&", "\\&")
+			papers = strings.ReplaceAll(papers, "^", "\\^{}")
+			papers = strings.ReplaceAll(papers, "#", "\\#")
+			papers = strings.ReplaceAll(papers, "_", "\\_")
+			papers = strings.ReplaceAll(papers, "$", "\\$")
 
 			args := []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers}
 
