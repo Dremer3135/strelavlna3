@@ -646,7 +646,7 @@ func main() {
 
 		}).BindFunc(requireAdminAuth())
 
-		e.Router.GET("/api/cash", func(e *core.RequestEvent) error {
+		e.Router.POST("/api/cash", func(e *core.RequestEvent) error {
 			req := make(map[string]string)
 			err := json.NewDecoder(e.Request.Body).Decode(&req)
 			if err != nil { return err }
