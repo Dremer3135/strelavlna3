@@ -719,6 +719,12 @@ func main() {
 					}
 
 					text, ans := prob.GetString("text"), prob.GetString("answer")
+					text = strings.ReplaceAll(text, "%", "\\%")
+					text = strings.ReplaceAll(text, "<br>", "\n")
+					text = strings.ReplaceAll(text, "°", "\\degree")
+					ans = strings.ReplaceAll(ans, "%", "\\%")
+					ans = strings.ReplaceAll(ans, "<br>", "\n")
+					ans = strings.ReplaceAll(ans, "°", "\\degree")
 
 					if prob.GetBool("auto") {
 						text, ans, err = genProb(txApp, prob.Id)
@@ -1154,20 +1160,35 @@ func main() {
 			return nil
 		})
 
-		e.Router.GET("/api/printrprob", func(e *core.RequestEvent) error {
-			printid := e.Request.URL.Query().Get("id")
-			probs, err := e.App.FindAllRecords("probs")
-			if err != nil { return err }
-			prob := probs[rand.Intn(len(probs))]
-			printSocketChanMap[printid] <- PrinterProb{
-				Diff: prob.GetString("diff"),
-				Name: prob.GetString("name"),
-				Id: prob.Id,
-				TeamName: "Bambuláci",
-				Code: "676767",
-			}
-			return e.String(200, "ok")
-		})
+		// e.Router.GET("/api/printrprob", func(e *core.RequestEvent) error {
+		// 	printid := e.Request.URL.Query().Get("id")
+		// 	probs, err := e.App.FindAllRecords("probs")
+		// 	if err != nil { return err }
+		//
+		// 	coll, err := e.App.FindCollectionByNameOrId("tickets")
+		// 	if err != nil { return err }
+		//
+		// 	tick := core.NewRecord(coll)
+		//
+		// 	tick.Set("team", "b881f9jlij0e4vz")
+		// 	tick.Set("prob", prob.Id)
+		// 	tick.Set("code", security.RandomString(7))
+		// 	tick.Set("text", text)
+		// 	tick.Set("answer", ans)
+		//
+		// 	err = txApp.Save(tick)
+		// 	if err != nil { return err }
+		//
+		// 	prob := probs[rand.Intn(len(probs))]
+		// 	printSocketChanMap[printid] <- PrinterProb{
+		// 		Diff: prob.GetString("diff"),
+		// 		Name: prob.GetString("name"),
+		// 		Id: prob.Id,
+		// 		TeamName: "Bambuláci",
+		// 		Code: "676767",
+		// 	}
+		// 	return e.String(200, "ok")
+		// })
 
 		// e.Router.POST("/loadprobs", func(e *core.RequestEvent) error {
 		//
