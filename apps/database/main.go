@@ -725,6 +725,7 @@ func main() {
 						prob, err = txApp.FindRecordById("probs", probid)
 						if err != nil { return err }
 						if prob.GetString("diff") == diff { break }
+						prob = nil
 					}
 
 					if prob == nil {
@@ -1053,7 +1054,7 @@ func main() {
 			papers := renbuf.String()
 			papers = html.UnescapeString(papers)
 			papers = strings.ReplaceAll(papers, "%", "\\%")
-			papers = strings.ReplaceAll(papers, "°", "\\degree")
+			papers = strings.ReplaceAll(papers, "°", "\\degree ")
 			papers = strings.ReplaceAll(papers, "<br>", "\n")
 
 			for _, img := range prob.GetStringSlice("images") {
