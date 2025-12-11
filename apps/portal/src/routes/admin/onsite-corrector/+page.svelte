@@ -53,10 +53,10 @@
             console.log(response);
 
             
-            // if (response.status != 200){
-            //     console.log("sdjhfkahj");
-            //     throw response.message;
-            // }
+            if (response.status ?? 200 != 200){
+                console.log("sdjhfkahj");
+                throw response.message;
+            }
             
             scannedProb = {
                 id: text,
