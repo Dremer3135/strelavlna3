@@ -763,7 +763,7 @@ func main() {
 				"money": gamedata.Money,
 				"state": state,
 			})
-		}).BindFunc(requireAdminAuth())
+		})
 
 		e.Router.GET("/api/gradeprob", func(e *core.RequestEvent) error {
 			tickid := e.Request.URL.Query().Get("id")
@@ -812,7 +812,7 @@ func main() {
 			if err != nil { return e.String(400, err.Error()) }
 
 			return e.String(200, "ok")
-		}).BindFunc(requireAdminAuth())
+		})
 
 		e.Router.GET("/api/sellprob", func(e *core.RequestEvent) error {
 			tickid := e.Request.URL.Query().Get("id")
@@ -861,7 +861,7 @@ func main() {
 			if err != nil { return e.String(400, err.Error()) }
 
 			return e.String(200, "ok")
-		}).BindFunc(requireAdminAuth())
+		})
 
 		e.Router.GET("/api/paperprob", func(e *core.RequestEvent) error {
 			id := e.Request.URL.Query().Get("id")
