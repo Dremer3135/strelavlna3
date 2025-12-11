@@ -924,10 +924,10 @@ func main() {
 			tickid := e.Request.URL.Query().Get("id")
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
-				tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
+				tick, err := txApp.FindFirstRecordByData("tickets", "code", tickid)
 				if err != nil { return err }
 
-				team, err := e.App.FindRecordById("teams", tick.GetString("team"))
+				team, err := txApp.FindRecordById("teams", tick.GetString("team"))
 				if err != nil { return err }
 
 				gamedata := TeamGameData{}
@@ -958,7 +958,7 @@ func main() {
 
 				team.Set("inPersonData", string(datab))
 
-				err = e.App.Save(team)
+				err = txApp.Save(team)
 				if err != nil { return err }
 
 				return nil
@@ -973,10 +973,10 @@ func main() {
 			tickid := e.Request.URL.Query().Get("id")
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
-				tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
+				tick, err := txApp.FindFirstRecordByData("tickets", "code", tickid)
 				if err != nil { return err }
 
-				team, err := e.App.FindRecordById("teams", tick.GetString("team"))
+				team, err := txApp.FindRecordById("teams", tick.GetString("team"))
 				if err != nil { return err }
 
 				gamedata := TeamGameData{}
@@ -1007,7 +1007,7 @@ func main() {
 
 				team.Set("inPersonData", string(datab))
 
-				err = e.App.Save(team)
+				err = txApp.Save(team)
 				if err != nil { return err }
 
 				return nil
