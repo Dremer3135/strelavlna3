@@ -680,6 +680,7 @@ func main() {
 			  diff := req["uloha"]
 				cardid := req["id"]
 				printid := req["ctecka"]
+				fmt.Printf("T: %#v\n", req)
 				err := e.App.RunInTransaction(func(txApp core.App) error {
 
 					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
