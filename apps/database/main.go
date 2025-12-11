@@ -627,7 +627,7 @@ func main() {
 			teams, err := e.App.FindRecordsByFilter("teams", teamf, "created", -1, 0)
 			if err != nil { return err }
 
-			gamedata := TeamGameData{100, []string{}, []string{}, []string{}, []string{}}
+			gamedata := TeamGameData{140, []string{}, []string{}, []string{}, []string{}}
 
 			for _, prob := range probs {
 				gamedata.Free = append(gamedata.Free, prob.Id)
