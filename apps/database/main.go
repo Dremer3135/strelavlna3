@@ -640,14 +640,112 @@ func main() {
 
 		}).BindFunc(requireAdminAuth())
 
+		e.Router.GET("/api/cash", func(e *core.RequestEvent) error {
+			printid := e.Request.URL.Query().Get("printer")
+			req := make(map[string]string)
+			err := json.NewDecoder(e.Request.Body).Decode(&req)
+			if err != nil { return err }
+			defer e.Request.Body.Close()
+			switch req["typ"] {
+			case "overeni":
+			  diff := req["uloha"]
+				cardid := req["id"]
+				err := e.App.RunInTransaction(func(txApp core.App) error {
+
+					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
+					if err != nil { return err }
+
+					gamedata := TeamGameData{}
+					err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+					if err != nil { return err }
+
+					contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
+					if err != nil { return err }
+
+					sconfig := contest.GetString("config")
+					config := struct{
+						Buy map[string]int
+						Sell map[string]int
+						Solve map[string]int
+					}{}
+					err = json.Unmarshal([]byte(sconfig), &config)
+					if err != nil { return err }
+
+					if gamedata.Money < config.Buy[diff] {
+						return errors.New("not enough money")
+					}
+
+					var prob *core.Record
+
+					for range len(gamedata.Free) {
+						probid := gamedata.Free[rand.Intn(len(gamedata.Free))]
+						prob, err = txApp.FindRecordById("probs", probid)
+						if err != nil { return err }
+						if prob.GetString("diff") == diff { break }
+					}
+
+					if prob == nil {
+						return errors.New("no probs left")
+					}
+
+					text, ans := prob.GetString("text"), prob.GetString("answer")
+
+					if prob.GetBool("auto") {
+						text, ans, err = genProb(txApp, prob.Id)
+						if err != nil { return err }
+					}
+
+					coll, err := txApp.FindCollectionByNameOrId("tickets")
+					if err != nil { return err }
+
+					tick := core.NewRecord(coll)
+
+					tick.Set("team", teamid)
+					tick.Set("prob", prob.Id)
+					tick.Set("code", security.RandomString(7))
+					tick.Set("text", text)
+					tick.Set("answer", ans)
+
+					err = txApp.Save(tick)
+					if err != nil { return err }
+
+					if !prob.GetBool("infinite") {
+						gamedata.Free = slices.DeleteFunc(gamedata.Free, func(a string) bool { return a == prob.Id })
+					}
+					gamedata.Bought = append(gamedata.Bought, prob.Id)
+
+					gamedata.Money -= config.Buy[diff]
+
+					datab, err := json.Marshal(gamedata)
+					if err != nil { return err }
+
+					team.Set("inPersonGameData", string(datab))
+
+					err = txApp.Save(team)
+					if err != nil { return err }
+
+					printSocketChanMap[printid] <- PrinterProb{
+						Diff: prob.GetString("diff"),
+						Name: prob.GetString("name"),
+						Id: prob.Id,
+						TeamName: team.GetString("name"),
+						Code: tick.GetString("code"),
+					}
+					return nil
+				})
+			}
+
+			return e.String(200, `{"key": "k"}`)
+		})
+
 		e.Router.GET("/api/buyprob", func(e *core.RequestEvent) error {
-			teamid := e.Request.URL.Query().Get("team")
+			cardid := e.Request.URL.Query().Get("team")
 			diff := e.Request.URL.Query().Get("diff")
 			printid := e.Request.URL.Query().Get("printer")
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
 
-				team, err := txApp.FindRecordById("teams", teamid)
+				team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
 				if err != nil { return err }
 
 				gamedata := TeamGameData{}
