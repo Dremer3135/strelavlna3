@@ -633,8 +633,11 @@ func main() {
 				gamedata.Free = append(gamedata.Free, prob.Id)
 			}
 
+			bts, err := json.Marshal(gamedata)
+			if err != nil { return err }
+
 			for _, team := range teams {
-				team.Set("inPersonGameData", gamedata)
+				team.Set("inPersonGameData", string(bts))
 				err := e.App.Save(team)
 				if err != nil { return err }
 			}
