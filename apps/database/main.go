@@ -641,15 +641,38 @@ func main() {
 		}).BindFunc(requireAdminAuth())
 
 		e.Router.GET("/api/cash", func(e *core.RequestEvent) error {
-			printid := e.Request.URL.Query().Get("printer")
 			req := make(map[string]string)
 			err := json.NewDecoder(e.Request.Body).Decode(&req)
 			if err != nil { return err }
 			defer e.Request.Body.Close()
+			returned := false
 			switch req["typ"] {
 			case "overeni":
+			  // diff := req["uloha"]
+				cardid := req["id"]
+				// printid := req["ctecka"]
+				err := e.App.RunInTransaction(func(txApp core.App) error {
+					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
+					if err != nil { return err }
+
+					gamedata := TeamGameData{}
+					err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+					if err != nil { return err }
+
+					returned = true
+					return e.JSON(200, map[string]string{
+						"key": "k",
+						"nazev": team.GetString("name"),
+						"penize": strconv.Itoa(gamedata.Money),
+					})
+				})
+				if !returned {
+					if err != nil { return e.String(200, `{"key": "n"}`)}
+				}
+			case "akce":
 			  diff := req["uloha"]
 				cardid := req["id"]
+				printid := req["ctecka"]
 				err := e.App.RunInTransaction(func(txApp core.App) error {
 
 					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
@@ -733,10 +756,15 @@ func main() {
 					}
 					return nil
 				})
-			  if err != nil {  return e.String(200, `{"key": "k"}`)}
+				if !returned {
+					if err != nil {  return e.String(200, `{"key": "n"}`)}
+				}
 			}
 
-			return e.String(200, `{"key": "k"}`)
+			if !returned {
+				return e.String(200, `{"key": "k"}`)
+			}
+			return nil
 		})
 
 		e.Router.GET("/api/buyprob", func(e *core.RequestEvent) error {
