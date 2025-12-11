@@ -618,6 +618,9 @@ func main() {
 			teamf := e.Request.URL.Query().Get("teamf")
 			probf := e.Request.URL.Query().Get("probf")
 
+			fmt.Println(teamf)
+			fmt.Println(probf)
+
 			probs, err := e.App.FindRecordsByFilter("probs", probf, "created", -1, 0)
 			if err != nil { return err }
 
