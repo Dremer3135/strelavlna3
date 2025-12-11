@@ -794,7 +794,7 @@ func main() {
 
 				tick := core.NewRecord(coll)
 
-				tick.Set("team", teamid)
+				tick.Set("team", team.Id)
 				tick.Set("prob", prob.Id)
 				tick.Set("code", security.RandomString(7))
 				tick.Set("text", text)
