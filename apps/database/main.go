@@ -677,7 +677,17 @@ func main() {
 					if err != nil { return e.String(200, `{"key": "n"}`)}
 				}
 			case "akce":
-			  diff := req["uloha"]
+			  diffi := req["uloha"]
+				diff := "A"
+				if diffi == "0" {
+					diff = "A"
+				}
+				if diffi == "1" {
+					diff = "B"
+				}
+				if diffi == "2" {
+					diff = "C"
+				}
 				cardid := req["id"]
 				printid := req["ctecka"]
 				fmt.Printf("T: %#v\n", req)
