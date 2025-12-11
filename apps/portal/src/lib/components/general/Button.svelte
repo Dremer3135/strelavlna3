@@ -1,12 +1,12 @@
 <script lang="ts">
   // We now also accept `children`, which is the Svelte 5 equivalent of a slot.
-  let { class: className = '', theme , children, ...rest }: { class: any, theme : "yellow" | "orange" | "purple" | "pink", children: any } = $props();
+  let { theme, disabled, children, ...rest }: { theme : "yellow" | "orange" | "purple" | "pink", disabled: boolean, children: any } = $props();
 </script>
 
 <button
   style="--color-theme: var(--color-{theme});"
-  class="base-button {className}"
   {...rest}
+  class:disabled={disabled}
 >
   <!-- We render the `children` snippet here. -->
   {@render children()}
@@ -34,7 +34,7 @@
       color: color-mix(in srgb, var(--color-theme) 20%, black 80%);
     }
 
-    &.disbaled {
+    &.disabled {
       cursor: not-allowed;
       color: #555555;
       border-color: #AAAAAA;

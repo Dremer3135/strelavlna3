@@ -55,7 +55,7 @@
 </script>
 
 <div class="admin-layout-container">
-    <Navbar user={data.user as CorrectorsResponse} isAdmin={false}/>
+    <!-- <Navbar user={data.user as CorrectorsResponse} isAdmin={false}/> -->
     {@render children()}
 </div>
 

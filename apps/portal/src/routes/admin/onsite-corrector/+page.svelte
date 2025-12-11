@@ -1,7 +1,10 @@
 <script lang="ts">
-    import Button from "$lib/assets/components/Button.svelte";
-    import QRreader from "$lib/assets/components/QRreader.svelte";
-    import LoadingAnimation from "../../../../shared/dist/components/LoadingAnimation.svelte";
+    import Button from "$lib/components/general/Button.svelte";
+    
+    import QRreader from "$lib/components/admin/QRreader.svelte";
+    // import LoadingAnimationColor from "shared";
+    import { LoadingAnimation }  from "shared";
+    // import { LoadingAminationColor } from "$lib/components/general/LoadingAnimationColor.svelte"
 
     let problemScanned: boolean = $state(true);
     let problemReady: boolean = $state(true);
