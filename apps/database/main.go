@@ -755,6 +755,8 @@ func main() {
 					datab, err := json.Marshal(gamedata)
 					if err != nil { return err }
 
+					fmt.Printf("67: %#v\n", string(datab))
+
 					team.Set("inPersonData", string(datab))
 
 					err = txApp.Save(team)
