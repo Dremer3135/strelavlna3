@@ -637,7 +637,7 @@ func main() {
 			if err != nil { return err }
 
 			for _, team := range teams {
-				team.Set("inPersonGameData", string(bts))
+				team.Set("inPersonData", string(bts))
 				err := e.App.Save(team)
 				if err != nil { return err }
 			}
@@ -662,7 +662,7 @@ func main() {
 					if err != nil { return err }
 
 					gamedata := TeamGameData{}
-					err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+					err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
 					if err != nil { return err }
 
 					returned = true
@@ -685,7 +685,7 @@ func main() {
 					if err != nil { return err }
 
 					gamedata := TeamGameData{}
-					err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+					err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
 					if err != nil { return err }
 
 					contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
@@ -748,7 +748,7 @@ func main() {
 					datab, err := json.Marshal(gamedata)
 					if err != nil { return err }
 
-					team.Set("inPersonGameData", string(datab))
+					team.Set("inPersonData", string(datab))
 
 					err = txApp.Save(team)
 					if err != nil { return err }
@@ -784,7 +784,7 @@ func main() {
 				if err != nil { return err }
 
 				gamedata := TeamGameData{}
-				err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+				err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
 				if err != nil { return err }
 
 				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
@@ -847,7 +847,7 @@ func main() {
 				datab, err := json.Marshal(gamedata)
 				if err != nil { return err }
 
-				team.Set("inPersonGameData", string(datab))
+				team.Set("inPersonData", string(datab))
 
 				err = txApp.Save(team)
 				if err != nil { return err }
@@ -877,7 +877,7 @@ func main() {
 			if err != nil { return err }
 
 			gamedata := TeamGameData{}
-			err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+			err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
 			if err != nil { return err }
 
 			state := "invalid"
@@ -909,7 +909,7 @@ func main() {
 				if err != nil { return err }
 
 				gamedata := TeamGameData{}
-				err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+				err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
 				if err != nil { return err }
 
 				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
@@ -934,7 +934,7 @@ func main() {
 				datab, err := json.Marshal(gamedata)
 				if err != nil { return err }
 
-				team.Set("inPersonGameData", string(datab))
+				team.Set("inPersonData", string(datab))
 
 				err = e.App.Save(team)
 				if err != nil { return err }
@@ -958,7 +958,7 @@ func main() {
 				if err != nil { return err }
 
 				gamedata := TeamGameData{}
-				err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+				err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
 				if err != nil { return err }
 
 				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
@@ -983,7 +983,7 @@ func main() {
 				datab, err := json.Marshal(gamedata)
 				if err != nil { return err }
 
-				team.Set("inPersonGameData", string(datab))
+				team.Set("inPersonData", string(datab))
 
 				err = e.App.Save(team)
 				if err != nil { return err }
