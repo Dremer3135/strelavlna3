@@ -741,9 +741,9 @@ func main() {
 			if err != nil { return err }
 
 			return e.String(200, tick.GetString("answer"))
-		})
+		}).BindFunc(requireAdminAuth())
 
-		e.Router.GET("/api/grade", func(e *core.RequestEvent) error {
+		e.Router.GET("/api/gradeprob", func(e *core.RequestEvent) error {
 			tickid := e.Request.URL.Query().Get("id")
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
@@ -790,9 +790,9 @@ func main() {
 			if err != nil { return e.String(400, err.Error()) }
 
 			return e.String(200, "ok")
-		})
+		}).BindFunc(requireAdminAuth())
 
-		e.Router.GET("/api/sell", func(e *core.RequestEvent) error {
+		e.Router.GET("/api/sellprob", func(e *core.RequestEvent) error {
 			tickid := e.Request.URL.Query().Get("id")
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
@@ -839,7 +839,7 @@ func main() {
 			if err != nil { return e.String(400, err.Error()) }
 
 			return e.String(200, "ok")
-		})
+		}).BindFunc(requireAdminAuth())
 
 		e.Router.GET("/api/paperprob", func(e *core.RequestEvent) error {
 			id := e.Request.URL.Query().Get("id")
