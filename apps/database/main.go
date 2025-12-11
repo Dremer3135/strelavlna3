@@ -701,6 +701,8 @@ func main() {
 					err = json.Unmarshal([]byte(sconfig), &config)
 					if err != nil { return err }
 
+					fmt.Printf("h: %#v\n", config)
+
 					if gamedata.Money < config.Buy[diff] {
 						return errors.New("not enough money")
 					}
