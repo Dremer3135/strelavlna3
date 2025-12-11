@@ -719,12 +719,12 @@ func main() {
 					}
 
 					text, ans := prob.GetString("text"), prob.GetString("answer")
-					text = strings.ReplaceAll(text, "%", "\\%")
-					text = strings.ReplaceAll(text, "<br>", "\n")
-					text = strings.ReplaceAll(text, "°", "\\degree")
-					ans = strings.ReplaceAll(ans, "%", "\\%")
-					ans = strings.ReplaceAll(ans, "<br>", "\n")
-					ans = strings.ReplaceAll(ans, "°", "\\degree")
+					// text = strings.ReplaceAll(text, "%", "\\%")
+					// text = strings.ReplaceAll(text, "<br>", "\n")
+					// text = strings.ReplaceAll(text, "°", "\\degree")
+					// ans = strings.ReplaceAll(ans, "%", "\\%")
+					// ans = strings.ReplaceAll(ans, "<br>", "\n")
+					// ans = strings.ReplaceAll(ans, "°", "\\degree")
 
 					if prob.GetBool("auto") {
 						text, ans, err = genProb(txApp, prob.Id)
@@ -1031,6 +1031,7 @@ func main() {
 			papers = html.UnescapeString(papers)
 			papers = strings.ReplaceAll(papers, "%", "\\%")
 			papers = strings.ReplaceAll(papers, "°", "\\degree")
+			papers = strings.ReplaceAll(papers, "<br>", "\n")
 
 			for _, img := range prob.GetStringSlice("images") {
 				papers = strings.ReplaceAll(papers, " " + img + " ", img)
