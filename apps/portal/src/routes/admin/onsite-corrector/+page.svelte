@@ -47,28 +47,31 @@
     async function handleScan(text: string) {
         if (problemScanned) return;
         problemScanned = true;
+        
+        let response: any = await (await fetch(`https://strela-vlna.gchd.cz/api/getprob?id=${text}`)).json();
+        console.log(response);
 
-        try {
-            let response: any = await (await fetch(`https://strela-vlna.gchd.cz/api/getprob?id=${text}`)).json();
-
-            if (response.status != 200){
-                throw response.message;
-            }
-
-            scannedProb = {
-                id: text,
-                money: response.money,
-                answer: response.answer,
-                state: response.state
-            }
-
-            problemReady = true;
-
-        } catch (error: any) {
-            alert(error);
-            problemScanned = false;
-
+        
+        // if (response.status != 200){
+        //     console.log("sdjhfkahj");
+        //     throw response.message;
+        // }
+        
+        scannedProb = {
+            id: text,
+            money: response.money,
+            answer: response.answer,
+            state: response.state
         }
+        
+        problemReady = true;
+        
+        // try {
+        // } catch (error: any) {
+        //     alert(error);
+        //     problemScanned = false;
+
+        // }
     }
 
 </script>
