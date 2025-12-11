@@ -6,8 +6,8 @@
     import { LoadingAnimation }  from "shared";
     // import { LoadingAminationColor } from "$lib/components/general/LoadingAnimationColor.svelte"
 
-    let problemScanned: boolean = $state(true);
-    let problemReady: boolean = $state(true);
+    let problemScanned: boolean = $state(false);
+    let problemReady: boolean = $state(false);
 
     let answerVisible: boolean = $state(false);
 
@@ -47,23 +47,26 @@
     async function handleScan(text: string) {
         if (problemScanned) return;
         problemScanned = true;
-
+        
         try {
             let response: any = await (await fetch(`https://strela-vlna.gchd.cz/api/getprob?id=${text}`)).json();
+            console.log(response);
 
-            if (response.status != 200){
-                throw response.message;
-            }
-
+            
+            // if (response.status != 200){
+            //     console.log("sdjhfkahj");
+            //     throw response.message;
+            // }
+            
             scannedProb = {
                 id: text,
                 money: response.money,
                 answer: response.answer,
                 state: response.state
             }
-
+            
             problemReady = true;
-
+        
         } catch (error: any) {
             alert(error);
             problemScanned = false;
