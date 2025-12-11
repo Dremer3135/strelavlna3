@@ -700,7 +700,7 @@ func main() {
 
 					tick := core.NewRecord(coll)
 
-					tick.Set("team", teamid)
+					tick.Set("team", team.Id)
 					tick.Set("prob", prob.Id)
 					tick.Set("code", security.RandomString(7))
 					tick.Set("text", text)
@@ -733,6 +733,7 @@ func main() {
 					}
 					return nil
 				})
+			  if err != nil {  return e.String(200, `{"key": "k"}`)}
 			}
 
 			return e.String(200, `{"key": "k"}`)
