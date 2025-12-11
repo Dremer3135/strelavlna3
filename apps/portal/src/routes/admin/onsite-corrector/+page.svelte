@@ -6,8 +6,8 @@
     import { LoadingAnimation }  from "shared";
     // import { LoadingAminationColor } from "$lib/components/general/LoadingAnimationColor.svelte"
 
-    let problemScanned: boolean = $state(true);
-    let problemReady: boolean = $state(true);
+    let problemScanned: boolean = $state(false);
+    let problemReady: boolean = $state(false);
 
     let answerVisible: boolean = $state(false);
 
