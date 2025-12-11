@@ -48,30 +48,30 @@
         if (problemScanned) return;
         problemScanned = true;
         
-        let response: any = await (await fetch(`https://strela-vlna.gchd.cz/api/getprob?id=${text}`)).json();
-        console.log(response);
+        try {
+            let response: any = await (await fetch(`https://strela-vlna.gchd.cz/api/getprob?id=${text}`)).json();
+            console.log(response);
 
+            
+            // if (response.status != 200){
+            //     console.log("sdjhfkahj");
+            //     throw response.message;
+            // }
+            
+            scannedProb = {
+                id: text,
+                money: response.money,
+                answer: response.answer,
+                state: response.state
+            }
+            
+            problemReady = true;
         
-        // if (response.status != 200){
-        //     console.log("sdjhfkahj");
-        //     throw response.message;
-        // }
-        
-        scannedProb = {
-            id: text,
-            money: response.money,
-            answer: response.answer,
-            state: response.state
+        } catch (error: any) {
+            alert(error);
+            problemScanned = false;
+
         }
-        
-        problemReady = true;
-        
-        // try {
-        // } catch (error: any) {
-        //     alert(error);
-        //     problemScanned = false;
-
-        // }
     }
 
 </script>
