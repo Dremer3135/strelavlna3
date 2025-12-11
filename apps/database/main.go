@@ -946,6 +946,10 @@ func main() {
 				err = json.Unmarshal([]byte(sconfig), &config)
 				if err != nil { return err }
 
+				if !slices.Contains(gamedata.Bought, tick.GetString("prob")) {
+					return errors.New("not bought")
+				}
+
 				gamedata.Bought = slices.DeleteFunc(gamedata.Bought, func(a string) bool { return a == tick.GetString("prob") })
 				gamedata.Solved = append(gamedata.Solved, tick.GetString("prob"))
 
@@ -994,6 +998,10 @@ func main() {
 				}{}
 				err = json.Unmarshal([]byte(sconfig), &config)
 				if err != nil { return err }
+
+				if !slices.Contains(gamedata.Bought, tick.GetString("prob")) {
+					return errors.New("not bought")
+				}
 
 				gamedata.Bought = slices.DeleteFunc(gamedata.Bought, func(a string) bool { return a == tick.GetString("prob") })
 				gamedata.Sold = append(gamedata.Sold, tick.GetString("prob"))
