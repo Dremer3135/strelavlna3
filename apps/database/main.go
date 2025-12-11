@@ -658,6 +658,7 @@ func main() {
 				cardid := req["id"]
 				// printid := req["ctecka"]
 				err := e.App.RunInTransaction(func(txApp core.App) error {
+					fmt.Printf("$$$$ %#v\n", cardid)
 					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
 					if err != nil { return err }
 
