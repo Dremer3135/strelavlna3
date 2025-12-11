@@ -734,13 +734,35 @@ func main() {
 			return e.String(200, "ok")
 		})
 
-		e.Router.GET("/api/getans", func(e *core.RequestEvent) error {
+		e.Router.GET("/api/getprob", func(e *core.RequestEvent) error {
 			tickid := e.Request.URL.Query().Get("id")
 
 			tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
 			if err != nil { return err }
 
-			return e.String(200, tick.GetString("answer"))
+			team, err := e.App.FindRecordById("teams", tick.GetString("team"))
+			if err != nil { return err }
+
+			gamedata := TeamGameData{}
+			err = json.Unmarshal([]byte(team.GetString("inPersonGameData")), &gamedata)
+			if err != nil { return err }
+
+			state := "invalid"
+			if slices.Contains(gamedata.Bought, tick.GetString("prob")) {
+				state = "bought"
+			}
+			if slices.Contains(gamedata.Solved, tick.GetString("prob")) {
+				state = "solved"
+			}
+			if slices.Contains(gamedata.Sold, tick.GetString("prob")) {
+				state = "sold"
+			}
+
+			return e.JSON(200, map[string]any{
+				"answer": tick.GetString("answer"),
+				"money": gamedata.Money,
+				"state": state,
+			})
 		}).BindFunc(requireAdminAuth())
 
 		e.Router.GET("/api/gradeprob", func(e *core.RequestEvent) error {
