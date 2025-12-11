@@ -999,12 +999,11 @@ func main() {
 
 		e.Router.GET("/api/paperprob", func(e *core.RequestEvent) error {
 			id := e.Request.URL.Query().Get("id")
-			prob, err := e.App.FindRecordById("probs", id)
+			tick, err := e.App.FindFirstRecordByData("tickets", "code", id)
 			if err != nil { return err }
-			ntext, nans, err := genProb(e.App, id)
+
+			prob, err := e.App.FindRecordById("probs", tick.GetString("prob"))
 			if err != nil { return err }
-			prob.Set("text", ntext)
-			prob.Set("answer", nans)
 
 			bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_templ_box.tex")
 			if err != nil { return err }
@@ -1019,7 +1018,7 @@ func main() {
 				Diff string
 				Name string
 				Index int
-			}{prob.GetString("text"), prob.GetStringSlice("images"), prob.GetString("diff"), prob.GetString("name"), -1})
+			}{tick.GetString("text"), prob.GetStringSlice("images"), prob.GetString("diff"), prob.GetString("name"), -1})
 			if err != nil { return err }
 
 			papers := renbuf.String()
