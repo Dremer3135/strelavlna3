@@ -1223,15 +1223,25 @@ func main() {
 
 		e.Router.GET("/api/printrprob", func(e *core.RequestEvent) error {
 			printid := e.Request.URL.Query().Get("id")
-			probs, err := e.App.FindAllRecords("probs")
-			if err != nil { return err }
+			probid := e.Request.URL.Query().Get("prob")
+
+			var prob *core.Record
+
+			if probid == "" {
+				probs, err := e.App.FindAllRecords("probs")
+				if err != nil { return err }
+
+				prob = probs[rand.Intn(len(probs))]
+			} else {
+				var err error
+				prob, err = e.App.FindRecordById("probs", probid)
+				if err != nil { return err }
+			}
 
 			coll, err := e.App.FindCollectionByNameOrId("tickets")
 			if err != nil { return err }
 
 			tick := core.NewRecord(coll)
-
-			prob := probs[rand.Intn(len(probs))]
 
 			text, ans := prob.GetString("text"), prob.GetString("answer")
 
