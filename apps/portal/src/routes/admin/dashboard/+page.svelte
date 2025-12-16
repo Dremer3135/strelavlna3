@@ -10,6 +10,7 @@
     let tfilter = $state("");
     let pfilter = $state("");
     async function setGameData() {
+      if (confirm("resetovat data týmů")) return;
       await pocketbase.send("/api/setgamedata", {query: {teamf: tfilter, probf: pfilter}})
     }
     async function pushFreeProbs() {
