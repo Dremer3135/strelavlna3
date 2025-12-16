@@ -646,6 +646,48 @@ func main() {
 
 		}).BindFunc(requireAdminAuth())
 
+		e.Router.GET("/api/pushfreeprobs", func(e *core.RequestEvent) error {
+			teamf := e.Request.URL.Query().Get("teamf")
+			probf := e.Request.URL.Query().Get("probf")
+
+			 err := e.App.RunInTransaction(func(txApp core.App) error {
+				probs, err := txApp.FindRecordsByFilter("probs", probf, "created", -1, 0)
+				if err != nil { return err }
+
+				teams, err := txApp.FindRecordsByFilter("teams", teamf, "created", -1, 0)
+				if err != nil { return err }
+
+				probids := []string{}
+				for _, prob := range probs {
+					probids = append(probids, prob.Id)
+				}
+
+				for _, team := range teams {
+					if team.GetString("inPersonData") == "null" { continue }
+
+					gamedata := TeamGameData{}
+					err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
+					if err != nil { return err }
+
+					gamedata.Free = append(gamedata.Free, probids...)
+
+					datab, err := json.Marshal(gamedata)
+					if err != nil { return err }
+
+					team.Set("inPersonData", string(datab))
+
+					err = txApp.Save(team)
+					if err != nil { return err }
+				}
+
+				return nil
+			})
+
+			if err != nil { return err }
+
+			return e.String(200, "ok")
+		})
+
 		e.Router.POST("/api/cash", func(e *core.RequestEvent) error {
 			req := make(map[string]string)
 			err := json.NewDecoder(e.Request.Body).Decode(&req)
