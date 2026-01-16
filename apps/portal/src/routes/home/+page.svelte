@@ -323,6 +323,11 @@ $effect(() => {
             <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova Vlna online</button></a>
             <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
         </div>
+        <div class="buttons">
+            <a href="/home/results/strela-2025"><button class="result-button">Pražská střela</button></a>
+            <a href="/home/results/vlna-2025"><button class="result-button">Dopplerova Vlna</button></a>
+            <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
+        </div>
     </div>
     <div class="main-a-content">
     <!-- <p style="text-align: center;">

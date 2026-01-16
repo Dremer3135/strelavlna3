@@ -29,8 +29,8 @@
             <div class="footer-element3 footer-element">
                 <h2>Doprava MHD</h2>
                 <div class="gray-top">
-                    <p>Tramvajová zastávka <b>Újezd</b> (tramvaje 9, 12, 15, 20, 22)</p>
-                    <p>Metro B - <b>Národní třída</b> a poté tramvají 9 nebo 22</p>
+                    <p>Tramvajová zastávka <b>Újezd</b> (tramvaje 9, 12, 15, 20, 22, 23)</p>
+                    <p>Metro B - <b>Národní třída</b> a poté tramvají 9, 22 nebo 23</p>
                 </div>
             </div>
         </div>
@@ -48,7 +48,7 @@
         </div>
     </div>
     <div class="copyright">
-        <p>© 2024 Skrat</p> <img alt="skrat-logo" src = "{skrat_icon}" width="70" height="70">
+        <p>© 2024-2026 Skrat</p> <img alt="skrat-logo" src = "{skrat_icon}" width="70" height="70">
     </div>
 </footer>
 
