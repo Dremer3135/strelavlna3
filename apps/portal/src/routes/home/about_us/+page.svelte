@@ -53,7 +53,7 @@
           <div class="about-list">
             <h2>Současní pořadatelé</h2>
             <p class="blue-left">
-              Současnými pořadateli soutěže jsou studenti matematické větve osmiletého gymnázia navštěvující septimu (tedy 7.M).
+              Současnými pořadateli soutěže jsou studenti matematické větve osmiletého gymnázia navštěvující oktávu (tedy 8.M).
             </p>
             <p class="blue-left">
               Soutěž mají na starosti od roku 2023 do roku 2026.

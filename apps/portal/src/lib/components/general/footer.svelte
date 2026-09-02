@@ -41,7 +41,7 @@
                     <p>
                         <a href="https://www.youtube.com/channel/UC8hsjufLjcGySi79GDzqJGg" title="YouTube" target="_blank"><img alt="YouTube_icon" src="{yt_icon}" width="48" height="34"></a>
                         <a href="https://www.instagram.com/strela_vlna?igsh=MXVkMzkyMXdjajBwdg==" title="Instagram" target="_blank"><img alt="Instagram_icon" src="{in_icon}" width="40" height="40" style="margin-left: 15px"></a>
-                        <a href="https://github.com/anteat3r/strelavlna2" title="GitHub" target="_blank"><img alt="GitHub_icon" src="{gh_icon}" width="40" height="40" style="margin-left: 15px"></a>
+                        <a href="https://github.com/Dremer3135/strelavlna3" title="GitHub" target="_blank"><img alt="GitHub_icon" src="{gh_icon}" width="40" height="40" style="margin-left: 15px"></a>
                     </p>
                 </div>
             </div>
