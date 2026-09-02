@@ -4,6 +4,8 @@
     import q_pink from "$lib/assets/images/general/questionmark_pink.svg";
     import q_purple from "$lib/assets/images/general/questionmark_purple.svg";
     import { onMount } from "svelte";
+    import { pocketbase } from "$lib/pocketbase";
+    import { myTeamsStore } from "$lib/stores/myTeams";
     
     let qs = [q_yellow, q_orange, q_pink, q_purple];
     let bgcols = ["#fffffa", "#fffbfa", "#fffafe", "#fefaff"];
@@ -17,60 +19,132 @@
 
         return () => clearInterval(interval);
     });
-    let { team } = $props()
-    // export let team: any;
+    let { team } = $props();
 
-    let players: {name: string, email: string}[] = [];
-
+    let displayTeam = $state({ ...team });
     $effect(() => {
-        players = [
-            {name: team.player1name, email: team.player1email},
-            {name: team.player2name, email: team.player2email},
-            {name: team.player3name, email: team.player3email},
-            {name: team.player4name, email: team.player4email},
-            {name: team.player5name, email: team.player5email},
-        ]
+        displayTeam = { ...team };
     });
 
+    let players = $derived([
+        {name: displayTeam.player1name, email: displayTeam.player1email},
+        {name: displayTeam.player2name, email: displayTeam.player2email},
+        {name: displayTeam.player3name, email: displayTeam.player3email},
+        {name: displayTeam.player4name, email: displayTeam.player4email},
+        {name: displayTeam.player5name, email: displayTeam.player5email},
+    ]);
 
     let oppened: boolean = $state(false);
+    let isEditing: boolean = $state(false);
+    let isSaving: boolean = $state(false);
+    let error: string = $state("");
+
+    let name: string = $state("");
+    let editablePlayers = $state<{ name: string; email: string }[]>([]);
+
+    function startEdit() {
+        name = displayTeam.name ?? "";
+        editablePlayers = [
+            { name: displayTeam.player1name ?? "", email: displayTeam.player1email ?? "" },
+            { name: displayTeam.player2name ?? "", email: displayTeam.player2email ?? "" },
+            { name: displayTeam.player3name ?? "", email: displayTeam.player3email ?? "" },
+            { name: displayTeam.player4name ?? "", email: displayTeam.player4email ?? "" },
+            { name: displayTeam.player5name ?? "", email: displayTeam.player5email ?? "" },
+        ];
+        error = "";
+        isEditing = true;
+    }
+
+    async function save() {
+        if (!name.trim()) {
+            error = "Jméno týmu je potřeba.";
+            return;
+        }
+        isSaving = true;
+        error = "";
+
+        const updated = {
+            name: name.trim(),
+            player1name: editablePlayers[0].name.trim(),
+            player1email: editablePlayers[0].email.trim(),
+            player2name: editablePlayers[1].name.trim(),
+            player2email: editablePlayers[1].email.trim(),
+            player3name: editablePlayers[2].name.trim(),
+            player3email: editablePlayers[2].email.trim(),
+            player4name: editablePlayers[3].name.trim(),
+            player4email: editablePlayers[3].email.trim(),
+            player5name: editablePlayers[4].name.trim(),
+            player5email: editablePlayers[4].email.trim(),
+        };
+
+        try {
+            await pocketbase.collection("teams").update(team.id, updated);
+            
+            Object.assign(displayTeam, updated);
+            Object.assign(team, updated);
+            myTeamsStore.update(teams => teams.map(t => t.id === team.id ? { ...t, ...updated } : t));
+
+            isEditing = false;
+        } catch (err) {
+            console.error(err);
+            error = "Nepodařilo se uložit změny.";
+        } finally {
+            isSaving = false;
+        }
+    }
 
     function close() {
         oppened = false;
+        isEditing = false;
+        error = "";
     }
 
     function open() {
         oppened = true;
     }
-
-
-
-
 </script>
 
 <main on:click={open} style="--hover-color: {bgcols[current_q_idx]}">
     {#if oppened}
     <div class="popup-holder" on:click|stopPropagation={close}>
         <div class="popup" on:click|stopPropagation>
-            <h2 class="name">{team.name}</h2>
-            <ul class="player-list">
-                {#each players as player, i}
-                    {#if player.email || player.name}
-                        <li class="player-item">
-                            <div class="dot" style="animation-delay:-{players.length - i}s"></div>
-                            <div class="text">
-                                <span class="player-name">{player.name}</span>
-                                <span class="player-email">{player.email}</span>
-                            </div>
-                        </li>
-                    {/if}
-                {/each}
-            </ul>
+            {#if !isEditing}
+                <h2 class="name">{displayTeam.name}</h2>
+                <ul class="player-list">
+                    {#each players as player, i}
+                        {#if player.email || player.name}
+                            <li class="player-item">
+                                <div class="dot" style="animation-delay:-{players.length - i}s"></div>
+                                <div class="text">
+                                    <span class="player-name">{player.name}</span>
+                                    <span class="player-email">{player.email}</span>
+                                </div>
+                            </li>
+                        {/if}
+                    {/each}
+                </ul>
+                <button class="edit-btn" on:click={startEdit}>Upravit</button>
+            {:else}
+                <form on:submit|preventDefault={save}>
+                    <input class="name-input" type="text" placeholder="Název týmu" bind:value={name} required />
+                    {#each editablePlayers as player, i}
+                        <div class="edit-row">
+                            <input type="text" placeholder={`Jméno hráče ${i + 1}`} bind:value={player.name} />
+                            <input type="email" placeholder={`Email hráče ${i + 1}`} bind:value={player.email} />
+                        </div>
+                    {/each}
+                    {#if error}<p class="error">{error}</p>{/if}
+                    <div class="buttons">
+                        <button type="button" on:click={() => (isEditing = false)} disabled={isSaving}>Zrušit</button>
+                        <button type="submit" disabled={isSaving}>{isSaving ? "Ukládání..." : "Uložit"}</button>
+                    </div>
+                </form>
+            {/if}
         </div>
     </div>
     {/if}
     <div class="slider">
-        <h2 class="name">{team.name}</h2>
+        <h2 class="name">{displayTeam.name}</h2>
         <div class="img-wrapper">
             <img src={qs[current_q_idx]} height="50px" />
         </div>
@@ -217,6 +291,101 @@
         75% {
             background-color: #9500EB;
         }
+    }
+
+    .edit-btn {
+        font-family: "Lexend";
+        font-size: 16px;
+        font-weight: 700;
+        margin-top: 20px;
+        padding: 8px 20px;
+        border-radius: 0px;
+        border: 4px solid #ddd;
+        background: #f8f8f8;
+        cursor: pointer;
+        color: #002c5e;
+    }
+    .edit-btn:hover {
+        background: #002c5e;
+        border-color: #002c5e;
+        border-radius: 3px;
+        color: white;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    .name-input {
+        font-family: "Fredoka";
+        font-size: 24px;
+        font-weight: 600;
+        color: #002c5e;
+        border: none;
+        border-bottom: 2px solid #c4c8ce;
+        padding: 5px;
+        margin-bottom: 10px;
+        outline: none;
+
+        transition: all 0.3s ease-out;
+
+        &:focus{
+            border-color: #002c5e;
+
+            transition: all 0s linear;
+        }
+    
+    }
+    .edit-row {
+        display: flex;
+        gap: 10px;
+    }
+    .edit-row input {
+        all:unset;
+        font-family: "Lexend";
+        font-size: 15px;
+        font-weight: 600;
+        padding: 8px 10px;
+        border-bottom: 3px solid #eeeeee;
+        border-radius: 3px;
+        flex: 1;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+
+        transition: all 0.3s ease-out;
+    }
+    .edit-row input:focus {
+        border-color: #002c5e;
+        transition: all 0s linear;
+    }
+    .buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .buttons button {
+        font-family: "Lexend";
+        font-size: 16px;
+        font-weight: 600;
+        padding: 8px 18px;
+        border-radius: 0px;
+        border: 4px solid #ddd;
+        background: #f8f8f8;
+        cursor: pointer;
+    }
+    .buttons button[type="submit"] {
+        background: #002c5e;
+        color: white;
+        border: none;
+    }
+    .error {
+        color: red;
+        font-family: "Lexend";
+        font-size: 14px;
+        margin: 0;
     }
 
 </style>

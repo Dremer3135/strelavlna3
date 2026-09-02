@@ -115,7 +115,7 @@
   </button>
   
   <div class="registered-team-container">
-    {#each filteredTeams as team}
+    {#each filteredTeams as team (team.id)}
       <RegisteredTeam team={team} />
     {/each}
   </div>
