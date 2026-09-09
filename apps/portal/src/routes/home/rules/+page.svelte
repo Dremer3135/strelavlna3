@@ -85,7 +85,7 @@
                 <p>12:30 - Vyhlášení výsledku na streamu</p>
             </p> -->
             <p class="blue-left">
-              Online kola proběhnou 2. a 4. prosince 2025.
+              Online kola proběhnou 24. a 26. listopadu 2026.
             </p>
           </div> 
         </div>
@@ -102,7 +102,7 @@
               Přesnější instrukce týmy obdrží v emailu po postupu.
             </p>
             <p class="blue-left">
-              Prezenční kola proběhnou 11. a 16. prosince 2025, zhruba týden po online kolech.
+              Prezenční kola proběhnou 7. a 10. prosince 2026, zhruba dva týdny po online kolech.
             </p>
           </div> 
         </div>
