@@ -311,6 +311,9 @@ func main() {
 		"final_mail",
 		"* * * * *",
 		func() {
+			// TODO: temporary, because of ŠIMON VECKA
+			return
+
 			teams := []*core.Record{}
 
 			err := app.RecordQuery("teams").
