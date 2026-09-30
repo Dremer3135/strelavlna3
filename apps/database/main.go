@@ -1536,7 +1536,7 @@ func main() {
 					for _, img := range prob.GetStringSlice("images") {
 						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
 					}
-					authorName := "anonym :("
+					authorName := "anonym 💔🤨"
 					if prob.ExpandedOne("author") != nil {
 						authorName = prob.ExpandedOne("author").GetString("username")
 					}
