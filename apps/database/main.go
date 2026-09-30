@@ -1528,7 +1528,11 @@ func main() {
 
 				i := 1
 				for _, prob := range probs {
-					app.ExpandRecord(prob, []string{"author"}, nil)
+					errs := app.ExpandRecord(prob, []string{"author"}, nil)
+					for name, err := range errs {
+						fmt.Printf("ERROR EXPAND %s\n", name)
+						return err
+					}
 					for _, img := range prob.GetStringSlice("images") {
 						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
 					}
