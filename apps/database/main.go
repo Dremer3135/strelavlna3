@@ -1536,7 +1536,10 @@ func main() {
 					for _, img := range prob.GetStringSlice("images") {
 						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
 					}
-					fmt.Printf("EXPAND %#v\n", prob.Expand())
+					authorName := "anonym :("
+					if prob.ExpandedOne("author") != nil {
+						authorName = prob.ExpandedOne("author").GetString("username")
+					}
 					res := PaperProb{
 						Diff:          prob.GetString("diff"),
 						Name:          latexEscape(prob.GetString("name")),
@@ -1548,7 +1551,7 @@ func main() {
 						Solve:         config.Solve[prob.GetString("diff")],
 						TeamName:      "",
 						Id:            prob.Id,
-						AuthorName:    prob.ExpandedOne("author").GetString("username"),
+						AuthorName:    authorName,
 						AuthorSocials: "",
 					}
 					sres := PaperSol{
