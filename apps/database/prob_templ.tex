@@ -12,6 +12,7 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage[T1]{fontenc}
+\usepackage{gensymb}
 
 \begin{document}
 \begin{center}
@@ -29,7 +30,7 @@
   % {{if not (eq .AuthorSocials "")}}
   \vfill \center{ Autor úlohy: {{.AuthorName}} \hfill \\ }
   % {{end}}
-  \vfill \center{ {{.TeamName}} \hfill {{.Id}} \\ } }
+  \vfill \center{ {{.AuthorName}} \hfill {{.Id}} \\ } }
   {{if iseven $idx}}
     \\ \hline
   {{else}}
