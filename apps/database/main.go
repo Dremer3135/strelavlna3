@@ -1536,6 +1536,7 @@ func main() {
 					for _, img := range prob.GetStringSlice("images") {
 						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
 					}
+					fmt.Printf("EXPAND %#v\n", prob.Expand())
 					res := PaperProb{
 						Diff:          prob.GetString("diff"),
 						Name:          latexEscape(prob.GetString("name")),
