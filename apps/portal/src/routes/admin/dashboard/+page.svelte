@@ -27,6 +27,11 @@
       await pocketbase.send("/api/rdb", {query: {id: rdbid} })
     }
 
+    let admintext = $state("");
+    async function genAdmins() {
+      await pocketbase.send("/api/createadmins", {query: {id: admintext} })
+    }
+
     async function start() {
       await pocketbase.send("/api/start")
     }
@@ -61,4 +66,7 @@
     <button onclick={start}>Start</button>
     <br>
     <button onclick={end}>End</button>
+    <br>
+    <textarea bind:value={admintext}>Cerate admins here</textarea>
+    <button onclick={genAdmins}>Create</button>
 </main>
