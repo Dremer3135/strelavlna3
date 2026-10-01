@@ -25,6 +25,7 @@ import (
 	// "github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/mails"
 	"github.com/pocketbase/pocketbase/tools/hook"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 	"github.com/pocketbase/pocketbase/tools/security"
@@ -1480,6 +1481,38 @@ func main() {
 				}
 
 				return e.JSON(200, res)
+			},
+		).Bind(RequireAuth())
+
+		e.Router.GET(
+			"/api/createadmins",
+			func(e *core.RequestEvent) error {
+				text := e.Request.URL.Query().Get("text")
+				admins := strings.Split(text, "\n")
+				for i := range admins {
+					admins[i] = strings.TrimSpace(admins[i])
+				}
+				coll, err := app.FindCollectionByNameOrId("correctors")
+				if err != nil {
+					return err
+				}
+				for _, admin := range admins {
+					rec := core.NewRecord(coll)
+					rec.Set("email", admin)
+					eparts := strings.Split(admin, "@")
+					name := eparts[0]
+					rec.Set("username", strings.ToTitle(name))
+					rec.Set("password", security.RandomString(10))
+					err := app.Save(rec)
+					if err != nil {
+						return err
+					}
+					err = mails.SendRecordPasswordReset(app, rec)
+					if err != nil {
+						return err
+					}
+				}
+				return e.String(200, "")
 			},
 		).Bind(RequireAuth())
 
