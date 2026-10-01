@@ -29,7 +29,7 @@
 
     let admintext = $state("");
     async function genAdmins() {
-      await pocketbase.send("/api/createadmins", {query: {id: admintext} })
+      await pocketbase.send("/api/createadmins", {query: {text: admintext} })
     }
 
     async function start() {
