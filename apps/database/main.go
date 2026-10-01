@@ -21,6 +21,8 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	// "github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/apis"
@@ -1501,7 +1503,7 @@ func main() {
 					rec.Set("email", admin)
 					eparts := strings.Split(admin, "@")
 					name := eparts[0]
-					rec.Set("username", strings.ToTitle(name))
+					rec.Set("username", cases.Title(language.Czech).String(name))
 					rec.Set("password", security.RandomString(10))
 					err := app.Save(rec)
 					if err != nil {
