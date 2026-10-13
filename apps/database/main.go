@@ -304,9 +304,9 @@ func main() {
 			for _, school := range schools {
 				// school.Set("spam", true)
 				// err := app.Save(school)
-				err := app.DB().Update("skoly", dbx.Params{"spam": true}, dbx.HashExp{"id": school.Id})
+				_, err := app.DB().Update("skoly", dbx.Params{"spam": true}, dbx.HashExp{"id": school.Id}).Execute()
 				if err != nil {
-					app.Logger().Error("app.Save failed", "err", err)
+					app.Logger().Error(fmt.Sprintf("app.Save failed: %v = %#v", err, err))
 				}
 			}
 
