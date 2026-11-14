@@ -1743,7 +1743,12 @@ func main() {
 
 				for _, team := range teams {
 					setMoney(rdb, team.Id, 100)
-					setPlayToken(rdb, team.GetString("token"), team.Id)
+					// DEBUG: empty token to random
+					token := team.GetString("token")
+					if token == "" {
+						token = "^" + security.RandomString(5)
+					}
+					setPlayToken(rdb, token, team.Id)
 					setTeamName(rdb, team.Id, team.GetString("name"))
 				}
 
