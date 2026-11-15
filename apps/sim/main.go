@@ -2,11 +2,14 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -20,7 +23,7 @@ func NewRdbConn() *redis.Client {
 }
 
 const (
-	ArenaUrl = "https://sv.skrat.org"
+	ArenaUrl = "wss://sv.skrat.org"
 )
 
 var words []string
@@ -34,9 +37,12 @@ func main() {
 		words = append(words, string(bts))
 	}
 
-	tt, ct := genMockRdb(100, 20, 200)
-	fmt.Println(tt)
-	fmt.Println(ct)
+	// tt, ct := genMockRdb(100, 20, 200)
+	// fmt.Println(tt)
+	// fmt.Println(ct)
+
+	runFinalTest([]string{"of4wm", "7opnl", "jrpl7", "sh1i1", "hjf8f", "3hlk2", "ik86g", "raci2", "hnnit", "omgcv", "a4lxr", "d051i", "1btvi", "kalko", "mz8eh", "7y2v0", "zm2zn", "vw09z", "xq91h", "7tjzi", "fgkab", "ekb8v", "dqpgx", "lega1", "1k4a5", "7d3c3", "8gq2v", "r82dk", "euu3g", "ra8lw", "2mmo7", "myk0f", "dfi7p", "6bgfb", "557wh", "mvwyv", "v33hi", "nl1li", "ajiqn", "6rym7", "gmfrk", "bfurf", "57hnl", "qlwss", "22kh0", "6htoh", "uatv3", "mxam9", "m480i", "rcedg", "l16rp", "labr8", "ujf1c", "vtz5x", "z10tr", "rorum", "axsn4", "kzksn", "3t0r7", "fce82", "omi44", "fg2fc", "tu2b4", "fs26z", "04s9t", "mje9g", "bdllc", "eafl9", "utt3v", "7fslg", "iunu0", "kcty2", "n6gxj", "3t5pc", "dhnmy", "rh0b8", "g6d0h", "laa5v", "5u12r", "z2fmp", "kn3rq", "brldx", "gpmwx", "63x6q", "8otfk", "02xe2", "dnxk1", "glwzt", "0qs3v", "gl9e1", "rej5q", "gdtht", "1a18o", "ndx2k", "eqq0w", "cr7vb", "a2zfy", "p5duh", "xqzl7", "5fzju"}, []string{"dj5he", "2azxx", "5nu9h", "gsudv", "7bzht", "im238", "3uz4g", "e21ot", "pk8pf", "5gq5a", "ffs3e", "gc679", "8omuv", "ht8at", "ktdok", "m8ohp", "npouo", "s2jk8", "vjwui", "32mxy"}, 5)
+
 }
 
 type InitLoad struct {
@@ -68,23 +74,73 @@ type PlayerState struct {
 	buycost map[string]int
 }
 
+type SimStats struct {
+	activePlayers atomic.Int64
+	activeCorrs   atomic.Int64
+	playerFocuses atomic.Int64
+	playerWrites  atomic.Int64
+	playerSolves  atomic.Int64
+	playerSells   atomic.Int64
+	playerBuys    atomic.Int64
+	probsBought   atomic.Int64
+	probsSold     atomic.Int64
+	probsSolved   atomic.Int64
+	corrFocuses   atomic.Int64
+	corrWrites    atomic.Int64
+	corrGrades    atomic.Int64
+	serverErrors  atomic.Int64
+	wsDisconnects atomic.Int64
+}
+
+var stats SimStats
+
+func redecode(v any, dst any) bool {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return false
+	}
+	return json.Unmarshal(b, dst) == nil
+}
+
+func toInt(v any) (int, bool) {
+	switch x := v.(type) {
+	case float64:
+		return int(x), true
+	case int:
+		return x, true
+	case string:
+		i, err := strconv.Atoi(x)
+		return i, err == nil
+	default:
+		return 0, false
+	}
+}
+
 func playerSimLoop(token string) error {
 	conn, _, err := websocket.DefaultDialer.Dial(ArenaUrl+"/ws?token="+token, nil)
 	if err != nil {
 		return err
 	}
+	stats.activePlayers.Add(1)
+	defer stats.activePlayers.Add(-1)
 
-	state := PlayerState{}
+	state := PlayerState{
+		bought:  make(map[string]struct{}),
+		sold:    make(map[string]struct{}),
+		solved:  make(map[string]struct{}),
+		buycost: make(map[string]int),
+	}
 
 	pchan := make(chan map[string]any, 10)
 
-	rng := rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	go func() {
 		for {
 			var msg map[string]any
 			err := conn.ReadJSON(&msg)
 			if err != nil {
+				stats.wsDisconnects.Add(1)
 				pchan <- nil
 				return
 			}
@@ -97,7 +153,7 @@ func playerSimLoop(token string) error {
 	for {
 		select {
 		case msg, ok := <-pchan:
-			if !ok {
+			if !ok || msg == nil {
 				conn.Close()
 				return nil
 			}
@@ -108,9 +164,13 @@ func playerSimLoop(token string) error {
 			}
 
 			switch name {
+			case "error":
+				stats.serverErrors.Add(1)
+				fmt.Printf("[player %s] server error: %v\n", token, msg["error"])
+
 			case "initload":
-				data, ok := msg["data"].(InitLoad)
-				if !ok {
+				var data InitLoad
+				if !redecode(msg["data"], &data) {
 					continue
 				}
 				state.state = data.State
@@ -126,6 +186,8 @@ func playerSimLoop(token string) error {
 					state.solved[prob.Id] = struct{}{}
 				}
 				state.buycost = data.BuyCost
+				fmt.Printf("[player %s/%s] initload: state=%s money=%d bought=%d solved=%d sold=%d\n",
+					token, data.PlayerId, data.State, data.Money, len(data.Bought), len(data.Solved), len(data.Sold))
 
 			case "focus":
 				probid, ok := msg["probid"].(string)
@@ -135,42 +197,45 @@ func playerSimLoop(token string) error {
 				state.focused = probid
 
 			case "bought":
-				prob, ok := msg["prob"].(Prob)
-				if !ok {
+				var prob Prob
+				if !redecode(msg["prob"], &prob) {
 					continue
 				}
-				money, ok := msg["money"].(int)
+				money, ok := toInt(msg["money"])
 				if !ok {
 					continue
 				}
 				state.bought[prob.Id] = struct{}{}
 				state.money = money
+				stats.probsBought.Add(1)
 
 			case "sold":
 				probid, ok := msg["probid"].(string)
 				if !ok {
 					continue
 				}
-				money, ok := msg["money"].(int)
+				money, ok := toInt(msg["money"])
 				if !ok {
 					continue
 				}
 				delete(state.bought, probid)
 				state.sold[probid] = struct{}{}
 				state.money = money
+				stats.probsSold.Add(1)
 
 			case "solved":
 				probid, ok := msg["probid"].(string)
 				if !ok {
 					continue
 				}
-				money, ok := msg["money"].(int)
+				money, ok := toInt(msg["money"])
 				if !ok {
 					continue
 				}
 				delete(state.bought, probid)
 				state.solved[probid] = struct{}{}
 				state.money = money
+				stats.probsSolved.Add(1)
 
 			case "start":
 				state.state = "running"
@@ -188,7 +253,7 @@ func playerSimLoop(token string) error {
 				state.state = "running"
 
 			case "chmoney":
-				money, ok := msg["money"].(int)
+				money, ok := toInt(msg["money"])
 				if !ok {
 					continue
 				}
@@ -221,16 +286,23 @@ func playerSimLoop(token string) error {
 				default:
 					cids = state.bought
 				}
+				if len(cids) == 0 {
+					continue
+				}
 				bids := make([]string, 0, len(cids))
 				for id := range cids {
 					bids = append(bids, id)
 				}
 				fprob := bids[rng.Intn(len(bids))]
+				stats.playerFocuses.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name":   "focus",
 					"probid": fprob,
 				})
 			} else if rng.Intn(30) == 0 {
+				if state.focused == "" {
+					continue
+				}
 				msg := ""
 				for range rng.Intn(20) + 3 {
 					msg += words[rng.Intn(len(words))]
@@ -246,6 +318,7 @@ func playerSimLoop(token string) error {
 					mtype = "paste"
 				}
 
+				stats.playerWrites.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name":    "write",
 					"probid":  state.focused,
@@ -258,6 +331,7 @@ func playerSimLoop(token string) error {
 					continue
 				}
 				msg := fmt.Sprint(rng.Float64()*10000 - 5000)
+				stats.playerSolves.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name":   "solve",
 					"probid": state.focused,
@@ -267,6 +341,7 @@ func playerSimLoop(token string) error {
 				if _, ok := state.bought[state.focused]; !ok {
 					continue
 				}
+				stats.playerSells.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name":   "sell",
 					"probid": state.focused,
@@ -283,6 +358,7 @@ func playerSimLoop(token string) error {
 				if diff == "" {
 					continue
 				}
+				stats.playerBuys.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name": "buy",
 					"diff": diff,
@@ -326,6 +402,8 @@ func corrSimLoop(token string) error {
 	if err != nil {
 		return err
 	}
+	stats.activeCorrs.Add(1)
+	defer stats.activeCorrs.Add(-1)
 
 	state := CorrState{
 		bought: make(map[string]struct{}),
@@ -342,6 +420,7 @@ func corrSimLoop(token string) error {
 			var msg map[string]any
 			err := conn.ReadJSON(&msg)
 			if err != nil {
+				stats.wsDisconnects.Add(1)
 				cchan <- nil
 				return
 			}
@@ -365,9 +444,13 @@ func corrSimLoop(token string) error {
 			}
 
 			switch name {
+			case "error":
+				stats.serverErrors.Add(1)
+				fmt.Printf("[corr %s] server error: %v\n", token, msg["error"])
+
 			case "initload":
-				data, ok := msg["data"].(CorrInitLoad)
-				if !ok {
+				var data CorrInitLoad
+				if !redecode(msg["data"], &data) {
 					continue
 				}
 				state.state = data.State
@@ -381,6 +464,8 @@ func corrSimLoop(token string) error {
 				for tickid := range data.SolvedTickets {
 					state.solved[tickid] = struct{}{}
 				}
+				fmt.Printf("[corr %s] initload: state=%s bought=%d solved=%d sold=%d\n",
+					token, data.State, len(data.BoughtTickets), len(data.SolvedTickets), len(data.SoldTickets))
 
 			case "focus":
 				id, ok := msg["id"].(string)
@@ -394,8 +479,8 @@ func corrSimLoop(token string) error {
 				if !ok {
 					continue
 				}
-				prob, ok := msg["prob"].(Prob)
-				if !ok {
+				var prob Prob
+				if !redecode(msg["prob"], &prob) {
 					continue
 				}
 				state.bought[teamid+":"+prob.Id] = struct{}{}
@@ -456,8 +541,8 @@ func corrSimLoop(token string) error {
 				continue
 			}
 
-			if rng.Intn(5) == 0 {
-				fn := rng.Intn(10)
+			if rng.Intn(3) == 0 {
+				fn := rng.Intn(50)
 				var cids map[string]struct{}
 				switch fn {
 				case 0:
@@ -475,11 +560,26 @@ func corrSimLoop(token string) error {
 					bids = append(bids, id)
 				}
 				ftick := bids[rng.Intn(len(bids))]
+				stats.corrFocuses.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name": "focus",
 					"id":   ftick,
 				})
-			} else if rng.Intn(30) == 0 {
+			} else if rng.Intn(5) == 0 {
+				if _, ok := state.bought[state.focused]; !ok {
+					continue
+				}
+				decision := "incorrect"
+				if rng.Intn(2) == 0 {
+					decision = "correct"
+				}
+				stats.corrGrades.Add(1)
+				conn.WriteJSON(map[string]string{
+					"name":     "grade",
+					"id":       state.focused,
+					"decision": decision,
+				})
+			} else if rng.Intn(20) == 0 {
 				if state.focused == "" {
 					continue
 				}
@@ -490,23 +590,11 @@ func corrSimLoop(token string) error {
 				}
 				msg = strings.TrimSuffix(msg, " ")
 
+				stats.corrWrites.Add(1)
 				conn.WriteJSON(map[string]string{
 					"name":    "write",
 					"id":      state.focused,
 					"message": msg,
-				})
-			} else if rng.Intn(50) == 0 {
-				if _, ok := state.bought[state.focused]; !ok {
-					continue
-				}
-				decision := "incorrect"
-				if rng.Intn(2) == 0 {
-					decision = "correct"
-				}
-				conn.WriteJSON(map[string]string{
-					"name":     "grade",
-					"id":       state.focused,
-					"decision": decision,
 				})
 			}
 
@@ -653,6 +741,42 @@ func runFinalTest(teamTokens []string, corrTokens []string, playersPerTeam int) 
 		teamTokens, corrTokens = getTokensFromRdb(rdb)
 	}
 
+	fmt.Printf("Starting stress test: %d teams (%d players/team = %d players), %d correctors\n",
+		len(teamTokens), playersPerTeam, len(teamTokens)*playersPerTeam, len(corrTokens))
+
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		start := time.Now()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				elapsed := time.Since(start).Round(time.Second)
+				fmt.Printf("[%v] active: %d players, %d corrs | actions sent -> buy:%d sell:%d solve:%d write:%d focus:%d | corr -> grade:%d write:%d focus:%d | events recv -> bought:%d sold:%d solved:%d | errs:%d disconn:%d\n",
+					elapsed,
+					stats.activePlayers.Load(),
+					stats.activeCorrs.Load(),
+					stats.playerBuys.Load(),
+					stats.playerSells.Load(),
+					stats.playerSolves.Load(),
+					stats.playerWrites.Load(),
+					stats.playerFocuses.Load(),
+					stats.corrGrades.Load(),
+					stats.corrWrites.Load(),
+					stats.corrFocuses.Load(),
+					stats.probsBought.Load(),
+					stats.probsSold.Load(),
+					stats.probsSolved.Load(),
+					stats.serverErrors.Load(),
+					stats.wsDisconnects.Load(),
+				)
+			}
+		}
+	}()
+
 	var wg sync.WaitGroup
 
 	for _, ctoken := range corrTokens {
@@ -663,6 +787,7 @@ func runFinalTest(teamTokens []string, corrTokens []string, playersPerTeam int) 
 				fmt.Printf("corr %s error: %v\n", tok, err)
 			}
 		}(ctoken)
+		time.Sleep(20 * time.Millisecond)
 	}
 
 	for _, ttoken := range teamTokens {
@@ -674,8 +799,10 @@ func runFinalTest(teamTokens []string, corrTokens []string, playersPerTeam int) 
 					fmt.Printf("player %s error: %v\n", tok, err)
 				}
 			}(ttoken)
+			time.Sleep(20 * time.Millisecond)
 		}
 	}
 
 	wg.Wait()
+	close(done)
 }
