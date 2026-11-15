@@ -256,6 +256,23 @@
         }
     }
 
+    async function pushProb() {
+        if (!selectedProb) return;
+        const probId = selectedProb.prob.id;
+        if (!changesSaved) {
+            await saveChanges();
+        }
+        try {
+            await pocketbase.send('/api/chprob', {
+                body: { id: probId },
+                method: 'post'
+            });
+        } catch (err) {
+            console.error('Failed to push prob:', err);
+            alert('Failed to push prob to game.');
+        }
+    }
+
     async function uploadImages(files: FileList) {
         if (!selectedProb) { return; }
         const imagesArray = Array.from(files);
@@ -551,6 +568,7 @@
                 return currentProbs;
             }); }}
             on:save-changes={(e) => { saveChanges(); }}
+            on:push-prob={(e) => { pushProb(); }}
             />
         {/if}
     </div>

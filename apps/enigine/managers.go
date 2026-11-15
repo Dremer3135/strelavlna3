@@ -15,12 +15,13 @@ import (
 )
 
 type MessageType int
+
 const (
-	WsError MessageType = iota // error
-	InvalidMessage // string (cmd)
+	WsError        MessageType = iota // error
+	InvalidMessage                    // string (cmd)
 
 	PlayerJoinRequest // PlayerJoinReqMsg
-	TeamRegister // id (string)
+	TeamRegister      // id (string)
 
 	CorrectorJoined
 	CorrectorLeft // error
@@ -38,11 +39,10 @@ const (
 
 	Focus
 
-
-	BuyProb // string (diff)
-	SellProb // string (probid)
+	BuyProb    // string (diff)
+	SellProb   // string (probid)
 	BoughtProb // BoughtProbMsg
-	SolveProb // string (probid)
+	SolveProb  // string (probid)
 	SolvedProb // string (probid)
 	SoldProb
 	SolveProbReq
@@ -56,8 +56,8 @@ const (
 	// GradedProb
 
 	NotEnoughMoney // required money (int)
-	NotAvaiable // nil
-	NotRunning // nil
+	NotAvaiable    // nil
+	NotRunning     // nil
 
 	UserError // error
 	TeamChanError
@@ -75,6 +75,7 @@ const (
 	RecoverGhost
 
 	ChangeMoney
+	ChangeProb
 )
 
 const (
@@ -93,95 +94,99 @@ const (
 type WriteMsgMsg struct {
 	probid string
 	teamid string
-	mtype string
-	msg string
-	admin bool
-	time time.Time
+	mtype  string
+	msg    string
+	admin  bool
+	time   time.Time
 }
 
 type PlayerJoinedMsg struct {
-	id string
+	id   string
 	addr chan Msg
 }
 
 type InWsMsg struct {
-	Name string `json:"name"`
+	Name string            `json:"name"`
 	Data map[string]string `json:"data"`
 }
 
 type OutWsMsg struct {
 	Name string `json:"name"`
-	Data any `json:"data"`
+	Data any    `json:"data"`
 }
 
 type Msg struct {
-	tp MessageType
-	from string
+	tp       MessageType
+	from     string
 	callback chan Msg
-	data any
+	data     any
 }
 
 type TeamProbMsg struct {
 	team string
-  prob string
+	prob string
 }
 
 type GradeProbMsg struct {
-	team string
-	prob string
+	team     string
+	prob     string
 	decision string
 }
 
 type ChangeMoneyMsg struct {
 	teamid string
-	mode string
+	mode   string
 	amount int
 }
 
 type SolveProbMsg struct {
 	probid string
-	text string
+	text   string
 }
 
 type PlayerFocusMsg struct {
-	probid string
+	probid   string
 	playerid string
 }
 
 type BoughtProbMsg struct {
-	prob Prob
-	money int
+	prob     Prob
+	money    int
 	remprobs map[string]int
 }
 
 type IdMoneyMsg struct {
-	id string
+	id    string
 	money int
 }
 
 type ResultsMsg struct {
 	money int
-	rank int
+	rank  int
 }
 
 var whiteSpaceRegex = regexp.MustCompile(`\s+`)
 
 func checkAnswer(cans, tans string) bool {
-  cans = whiteSpaceRegex.ReplaceAllLiteralString(cans, "")
-  tans = whiteSpaceRegex.ReplaceAllLiteralString(tans, "")
+	cans = whiteSpaceRegex.ReplaceAllLiteralString(cans, "")
+	tans = whiteSpaceRegex.ReplaceAllLiteralString(tans, "")
 	cans = strings.ReplaceAll(cans, ",", ".")
 	tans = strings.ReplaceAll(tans, ",", ".")
 	cf, errc := strconv.ParseFloat(cans, 64)
 	tf, errt := strconv.ParseFloat(tans, 64)
 	if errc == nil && errt == nil {
-	  if tf > cf * 0.99 && tf < cf * 1.01 { return true }
+		if tf > cf*0.99 && tf < cf*1.01 {
+			return true
+		}
 	}
-	if cans == tans { return true }
-  return false
+	if cans == tans {
+		return true
+	}
+	return false
 }
 
 type TeamNameMoneyMsg struct {
-	name string
+	name  string
 	money int
 }
 
@@ -191,7 +196,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 	correctors := map[string]chan Msg{}
 	monitors := map[string]chan Msg{}
 	for {
-		msg, ok := <- self
+		msg, ok := <-self
 		fmt.Printf("team: %#v\n", msg)
 		if !ok {
 			admins <- Msg{TeamChanError, id, self, ok}
@@ -204,7 +209,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 		case PlayerJoinRequest:
 			data, ok := msg.data.(*websocket.Conn)
-		  if !ok {
+			if !ok {
 				msg.callback <- Msg{UserError, id, self, "join"}
 				break
 			}
@@ -216,54 +221,73 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			plid := "0"
 			for {
 				_, ok := players[plid]
-				if !ok { break }
+				if !ok {
+					break
+				}
 				plidi++
 				plid = strconv.Itoa(plidi)
 			}
-		  plchan := make(chan Msg, 1000)
-		  go playerManager(data, plchan, self, plid, id)
-		  players[plid] = plchan
+			plchan := make(chan Msg, 1000)
+			go playerManager(data, plchan, self, plid, id)
+			players[plid] = plchan
 
 			iload, err := initLoad(conn, id, plid)
 			if err != nil {
 				plchan <- Msg{ServerError, id, self, err.Error()}
 				break
 			}
-		  plchan <- Msg{PlayerInitLoaded, id, self, iload}
+			plchan <- Msg{PlayerInitLoaded, id, self, iload}
 
 		case CorrectorJoined:
 			data, ok := msg.data.(CorrectorJoinedMsg)
-	    if !ok { break }
+			if !ok {
+				break
+			}
 			correctors[data.Id] = data.Chan
 
 		case CorrectorLeft:
 			data, ok := msg.data.(string)
-	    if !ok { break }
-		  delete(correctors, data)
+			if !ok {
+				break
+			}
+			delete(correctors, data)
 
 		case AdminJoined:
 			data, ok := msg.data.(CorrectorJoinedMsg)
-	    if !ok { break }
+			if !ok {
+				break
+			}
 			monitors[data.Id] = data.Chan
 
 		case AdminLeft:
 			data, ok := msg.data.(string)
-	    if !ok { break }
-		  delete(monitors, data)
-		
+			if !ok {
+				break
+			}
+			delete(monitors, data)
+
 		case BuyProb:
 			diff, ok := msg.data.(string)
-		  if !ok { msg.callback <- Msg{UserError, id, self, "buy"}; break }
+			if !ok {
+				msg.callback <- Msg{UserError, id, self, "buy"}
+				break
+			}
 
 			state, err := getState(conn)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if state != StateRunning { msg.callback <- Msg{UserError, id, self, "not running"}; break }
+			if state != StateRunning {
+				msg.callback <- Msg{UserError, id, self, "not running"}
+				break
+			}
 
 			prob, money, remprobs, err := buyProb(conn, id, diff)
-			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
+			if err != nil {
+				msg.callback <- Msg{UserError, id, self, err.Error()}
+				break
+			}
 
 			adminid := ""
 			for _, a := range prob.Queue {
@@ -272,7 +296,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					adminid = a
 					break
 				}
-			} 
+			}
 			if adminid == "" {
 				msg.callback <- Msg{UserError, id, self, "no corrector"}
 				break
@@ -311,23 +335,28 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				default:
 				}
 			}
-		  
-
-		
 
 		case SellProb:
 			probid, ok := msg.data.(string)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 
 			state, err := getState(conn)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if state != StateRunning { msg.callback <- Msg{UserError, id, self, "not running"}; break }
+			if state != StateRunning {
+				msg.callback <- Msg{UserError, id, self, "not running"}
+				break
+			}
 
 			money, err := sellProb(conn, id, probid)
-			if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
+			if err != nil {
+				msg.callback <- Msg{UserError, id, self, err.Error()}
+				break
+			}
 
 			corrid, err := getTCorr(conn, id, probid)
 			if err != nil {
@@ -336,7 +365,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}
 			if corrid != "" {
 				corr, ok := correctors[corrid]
-				if !ok { corr = correctors["ghost"] }
+				if !ok {
+					corr = correctors["ghost"]
+				}
 				corr <- Msg{SoldProb, id, self, probid}
 			}
 
@@ -356,19 +387,24 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 		case SolveProb:
 			data, ok := msg.data.(SolveProbMsg)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 
 			state, err := getState(conn)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-			if state != StateRunning { msg.callback <- Msg{UserError, id, self, "not running"}; break }
+			if state != StateRunning {
+				msg.callback <- Msg{UserError, id, self, "not running"}
+				break
+			}
 			// for _, pl := range players {
 			// 	pl <- Msg{SolveProbReq, id, self, data}
 			// }
 
-			go func(){
+			go func() {
 				self <- Msg{WriteMsg, id, self, WriteMsgMsg{data.probid, id, MTypeSolve, data.text, false, time.Now()}}
 			}()
 
@@ -379,7 +415,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}
 			if checkAnswer(data.text, prob.Answer) {
 				money, err := solveProb(conn, id, data.probid)
-				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
+				if err != nil {
+					msg.callback <- Msg{UserError, id, self, err.Error()}
+					break
+				}
 
 				for _, pl := range players {
 					select {
@@ -388,7 +427,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 					}
 				}
 
-				go func(){
+				go func() {
 					self <- Msg{WriteMsg,
 						id,
 						self,
@@ -400,7 +439,7 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 							true,
 							time.Now(),
 						},
-						}
+					}
 				}()
 
 				corrid, err := getTCorr(conn, id, data.probid)
@@ -410,12 +449,16 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 				if corrid != "" {
 					corr, ok := correctors[corrid]
-					if !ok { corr = correctors["ghost"] }
+					if !ok {
+						corr = correctors["ghost"]
+					}
 					corr <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.probid}}
 				}
 				if corrid != "" {
 					corr, ok := correctors[corrid]
-					if !ok { corr = correctors["ghost"] }
+					if !ok {
+						corr = correctors["ghost"]
+					}
 					corr <- Msg{SolvedProb, id, self, data.probid}
 				}
 				for _, mon := range monitors {
@@ -431,7 +474,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 		case WriteMsg:
 			data, ok := msg.data.(WriteMsgMsg)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 
 			side := MSidePlayer
 			if data.admin {
@@ -456,13 +501,17 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			}
 			if corrid != "" {
 				corr, ok := correctors[corrid]
-				if !ok { corr = correctors["ghost"] }
+				if !ok {
+					corr = correctors["ghost"]
+				}
 				corr <- Msg{WriteMsg, id, self, data}
 			}
 
 		case CorrGrade:
 			data, ok := msg.data.(GradeProbMsg)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 
 			corrid, err := getTCorr(conn, id, data.prob)
 			if err != nil {
@@ -472,7 +521,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			if data.decision == DecisionCorrect {
 				money, err := solveProb(conn, id, data.prob)
-				if err != nil { msg.callback <- Msg{UserError, id, self, err.Error() }; break }
+				if err != nil {
+					msg.callback <- Msg{UserError, id, self, err.Error()}
+					break
+				}
 
 				for _, pl := range players {
 					select {
@@ -482,7 +534,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				}
 				if corrid != "" {
 					corr, ok := correctors[corrid]
-					if !ok { corr = correctors["ghost"] }
+					if !ok {
+						corr = correctors["ghost"]
+					}
 					corr <- Msg{SolvedProb, id, self, data.prob}
 				}
 				for _, mon := range monitors {
@@ -499,15 +553,15 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 			// 	pl <- msgs
 			// }
 
-			go func(){
+			go func() {
 				self <- Msg{
 					WriteMsg,
 					id,
 					self,
 					WriteMsgMsg{
 						data.prob,
-						data.team, 
-						MTypeGrade, 
+						data.team,
+						MTypeGrade,
 						data.decision,
 						true,
 						time.Now(),
@@ -517,7 +571,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 			if corrid != "" {
 				corr, ok := correctors[corrid]
-				if !ok { corr = correctors["ghost"] }
+				if !ok {
+					corr = correctors["ghost"]
+				}
 				corr <- Msg{CorrGraded, id, self, TeamProbMsg{id, data.prob}}
 			}
 
@@ -555,7 +611,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 		case Results:
 			data, ok := msg.data.(TeamMoneyResult)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 			for _, pl := range players {
 				select {
 				case pl <- Msg{Results, id, self, data}:
@@ -565,8 +623,10 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 		case Focus:
 			data, ok := msg.data.(PlayerFocusMsg)
-		  if !ok { break }
-		  for _, pl := range players {
+			if !ok {
+				break
+			}
+			for _, pl := range players {
 				select {
 				case pl <- Msg{Focus, id, self, data}:
 				default:
@@ -575,7 +635,9 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 
 		case ChangeMoney:
 			data, ok := msg.data.(ChangeMoneyMsg)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 			money, err := getMoney(conn, id)
 			if err != nil {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
@@ -595,10 +657,63 @@ func teamManager(self chan Msg, admins chan Msg, id string, tname string) {
 				msg.callback <- Msg{ServerError, id, self, "db error"}
 				break
 			}
-		  for _, pl := range players {
+			for _, pl := range players {
 				select {
 				case pl <- Msg{ChangeMoney, id, self, money}:
 				default:
+				}
+			}
+
+		case ChangeProb:
+			data, ok := msg.data.(Prob)
+			if !ok {
+				break
+			}
+			for _, d := range DIFFS {
+				bought, err := getOwnedProbs(conn, id, OwnedBought, d)
+				if err != nil {
+					continue
+				}
+				for _, probid := range bought {
+					if probid == data.Id || strings.HasPrefix(probid, data.Id+"/") {
+						p := data
+						p.Id = probid
+						if data.Auto {
+							if err := genProb(conn, &p); err != nil {
+								continue
+							}
+						}
+						if probid != data.Id || data.Auto {
+							if err := setProb(conn, p); err != nil {
+								continue
+							}
+						}
+						if d != data.Diff {
+							conn.SMove(ctx, "oprobs:"+id+":"+OwnedBought+":"+d, "oprobs:"+id+":"+OwnedBought+":"+data.Diff, probid)
+						}
+						corrid, err := getTCorr(conn, id, probid)
+						if err == nil && corrid != "" {
+							corr, ok := correctors[corrid]
+							if !ok {
+								corr = correctors["ghost"]
+							}
+							if corr != nil {
+								select {
+								case corr <- Msg{ChangeProb, id, self, p}:
+								default:
+								}
+							}
+						}
+						pPlayer := p
+						pPlayer.Answer = "<dobrej pokus>"
+						pPlayer.Code = "<dobrej pokus>"
+						for _, pl := range players {
+							select {
+							case pl <- Msg{ChangeProb, id, self, pPlayer}:
+							default:
+							}
+						}
+					}
 				}
 			}
 
@@ -616,47 +731,81 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 				break
 			}
 			name, ok := msg["name"]
-			if !ok { self <- Msg{UserError, id, self, "no name"}; break }
+			if !ok {
+				self <- Msg{UserError, id, self, "no name"}
+				break
+			}
 			switch name {
 
 			case "buy":
 				diff, ok := msg["diff"]
-				if !ok { self <- Msg{UserError, id, self, "no diff"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no diff"}
+					break
+				}
 				team <- Msg{BuyProb, id, self, diff}
 
 			case "sell":
 				probid, ok := msg["probid"]
-				if !ok { self <- Msg{UserError, id, self, "no probid"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no probid"}
+					break
+				}
 				team <- Msg{SellProb, id, self, probid}
 
 			case "solve":
 				probid, ok := msg["probid"]
-				if !ok { self <- Msg{UserError, id, self, "no probid"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no probid"}
+					break
+				}
 				solution, ok := msg["answer"]
-				if !ok { self <- Msg{UserError, id, self, "no answer"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no answer"}
+					break
+				}
 				team <- Msg{SolveProb, id, self, SolveProbMsg{probid, solution}}
 
 			case "write":
 				probid, ok := msg["probid"]
-				if !ok { self <- Msg{UserError, id, self, "no probid"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no probid"}
+					break
+				}
 				text, ok := msg["message"]
-				if !ok { self <- Msg{UserError, id, self, "no text"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no text"}
+					break
+				}
 				mtype, ok := msg["mtype"]
-				if !ok { self <- Msg{UserError, id, self, "no mtype"}; break }
-				if mtype != MTypeText && mtype != MTypeGif && mtype != MTypeCopy && mtype != MTypePaste && mtype != MTypeFocus { self <- Msg{UserError, id, self, "invalid mtype"}; break }
-				// if len(text) > 50 { self <- Msg{UserError, id, self, "too long"}; break }
+				if !ok {
+					self <- Msg{UserError, id, self, "no mtype"}
+					break
+				}
+				if mtype != MTypeText && mtype != MTypeGif && mtype != MTypeCopy && mtype != MTypePaste && mtype != MTypeFocus {
+					self <- Msg{UserError, id, self, "invalid mtype"}
+					break
+				}
+				if len(text) > 50 {
+					self <- Msg{UserError, id, self, "too long"}
+					break
+				}
 				team <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, teamid, mtype, text, false, time.Now()}}
 
 			case "focus":
 				probid, ok := msg["probid"]
-				if !ok { self <- Msg{UserError, id, self, "no probid"}; break }
-			  team <- Msg{Focus, id, self, PlayerFocusMsg{probid, id}}
+				if !ok {
+					self <- Msg{UserError, id, self, "no probid"}
+					break
+				}
+				team <- Msg{Focus, id, self, PlayerFocusMsg{probid, id}}
 
 			}
 		}
 	}()
-	chanloop: for {
-		msg, ok := <- self
+chanloop:
+	for {
+		msg, ok := <-self
 		fmt.Printf("client: %#v\n", msg)
 		if !ok {
 			ws.Close()
@@ -667,7 +816,9 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 
 		case WsError:
 			data, ok := msg.data.(error)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			fmt.Printf("WSERROR: %v\n", data)
 			ws.Close()
 			team <- Msg{PlayerLeft, id, self, data}
@@ -675,98 +826,130 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 
 		case UserError:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "error",
+				"name":  "error",
 				"error": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case ServerError:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "error",
+				"name":  "error",
 				"error": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case PlayerInitLoaded:
-		  data, ok := msg.data.(InitLoad)
+			data, ok := msg.data.(InitLoad)
 			fmt.Printf("%v %v\n", ok, data)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "initload",
 				"data": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 			fmt.Printf("err: %v\n", err)
 
 		case Focus:
-		  data, ok := msg.data.(PlayerFocusMsg)
-		  if !ok { break }
+			data, ok := msg.data.(PlayerFocusMsg)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "focus",
+				"name":     "focus",
 				"playerid": data.playerid,
-				"probid": data.probid,
+				"probid":   data.probid,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case WriteMsg:
-		  data, ok := msg.data.(WriteMsgMsg)
-		  if !ok { break }
+			data, ok := msg.data.(WriteMsgMsg)
+			if !ok {
+				break
+			}
 			rtype := "sent"
 			if data.admin {
 				rtype = "recieved"
 			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "written",
+				"name":   "written",
 				"probid": data.probid,
-				"text": data.msg,
+				"text":   data.msg,
 				"origin": rtype,
-				"type": data.mtype,
-				"time": data.time.UnixMilli(),
+				"type":   data.mtype,
+				"time":   data.time.UnixMilli(),
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case BoughtProb:
-		  data, ok := msg.data.(BoughtProbMsg)
-		  if !ok { break }
+			data, ok := msg.data.(BoughtProbMsg)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "bought",
-				"prob": data.prob,
-				"money": data.money,
+				"name":     "bought",
+				"prob":     data.prob,
+				"money":    data.money,
 				"remprobs": data.remprobs,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case SoldProb:
-		  data, ok := msg.data.(IdMoneyMsg)
-		  if !ok { break }
+			data, ok := msg.data.(IdMoneyMsg)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "sold",
+				"name":   "sold",
 				"probid": data.id,
-				"money": strconv.Itoa(data.money),
+				"money":  strconv.Itoa(data.money),
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case SolvedProb:
-		  data, ok := msg.data.(IdMoneyMsg)
-		  if !ok { break }
+			data, ok := msg.data.(IdMoneyMsg)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "solved",
+				"name":   "solved",
 				"probid": data.id,
-				"money": strconv.Itoa(data.money),
+				"money":  strconv.Itoa(data.money),
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		// case SolveProbReq:
 		//   data, ok := msg.data.(SolveProbMsg)
@@ -786,72 +969,103 @@ func playerManager(ws *websocket.Conn, self chan Msg, team chan Msg, id string, 
 			err := ws.WriteJSON(map[string]any{
 				"name": "start",
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case End:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "end",
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case Pause:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "paused",
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case Resume:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "resumed",
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case Results:
-		  data, ok := msg.data.(TeamMoneyResult)
-		  if !ok { break }
+			data, ok := msg.data.(TeamMoneyResult)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "results",
+				"name":  "results",
 				"money": data.Money,
-				"rank": data.Rank,
+				"rank":  data.Rank,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case ChangeMoney:
-		  data, ok := msg.data.(int)
-		  if !ok { break }
+			data, ok := msg.data.(int)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "chmoney",
+				"name":  "chmoney",
 				"money": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
-		  
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
+
+		case ChangeProb:
+			data, ok := msg.data.(Prob)
+			if !ok {
+				break
+			}
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name": "chprob",
+				"prob": data,
+			})
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
+
 		}
 	}
 }
 
 type PlayerJoinReqMsg struct {
 	Teamid string
-	Conn *websocket.Conn
+	Conn   *websocket.Conn
 }
 
 type CorrectorJoinedReqMsg struct {
-	Id string
+	Id   string
 	Conn *websocket.Conn
 }
 
-type CorrectorJoinedMsg struct{
-	Id string
+type CorrectorJoinedMsg struct {
+	Id   string
 	Chan chan Msg
 }
 
 func monitorManager(self chan Msg, ws *websocket.Conn, admins chan Msg, id string) {
-	chanloop: for {
-		msg, ok := <- self
+chanloop:
+	for {
+		msg, ok := <-self
 		fmt.Printf("client: %#v\n", msg)
 		if !ok {
 			ws.Close()
@@ -862,7 +1076,9 @@ func monitorManager(self chan Msg, ws *websocket.Conn, admins chan Msg, id strin
 
 		case WsError:
 			data, ok := msg.data.(error)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			fmt.Printf("WSERROR: %v\n", data)
 			ws.Close()
 			admins <- Msg{PlayerLeft, id, self, data}
@@ -870,44 +1086,56 @@ func monitorManager(self chan Msg, ws *websocket.Conn, admins chan Msg, id strin
 
 		case UserError:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "error",
+				"name":  "error",
 				"error": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case ServerError:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "error",
+				"name":  "error",
 				"error": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case TeamMonitorUpdate:
-		  data, ok := msg.data.(TeamNameMoneyMsg)
-		  if !ok { break }
+			data, ok := msg.data.(TeamNameMoneyMsg)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "tchange",
-				"teamid": msg.from,
-				"money": data.money,
+				"name":     "tchange",
+				"teamid":   msg.from,
+				"money":    data.money,
 				"teamname": data.name,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
-		
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
+
 		}
 	}
-} 
+}
 
 type TeamMonitorUpdateMsg struct {
-	money int
+	money  int
 	bought []int
-	sold []int
+	sold   []int
 	solved []int
 }
 
@@ -920,21 +1148,23 @@ func adminManager(self chan Msg) {
 	correctors["ghost"] = gchan
 	for {
 		fmt.Printf("ADMIN\n")
-		msg := <- self
+		msg := <-self
 		fmt.Printf("admin: %#v\n", msg)
 		switch msg.tp {
 
 		case TeamRegister:
 			id, ok := msg.data.(string)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 			tchan := make(chan Msg, 1000)
 			tname, err := getTeamName(conn, id)
 			if err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  go teamManager(tchan, self, id, tname)
-		  teams[id] = tchan
+			go teamManager(tchan, self, id, tname)
+			teams[id] = tchan
 			for _, ch := range correctors {
 				select {
 				case ch <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, tchan}}:
@@ -942,7 +1172,7 @@ func adminManager(self chan Msg) {
 				}
 			}
 			tchan <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{"ghost", gchan}}
-		  for id, corr := range correctors {
+			for id, corr := range correctors {
 				select {
 				case tchan <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{id, corr}}:
 				default:
@@ -956,25 +1186,27 @@ func adminManager(self chan Msg) {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  go teamManager(tchan, self, msg.from, tname)
-		  teams[msg.from] = tchan
+			go teamManager(tchan, self, msg.from, tname)
+			teams[msg.from] = tchan
 
 		case CorrectorJoined:
 			data, ok := msg.data.(CorrectorJoinedReqMsg)
-		  if !ok { break }
+			if !ok {
+				break
+			}
 			cchan := make(chan Msg, 1000)
-		  go correctorManager(data.Conn, cchan, self, data.Id)
-		  correctors[data.Id] = cchan
-		  for id, ch := range teams {
+			go correctorManager(data.Conn, cchan, self, data.Id)
+			correctors[data.Id] = cchan
+			for id, ch := range teams {
 				cchan <- Msg{TeamRegister, "", self, CorrectorJoinedMsg{id, ch}}
 			}
-	    // gchan <- Msg{RecoverGhost, "", self, cchan}
+			// gchan <- Msg{RecoverGhost, "", self, cchan}
 			tickets, err := getCorrTickets(conn, "ghost")
 			if err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  for _, t := range tickets {
+			for _, t := range tickets {
 				teamid, probid := parseTicketId(t)
 				prob, err := getProb(conn, probid)
 				if err != nil {
@@ -988,7 +1220,7 @@ func adminManager(self chan Msg) {
 						adminid = a
 						break
 					}
-				} 
+				}
 				if adminid == "" {
 					adminid = "ghost"
 				}
@@ -1010,7 +1242,7 @@ func adminManager(self chan Msg) {
 				break
 			}
 			cchan <- Msg{CorrectorInitLoaded, "", self, iload}
-		  for _, ch := range teams {
+			for _, ch := range teams {
 				select {
 				case ch <- Msg{CorrectorJoined, "", self, CorrectorJoinedMsg{data.Id, cchan}}:
 				default:
@@ -1018,12 +1250,14 @@ func adminManager(self chan Msg) {
 			}
 
 		case AdminJoined:
-		  data, ok := msg.data.(CorrectorJoinedReqMsg)
-		  if !ok { break }
+			data, ok := msg.data.(CorrectorJoinedReqMsg)
+			if !ok {
+				break
+			}
 			adchan := make(chan Msg, 1000)
-		  admins[data.Id] = adchan
+			admins[data.Id] = adchan
 			go monitorManager(adchan, data.Conn, self, data.Id)
-		  for _, ch := range teams {
+			for _, ch := range teams {
 				select {
 				case ch <- Msg{AdminJoined, "", self, CorrectorJoinedMsg{data.Id, adchan}}:
 				default:
@@ -1031,10 +1265,12 @@ func adminManager(self chan Msg) {
 			}
 
 		case AdminLeft:
-		  data, ok := msg.data.(string)
-		  if !ok { break }
-		  delete(admins, data)
-		  for _, ch := range teams {
+			data, ok := msg.data.(string)
+			if !ok {
+				break
+			}
+			delete(admins, data)
+			for _, ch := range teams {
 				select {
 				case ch <- Msg{AdminLeft, "", self, data}:
 				default:
@@ -1043,27 +1279,31 @@ func adminManager(self chan Msg) {
 
 		case CorrectorLeft:
 			_, ok := msg.data.(error)
-		  if !ok { break }
-		  for _, ch := range teams {
+			if !ok {
+				break
+			}
+			for _, ch := range teams {
 				select {
 				case ch <- Msg{CorrectorLeft, "", self, msg.from}:
 				default:
 				}
 			}
-		  delete(correctors, msg.from)
+			delete(correctors, msg.from)
 			tickets, err := getCorrTickets(conn, msg.from)
 			if err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  for _, t := range tickets {
+			for _, t := range tickets {
 				teamid, probid := parseTicketId(t)
 				tstate, err := getTState(conn, teamid, probid)
 				if err != nil {
 					fmt.Printf("admin error: %v\n", err)
 					continue
 				}
-				if tstate != OwnedBought { continue }
+				if tstate != OwnedBought {
+					continue
+				}
 				prob, err := getProb(conn, probid)
 				if err != nil {
 					fmt.Printf("admin error: %v\n", err)
@@ -1076,7 +1316,7 @@ func adminManager(self chan Msg) {
 						adminid = a
 						break
 					}
-				} 
+				}
 				if adminid == "" {
 					adminid = "ghost"
 				}
@@ -1107,59 +1347,63 @@ func adminManager(self chan Msg) {
 
 		case PlayerJoinRequest:
 			data, ok := msg.data.(PlayerJoinReqMsg)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			team, ok := teams[data.Teamid]
-			if !ok { break }
+			if !ok {
+				break
+			}
 			team <- Msg{PlayerJoinRequest, "", self, data.Conn}
 
 		case Start:
-		  if err := setState(conn, StateRunning); err != nil {
+			if err := setState(conn, StateRunning); err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  for _, team := range teams {
+			for _, team := range teams {
 				select {
 				case team <- Msg{Start, "", self, nil}:
 				default:
 				}
 			}
-		  for _, corr := range correctors {
+			for _, corr := range correctors {
 				select {
 				case corr <- Msg{Start, "", self, nil}:
 				default:
 				}
 			}
-		
+
 		case End:
-		  if err := setState(conn, StateAfter); err != nil {
+			if err := setState(conn, StateAfter); err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  for _, team := range teams {
+			for _, team := range teams {
 				select {
 				case team <- Msg{End, "", self, nil}:
 				default:
 				}
 			}
-		  for _, corr := range correctors {
+			for _, corr := range correctors {
 				select {
 				case corr <- Msg{End, "", self, nil}:
 				default:
 				}
 			}
-		
+
 		case Pause:
-		  if err := setState(conn, StatePaused); err != nil {
+			if err := setState(conn, StatePaused); err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  for _, team := range teams {
+			for _, team := range teams {
 				select {
 				case team <- Msg{Pause, "", self, nil}:
 				default:
 				}
 			}
-		  for _, corr := range correctors {
+			for _, corr := range correctors {
 				select {
 				case corr <- Msg{Pause, "", self, nil}:
 				default:
@@ -1167,17 +1411,17 @@ func adminManager(self chan Msg) {
 			}
 
 		case Resume:
-		  if err := setState(conn, StateRunning); err != nil {
+			if err := setState(conn, StateRunning); err != nil {
 				fmt.Printf("admin error: %v\n", err)
 				continue
 			}
-		  for _, team := range teams {
+			for _, team := range teams {
 				select {
 				case team <- Msg{Resume, "", self, nil}:
 				default:
 				}
 			}
-		  for _, corr := range correctors {
+			for _, corr := range correctors {
 				select {
 				case corr <- Msg{Resume, "", self, nil}:
 				default:
@@ -1193,15 +1437,19 @@ func adminManager(self chan Msg) {
 					fmt.Printf("admin error: %v\n", err)
 					continue
 				}
-				moneys[money] = append(moneys[money], id) 
+				moneys[money] = append(moneys[money], id)
 			}
 			tmrl := make([]ManyTeamMoneyResult, 0, len(moneys))
 			for k, v := range moneys {
 				tmrl = append(tmrl, ManyTeamMoneyResult{v, k})
 			}
 			slices.SortFunc(tmrl, func(a, b ManyTeamMoneyResult) int {
-				if a.money < b.money { return 1 }
-				if a.money > b.money { return -1 }
+				if a.money < b.money {
+					return 1
+				}
+				if a.money > b.money {
+					return -1
+				}
 				return 0
 			})
 			resmap := make(map[string]TeamMoneyResult)
@@ -1220,16 +1468,32 @@ func adminManager(self chan Msg) {
 					}
 					resmap[id] = TeamMoneyResult{tmr.money, rank, tname}
 					select {
-						case teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, rank, ""}}:
-						default:
+					case teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, rank, ""}}:
+					default:
 					}
 				}
 				i += len(tmr.ids)
 			}
 			for _, corr := range correctors {
 				select {
-					case corr <- Msg{Results, "", self, resmap}:
-					default:
+				case corr <- Msg{Results, "", self, resmap}:
+				default:
+				}
+			}
+
+		case ChangeProb:
+			data, ok := msg.data.(Prob)
+			if !ok {
+				break
+			}
+			err := setProb(conn, data)
+			if err != nil {
+				break
+			}
+			for _, team := range teams {
+				select {
+				case team <- Msg{ChangeProb, "", self, data}:
+				default:
 				}
 			}
 
@@ -1238,13 +1502,13 @@ func adminManager(self chan Msg) {
 }
 
 type TeamMoneyResult struct {
-	Money int `json:"money"`
-	Rank int `json:"rank"`
-	Name string `json:"name"`
+	Money int    `json:"money"`
+	Rank  int    `json:"rank"`
+	Name  string `json:"name"`
 }
 
 type ManyTeamMoneyResult struct {
-	ids []string
+	ids   []string
 	money int
 }
 
@@ -1259,63 +1523,94 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 				break
 			}
 			name, ok := msg["name"]
-			if !ok { self <- Msg{UserError, id, self, "no name"}; break }
+			if !ok {
+				self <- Msg{UserError, id, self, "no name"}
+				break
+			}
 			switch name {
 
 			case "focus":
 				tid, ok := msg["id"]
-				if !ok { self <- Msg{UserError, id, self, "not focus id"}; break}
+				if !ok {
+					self <- Msg{UserError, id, self, "not focus id"}
+					break
+				}
 				self <- Msg{Focus, id, self, tid}
 
 			case "write":
-			  tid, ok := msg["id"]
-				if !ok { self <- Msg{UserError, id, self, "no teamid"}; break}
-			  text, ok := msg["message"]
-				if !ok { self <- Msg{UserError, id, self, "no text"}; break}
+				tid, ok := msg["id"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no teamid"}
+					break
+				}
+				text, ok := msg["message"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no text"}
+					break
+				}
 				teamid, probid := parseTicketId(tid)
-			  self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
-			  // self <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
+				self <- Msg{CorrWriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
+				// self <- Msg{WriteMsg, id, self, WriteMsgMsg{probid, teamid, MTypeText, text, true, time.Now()}}
 
 			case "grade":
-			  tid, ok := msg["id"]
-				if !ok { self <- Msg{UserError, id, self, "no teamid"}; break}
-			  decision, ok := msg["decision"]
-				if !ok { self <- Msg{UserError, id, self, "no decision"}; break}
+				tid, ok := msg["id"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no teamid"}
+					break
+				}
+				decision, ok := msg["decision"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no decision"}
+					break
+				}
 				teamid, probid := parseTicketId(tid)
-			  self <- Msg{CorrGrade, id, self, GradeProbMsg{teamid, probid, decision}}
+				self <- Msg{CorrGrade, id, self, GradeProbMsg{teamid, probid, decision}}
 
 			case "start":
-			  admins <- Msg{Start, id, self, nil}
+				admins <- Msg{Start, id, self, nil}
 
 			case "end":
-			  admins <- Msg{End, id, self, nil}
+				admins <- Msg{End, id, self, nil}
 
 			case "results":
-			  admins <- Msg{Results, id, self, nil}
+				admins <- Msg{Results, id, self, nil}
 
 			case "pause":
-			  admins <- Msg{Pause, id, self, nil}
+				admins <- Msg{Pause, id, self, nil}
 
 			case "resume":
-			  admins <- Msg{Resume, id, self, nil}
+				admins <- Msg{Resume, id, self, nil}
 
 			case "chmoney":
-			  tid, ok := msg["teamid"]
-				if !ok { self <- Msg{UserError, id, self, "no teamid"}; break}
-			  mode, ok := msg["mode"]
-				if !ok { self <- Msg{UserError, id, self, "no mode"}; break}
-			  amounts, ok := msg["amount"]
-				if !ok { self <- Msg{UserError, id, self, "no amount"}; break}
+				tid, ok := msg["teamid"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no teamid"}
+					break
+				}
+				mode, ok := msg["mode"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no mode"}
+					break
+				}
+				amounts, ok := msg["amount"]
+				if !ok {
+					self <- Msg{UserError, id, self, "no amount"}
+					break
+				}
 				amount, err := strconv.Atoi(amounts)
-				if err != nil { self <- Msg{UserError, id, self, err.Error()}; break}
-			  self <- Msg{ChangeMoney, id, self, ChangeMoneyMsg{tid, mode, amount}}
+				if err != nil {
+					self <- Msg{UserError, id, self, err.Error()}
+					break
+				}
+				self <- Msg{ChangeMoney, id, self, ChangeMoneyMsg{tid, mode, amount}}
 
 			}
 		}
 	}()
-	chanloop: for {
+chanloop:
+	for {
 		fmt.Printf("CORRECTOR\n")
-		msg, ok := <- self
+		msg, ok := <-self
 		fmt.Printf("corr: %#v\n", msg)
 		if !ok {
 			ws.Close()
@@ -1326,7 +1621,9 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 
 		case WsError:
 			data, ok := msg.data.(error)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			fmt.Printf("WSERROR: %v\n", data)
 			ws.Close()
 			admins <- Msg{CorrectorLeft, id, self, data}
@@ -1334,84 +1631,116 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 
 		case UserError:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{"name": "error", "error": data})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case ServerError:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{"name": "error", "error": data})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case TeamRegister:
-		  data, ok := msg.data.(CorrectorJoinedMsg)
-			if !ok { break }
+			data, ok := msg.data.(CorrectorJoinedMsg)
+			if !ok {
+				break
+			}
 			teams[data.Id] = data.Chan
 
 		case CorrectorInitLoaded:
-		  data, ok := msg.data.(CorrInitLoad)
-			if !ok { break }
+			data, ok := msg.data.(CorrInitLoad)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
-		  err := ws.WriteJSON(map[string]any{
+			err := ws.WriteJSON(map[string]any{
 				"name": "initload",
 				"data": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case Focus:
 			data, ok := msg.data.(string)
-			if !ok { break }
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{"name": "focus", "id": data})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case CorrWriteMsg:
-		  data, ok := msg.data.(WriteMsgMsg)
-		  if !ok { break }
-		  teams[data.teamid] <- Msg{WriteMsg, id, self, data}
+			data, ok := msg.data.(WriteMsgMsg)
+			if !ok {
+				break
+			}
+			teams[data.teamid] <- Msg{WriteMsg, id, self, data}
 
 		case ChangeMoney:
-		  data, ok := msg.data.(ChangeMoneyMsg)
-		  if !ok { break }
-		  teams[data.teamid] <- Msg{ChangeMoney, id, self, data}
+			data, ok := msg.data.(ChangeMoneyMsg)
+			if !ok {
+				break
+			}
+			teams[data.teamid] <- Msg{ChangeMoney, id, self, data}
 
 		case CorrGrade:
-		  data, ok := msg.data.(GradeProbMsg)
-		  if !ok { break }
-		  teams[data.team] <- Msg{CorrGrade, id, self, data}
+			data, ok := msg.data.(GradeProbMsg)
+			if !ok {
+				break
+			}
+			teams[data.team] <- Msg{CorrGrade, id, self, data}
 
 		case CorrGraded:
-		  data, ok := msg.data.(TeamProbMsg)
-		  if !ok { break }
+			data, ok := msg.data.(TeamProbMsg)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]string{
-				"name": "graded",
+				"name":   "graded",
 				"probid": data.prob,
 				"teamid": data.team,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case WriteMsg:
-		  data, ok := msg.data.(WriteMsgMsg)
-		  if !ok { break }
+			data, ok := msg.data.(WriteMsgMsg)
+			if !ok {
+				break
+			}
 			rtype := "recieved"
 			if data.admin {
 				rtype = "sent"
 			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
-				"name": "written",
+				"name":   "written",
 				"probid": data.probid,
 				"teamid": data.teamid,
-				"text": data.msg,
-				"type": data.mtype,
-				"time": data.time.UnixMilli(),
+				"text":   data.msg,
+				"type":   data.mtype,
+				"time":   data.time.UnixMilli(),
 				"origin": rtype,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		// case SolveProb:
 		//   data, ok := msg.data.(SolveProbMsg)
@@ -1428,58 +1757,91 @@ func correctorManager(ws *websocket.Conn, self chan Msg, admins chan Msg, id str
 		// 	if err != nil { self <- Msg{WsError, id, self, err} }
 
 		case SoldProb:
-		  data, ok := msg.data.(string)
-		  if !ok { break }
+			data, ok := msg.data.(string)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
-		  err := ws.WriteJSON(map[string]string{
-				"name": "sold",
+			err := ws.WriteJSON(map[string]string{
+				"name":   "sold",
 				"teamid": msg.from,
 				"probid": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case SolvedProb:
-		  data, ok := msg.data.(string)
-		  if !ok { break }
+			data, ok := msg.data.(string)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
-		  err := ws.WriteJSON(map[string]string{
-				"name": "solved",
+			err := ws.WriteJSON(map[string]string{
+				"name":   "solved",
 				"teamid": msg.from,
 				"probid": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case BoughtProb:
-		  data, ok := msg.data.(CorrTicket)
-		  if !ok { break }
+			data, ok := msg.data.(CorrTicket)
+			if !ok {
+				break
+			}
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if data.TLines == nil {
 				data.TLines = map[string][]TLineAtom{}
 			}
 			err := ws.WriteJSON(map[string]any{
-				"name": "bought",
-				"teamid": data.TeamId,
+				"name":     "bought",
+				"teamid":   data.TeamId,
 				"teamname": data.TeamName,
-				"prob": data.Prob,
-				"tlines": data.TLines,
+				"prob":     data.Prob,
+				"tlines":   data.TLines,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case Start:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
-		  err := ws.WriteJSON(map[string]string{
+			err := ws.WriteJSON(map[string]string{
 				"name": "start",
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		case Results:
-		  data, ok := msg.data.(map[string]TeamMoneyResult)
-		  if !ok { break }
-		  err := ws.WriteJSON(map[string]any{
+			data, ok := msg.data.(map[string]TeamMoneyResult)
+			if !ok {
+				break
+			}
+			err := ws.WriteJSON(map[string]any{
 				"name": "results",
 				"data": data,
 			})
-			if err != nil { self <- Msg{WsError, id, self, err} }
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
+
+		case ChangeProb:
+			data, ok := msg.data.(Prob)
+			if !ok {
+				break
+			}
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteJSON(map[string]any{
+				"name":   "chprob",
+				"teamid": msg.from,
+				"prob":   data,
+			})
+			if err != nil {
+				self <- Msg{WsError, id, self, err}
+			}
 
 		}
 	}

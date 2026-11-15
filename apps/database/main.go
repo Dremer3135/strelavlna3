@@ -1351,6 +1351,54 @@ func main() {
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 		}).Bind(apis.RequireAuth("correctors"))
 
+		e.Router.POST("/api/chprob", func(e *core.RequestEvent) error {
+			data := struct {
+				Id string `json:"id"`
+			}{}
+			_ = e.BindBody(&data)
+			if data.Id == "" {
+				data.Id = e.Request.URL.Query().Get("id")
+			}
+			if data.Id == "" {
+				return e.Error(400, "invalid data", nil)
+			}
+			prob, err := e.App.FindRecordById("probs", data.Id)
+			if err != nil {
+				return e.Error(400, "invalid prob id", err)
+			}
+			imgs := []string{}
+			for _, img := range prob.GetStringSlice("images") {
+				imgs = append(imgs, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
+			}
+			p := Prob{
+				Id:       prob.Id,
+				Name:     prob.GetString("name"),
+				Diff:     prob.GetString("diff"),
+				Text:     prob.GetString("text"),
+				Answer:   prob.GetString("answer"),
+				Code:     prob.GetString("code"),
+				Auto:     prob.GetBool("auto"),
+				Infinite: prob.GetBool("infinite"),
+				Queue:    prob.GetStringSlice("queue"),
+				Images:   imgs,
+			}
+			jbody, err := json.Marshal(p)
+			if err != nil {
+				return e.Error(500, "failed to marshal prob", err)
+			}
+			token := e.Auth.GetString("token")
+			resp, err := http.DefaultClient.Post("http://localhost:7777/api/chprob?token="+token, "application/json", bytes.NewBuffer(jbody))
+			if err != nil {
+				return e.Error(500, "failed to contact engine", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				b, _ := io.ReadAll(resp.Body)
+				return e.Error(resp.StatusCode, string(b), nil)
+			}
+			return e.String(200, "ok")
+		}).Bind(apis.RequireAuth("correctors"))
+
 		e.Router.GET("/api/printsocket", func(e *core.RequestEvent) error {
 			printid := e.Request.URL.Query().Get("id")
 			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)

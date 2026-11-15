@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+
 	// "os"
 
 	"github.com/gorilla/websocket"
@@ -30,7 +32,9 @@ func main() {
 	mchan := make(chan Msg, 10)
 
 	teams, err := rdb.SMembers(ctx, "teams").Result()
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	for _, team := range teams {
 		achan <- Msg{TeamRegister, "", nil, team}
@@ -38,7 +42,7 @@ func main() {
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
-		teamid, err := rdb.Get(ctx, "playtoken:" + token).Result()
+		teamid, err := rdb.Get(ctx, "playtoken:"+token).Result()
 		if err != nil {
 			http.Error(w, "invalid token", 400)
 			return
@@ -56,7 +60,7 @@ func main() {
 
 	http.HandleFunc("/ws/corr", func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
-		corrid, err := rdb.Get(ctx, "corrtoken:" + token).Result()
+		corrid, err := rdb.Get(ctx, "corrtoken:"+token).Result()
 		if err != nil {
 			http.Error(w, "invalid token", 400)
 			return
@@ -71,9 +75,28 @@ func main() {
 		achan <- Msg{CorrectorJoined, "", mchan, CorrectorJoinedReqMsg{corrid, conn}}
 	})
 
+	http.HandleFunc("/api/chprob", func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		_, err := rdb.Get(ctx, "corrtoken:"+token).Result()
+		if err != nil {
+			http.Error(w, "invalid token", 400)
+			return
+		}
+
+		dec := json.NewDecoder(r.Body)
+		res := Prob{}
+		err = dec.Decode(&res)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		achan <- Msg{ChangeProb, "", mchan, res}
+	})
+
 	http.HandleFunc("/ws/admin", func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
-		corrid, err := rdb.Get(ctx, "corrtoken:" + token).Result()
+		corrid, err := rdb.Get(ctx, "corrtoken:"+token).Result()
 		if err != nil {
 			http.Error(w, "invalid token", 400)
 			return
