@@ -317,8 +317,7 @@ func main() {
 		"final_mail",
 		"* * * * *",
 		func() {
-			// TODO: temporary, because of ŠIMON VECKA
-			return
+			// return
 
 			teams := []*core.Record{}
 

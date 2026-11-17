@@ -37,11 +37,10 @@ func main() {
 		words = append(words, string(bts))
 	}
 
-	// tt, ct := genMockRdb(100, 20, 200)
-	// fmt.Println(tt)
-	// fmt.Println(ct)
+	// tt, ct := genMockRdb(10000, 2000, 2000)
+	// fmt.Printf("%#v\n:==-==:\n%#v\n", tt, ct)
 
-	runFinalTest([]string{"of4wm", "7opnl", "jrpl7", "sh1i1", "hjf8f", "3hlk2", "ik86g", "raci2", "hnnit", "omgcv", "a4lxr", "d051i", "1btvi", "kalko", "mz8eh", "7y2v0", "zm2zn", "vw09z", "xq91h", "7tjzi", "fgkab", "ekb8v", "dqpgx", "lega1", "1k4a5", "7d3c3", "8gq2v", "r82dk", "euu3g", "ra8lw", "2mmo7", "myk0f", "dfi7p", "6bgfb", "557wh", "mvwyv", "v33hi", "nl1li", "ajiqn", "6rym7", "gmfrk", "bfurf", "57hnl", "qlwss", "22kh0", "6htoh", "uatv3", "mxam9", "m480i", "rcedg", "l16rp", "labr8", "ujf1c", "vtz5x", "z10tr", "rorum", "axsn4", "kzksn", "3t0r7", "fce82", "omi44", "fg2fc", "tu2b4", "fs26z", "04s9t", "mje9g", "bdllc", "eafl9", "utt3v", "7fslg", "iunu0", "kcty2", "n6gxj", "3t5pc", "dhnmy", "rh0b8", "g6d0h", "laa5v", "5u12r", "z2fmp", "kn3rq", "brldx", "gpmwx", "63x6q", "8otfk", "02xe2", "dnxk1", "glwzt", "0qs3v", "gl9e1", "rej5q", "gdtht", "1a18o", "ndx2k", "eqq0w", "cr7vb", "a2zfy", "p5duh", "xqzl7", "5fzju"}, []string{"dj5he", "2azxx", "5nu9h", "gsudv", "7bzht", "im238", "3uz4g", "e21ot", "pk8pf", "5gq5a", "ffs3e", "gc679", "8omuv", "ht8at", "ktdok", "m8ohp", "npouo", "s2jk8", "vjwui", "32mxy"}, 5)
+	runFinalTest(playtoks[:500], corrtoks[:100], 5)
 
 }
 
@@ -65,31 +64,34 @@ type InitLoad struct {
 }
 
 type PlayerState struct {
-	state   string
-	focused string
-	money   int
-	bought  map[string]struct{}
-	sold    map[string]struct{}
-	solved  map[string]struct{}
-	buycost map[string]int
+	playerid string
+	state    string
+	focused  string
+	money    int
+	bought   map[string]struct{}
+	sold     map[string]struct{}
+	solved   map[string]struct{}
+	ungraded map[string]struct{}
+	buycost  map[string]int
 }
 
 type SimStats struct {
-	activePlayers atomic.Int64
-	activeCorrs   atomic.Int64
-	playerFocuses atomic.Int64
-	playerWrites  atomic.Int64
-	playerSolves  atomic.Int64
-	playerSells   atomic.Int64
-	playerBuys    atomic.Int64
-	probsBought   atomic.Int64
-	probsSold     atomic.Int64
-	probsSolved   atomic.Int64
-	corrFocuses   atomic.Int64
-	corrWrites    atomic.Int64
-	corrGrades    atomic.Int64
-	serverErrors  atomic.Int64
-	wsDisconnects atomic.Int64
+	activePlayers   atomic.Int64
+	activeCorrs     atomic.Int64
+	playerFocuses   atomic.Int64
+	playerWrites    atomic.Int64
+	playerSolves    atomic.Int64
+	playerSells     atomic.Int64
+	playerBuys      atomic.Int64
+	probsBought     atomic.Int64
+	probsSold       atomic.Int64
+	probsSolved     atomic.Int64
+	corrFocuses     atomic.Int64
+	corrWrites      atomic.Int64
+	corrGrades      atomic.Int64
+	ungradedTickets atomic.Int64
+	serverErrors    atomic.Int64
+	wsDisconnects   atomic.Int64
 }
 
 var stats SimStats
@@ -116,6 +118,19 @@ func toInt(v any) (int, bool) {
 	}
 }
 
+func isTLineUngraded(tline []TLineAtom) bool {
+	lastAns := -1
+	lastGrade := -1
+	for i, a := range tline {
+		if a.Mtype == "answer" || a.Mtype == "solve" {
+			lastAns = i
+		} else if a.Mtype == "grade" {
+			lastGrade = i
+		}
+	}
+	return lastAns > lastGrade
+}
+
 func playerSimLoop(token string) error {
 	conn, _, err := websocket.DefaultDialer.Dial(ArenaUrl+"/ws?token="+token, nil)
 	if err != nil {
@@ -125,10 +140,11 @@ func playerSimLoop(token string) error {
 	defer stats.activePlayers.Add(-1)
 
 	state := PlayerState{
-		bought:  make(map[string]struct{}),
-		sold:    make(map[string]struct{}),
-		solved:  make(map[string]struct{}),
-		buycost: make(map[string]int),
+		bought:   make(map[string]struct{}),
+		sold:     make(map[string]struct{}),
+		solved:   make(map[string]struct{}),
+		ungraded: make(map[string]struct{}),
+		buycost:  make(map[string]int),
 	}
 
 	pchan := make(chan map[string]any, 10)
@@ -173,11 +189,15 @@ func playerSimLoop(token string) error {
 				if !redecode(msg["data"], &data) {
 					continue
 				}
+				state.playerid = data.PlayerId
 				state.state = data.State
 				state.money = data.Money
 				state.focused = ""
 				for _, prob := range data.Bought {
 					state.bought[prob.Id] = struct{}{}
+					if isTLineUngraded(data.TLines[prob.Id]) {
+						state.ungraded[prob.Id] = struct{}{}
+					}
 				}
 				for _, prob := range data.Sold {
 					state.sold[prob.Id] = struct{}{}
@@ -190,11 +210,30 @@ func playerSimLoop(token string) error {
 					token, data.PlayerId, data.State, data.Money, len(data.Bought), len(data.Solved), len(data.Sold))
 
 			case "focus":
+				playerid, ok := msg["playerid"].(string)
+				if !ok || playerid != state.playerid {
+					continue
+				}
 				probid, ok := msg["probid"].(string)
 				if !ok {
 					continue
 				}
 				state.focused = probid
+
+			case "written":
+				probid, ok := msg["probid"].(string)
+				if !ok {
+					continue
+				}
+				mtype, ok := msg["type"].(string)
+				if !ok {
+					continue
+				}
+				if mtype == "answer" {
+					state.ungraded[probid] = struct{}{}
+				} else if mtype == "grade" {
+					delete(state.ungraded, probid)
+				}
 
 			case "bought":
 				var prob Prob
@@ -219,6 +258,7 @@ func playerSimLoop(token string) error {
 					continue
 				}
 				delete(state.bought, probid)
+				delete(state.ungraded, probid)
 				state.sold[probid] = struct{}{}
 				state.money = money
 				stats.probsSold.Add(1)
@@ -233,6 +273,7 @@ func playerSimLoop(token string) error {
 					continue
 				}
 				delete(state.bought, probid)
+				delete(state.ungraded, probid)
 				state.solved[probid] = struct{}{}
 				state.money = money
 				stats.probsSolved.Add(1)
@@ -330,6 +371,10 @@ func playerSimLoop(token string) error {
 				if _, ok := state.bought[state.focused]; !ok {
 					continue
 				}
+				if _, ungraded := state.ungraded[state.focused]; ungraded {
+					continue
+				}
+				state.ungraded[state.focused] = struct{}{}
 				msg := fmt.Sprint(rng.Float64()*10000 - 5000)
 				stats.playerSolves.Add(1)
 				conn.WriteJSON(map[string]string{
@@ -390,11 +435,26 @@ type CorrTicket struct {
 }
 
 type CorrState struct {
-	state   string
-	focused string
-	bought  map[string]struct{}
-	sold    map[string]struct{}
-	solved  map[string]struct{}
+	state    string
+	focused  string
+	bought   map[string]struct{}
+	sold     map[string]struct{}
+	solved   map[string]struct{}
+	ungraded map[string]struct{}
+}
+
+func (s *CorrState) addUngraded(tickid string) {
+	if _, exists := s.ungraded[tickid]; !exists {
+		s.ungraded[tickid] = struct{}{}
+		stats.ungradedTickets.Add(1)
+	}
+}
+
+func (s *CorrState) removeUngraded(tickid string) {
+	if _, exists := s.ungraded[tickid]; exists {
+		delete(s.ungraded, tickid)
+		stats.ungradedTickets.Add(-1)
+	}
 }
 
 func corrSimLoop(token string) error {
@@ -406,10 +466,14 @@ func corrSimLoop(token string) error {
 	defer stats.activeCorrs.Add(-1)
 
 	state := CorrState{
-		bought: make(map[string]struct{}),
-		sold:   make(map[string]struct{}),
-		solved: make(map[string]struct{}),
+		bought:   make(map[string]struct{}),
+		sold:     make(map[string]struct{}),
+		solved:   make(map[string]struct{}),
+		ungraded: make(map[string]struct{}),
 	}
+	defer func() {
+		stats.ungradedTickets.Add(-int64(len(state.ungraded)))
+	}()
 
 	cchan := make(chan map[string]any, 10)
 
@@ -457,6 +521,9 @@ func corrSimLoop(token string) error {
 				state.focused = ""
 				for tickid := range data.BoughtTickets {
 					state.bought[tickid] = struct{}{}
+					if isTLineUngraded(data.TLines[tickid]) {
+						state.addUngraded(tickid)
+					}
 				}
 				for tickid := range data.SoldTickets {
 					state.sold[tickid] = struct{}{}
@@ -474,6 +541,39 @@ func corrSimLoop(token string) error {
 				}
 				state.focused = id
 
+			case "written":
+				teamid, ok := msg["teamid"].(string)
+				if !ok {
+					continue
+				}
+				probid, ok := msg["probid"].(string)
+				if !ok {
+					continue
+				}
+				mtype, ok := msg["type"].(string)
+				if !ok {
+					continue
+				}
+				tickid := teamid + ":" + probid
+				if mtype == "answer" {
+					if _, isBought := state.bought[tickid]; isBought {
+						state.addUngraded(tickid)
+					}
+				} else if mtype == "grade" {
+					state.removeUngraded(tickid)
+				}
+
+			case "graded":
+				teamid, ok := msg["teamid"].(string)
+				if !ok {
+					continue
+				}
+				probid, ok := msg["probid"].(string)
+				if !ok {
+					continue
+				}
+				state.removeUngraded(teamid + ":" + probid)
+
 			case "bought":
 				teamid, ok := msg["teamid"].(string)
 				if !ok {
@@ -483,7 +583,12 @@ func corrSimLoop(token string) error {
 				if !redecode(msg["prob"], &prob) {
 					continue
 				}
-				state.bought[teamid+":"+prob.Id] = struct{}{}
+				tickid := teamid + ":" + prob.Id
+				state.bought[tickid] = struct{}{}
+				var tlines map[string][]TLineAtom
+				if redecode(msg["tlines"], &tlines) && isTLineUngraded(tlines[prob.Id]) {
+					state.addUngraded(tickid)
+				}
 
 			case "sold":
 				teamid, ok := msg["teamid"].(string)
@@ -496,6 +601,7 @@ func corrSimLoop(token string) error {
 				}
 				tickid := teamid + ":" + probid
 				delete(state.bought, tickid)
+				state.removeUngraded(tickid)
 				state.sold[tickid] = struct{}{}
 
 			case "solved":
@@ -509,6 +615,7 @@ func corrSimLoop(token string) error {
 				}
 				tickid := teamid + ":" + probid
 				delete(state.bought, tickid)
+				state.removeUngraded(tickid)
 				state.solved[tickid] = struct{}{}
 
 			case "start":
@@ -542,15 +649,19 @@ func corrSimLoop(token string) error {
 			}
 
 			if rng.Intn(3) == 0 {
-				fn := rng.Intn(50)
 				var cids map[string]struct{}
-				switch fn {
-				case 0:
-					cids = state.sold
-				case 1:
-					cids = state.solved
-				default:
-					cids = state.bought
+				if len(state.ungraded) > 0 {
+					cids = state.ungraded
+				} else {
+					fn := rng.Intn(50)
+					switch fn {
+					case 0:
+						cids = state.sold
+					case 1:
+						cids = state.solved
+					default:
+						cids = state.bought
+					}
 				}
 				if len(cids) == 0 {
 					continue
@@ -569,6 +680,10 @@ func corrSimLoop(token string) error {
 				if _, ok := state.bought[state.focused]; !ok {
 					continue
 				}
+				if _, ok := state.ungraded[state.focused]; !ok {
+					continue
+				}
+				state.removeUngraded(state.focused)
 				decision := "incorrect"
 				if rng.Intn(2) == 0 {
 					decision = "correct"
@@ -755,7 +870,7 @@ func runFinalTest(teamTokens []string, corrTokens []string, playersPerTeam int) 
 				return
 			case <-ticker.C:
 				elapsed := time.Since(start).Round(time.Second)
-				fmt.Printf("[%v] active: %d players, %d corrs | actions sent -> buy:%d sell:%d solve:%d write:%d focus:%d | corr -> grade:%d write:%d focus:%d | events recv -> bought:%d sold:%d solved:%d | errs:%d disconn:%d\n",
+				fmt.Printf("[%v] active: %d players, %d corrs | actions sent -> buy:%d sell:%d solve:%d write:%d focus:%d | corr -> grade:%d ungraded:%d write:%d focus:%d | events recv -> bought:%d sold:%d solved:%d | errs:%d disconn:%d\n",
 					elapsed,
 					stats.activePlayers.Load(),
 					stats.activeCorrs.Load(),
@@ -765,6 +880,7 @@ func runFinalTest(teamTokens []string, corrTokens []string, playersPerTeam int) 
 					stats.playerWrites.Load(),
 					stats.playerFocuses.Load(),
 					stats.corrGrades.Load(),
+					stats.ungradedTickets.Load(),
 					stats.corrWrites.Load(),
 					stats.corrFocuses.Load(),
 					stats.probsBought.Load(),
@@ -799,7 +915,7 @@ func runFinalTest(teamTokens []string, corrTokens []string, playersPerTeam int) 
 					fmt.Printf("player %s error: %v\n", tok, err)
 				}
 			}(ttoken)
-			time.Sleep(20 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 	}
 
