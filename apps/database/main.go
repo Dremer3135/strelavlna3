@@ -1893,8 +1893,8 @@ func main() {
 
 				setState(rdb, StateBefore)
 
-				setStart(rdb, contest.GetDateTime("onlineStart").Time())
-				setEnd(rdb, contest.GetDateTime("onlineEnd").Time())
+				setStart(rdb, contest.GetDateTime("onlineStart").Time().Local())
+				setEnd(rdb, contest.GetDateTime("onlineEnd").Time().Local())
 
 				constants, err := e.App.FindAllRecords("constants")
 				if err != nil {
