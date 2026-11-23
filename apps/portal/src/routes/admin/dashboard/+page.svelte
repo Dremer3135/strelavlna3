@@ -41,7 +41,7 @@
     }
 
     async function hashProbs() {
-      await pocketbase.send("/api/end")
+      await pocketbase.send("/api/hashprobs")
     }
 </script>
 
