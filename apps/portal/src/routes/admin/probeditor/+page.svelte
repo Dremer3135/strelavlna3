@@ -69,6 +69,10 @@
                     return probIds.filter(probId => getProbEditedState($editableProbs[probId]).contests.includes(getContestEditedState(contest[1]).id));
                 }
             }))
+        ],[
+        {name: "all", function: (probIds: string[]) => {return probIds; }},
+        {name: "online", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).online )}},
+        {name: "offline", function: (probIds: string[]) => { return probIds.filter( probId => !getProbEditedState($editableProbs[probId]).online )}},
         ]
     ]);
 
