@@ -69,7 +69,7 @@
           <option value="+">+</option>
           <option value="-">-</option>
         </select>
-        <input type="number" value={chmoneyamount}>
+        <input type="number" bind:value={chmoneyamount}>
         <button class="resume" onclick={(_) => chmoney ? chmoney(chmoneytid, chmoneymode, chmoneyamount) : null}>SetMoney</button>
     {:else}
         <a href="https://strela-vlna.gchd.cz/constants" target="_blank" class="constants-link">tabulky hodnot</a>
