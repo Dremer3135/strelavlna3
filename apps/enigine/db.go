@@ -26,7 +26,7 @@ const (
 
 func parseTicketId(tid string) (teamid string, probid string) {
 	parts := strings.SplitN(tid, ":", 2)
-	teamid = parts[0]
+	teamid = parts[0]buy
 	probid = parts[1]
 	return
 }
