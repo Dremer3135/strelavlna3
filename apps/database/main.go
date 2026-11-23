@@ -1441,7 +1441,7 @@ func main() {
 				return e.Error(500, "failed to marshal prob", err)
 			}
 			token := e.Auth.GetString("token")
-			resp, err := http.DefaultClient.Post("http://sv.skrat.org/api/chprob?token="+token, "application/json", bytes.NewBuffer(jbody))
+			resp, err := http.DefaultClient.Post("https://sv.skrat.org/api/chprob?token="+token, "application/json", bytes.NewBuffer(jbody))
 			if err != nil {
 				return e.Error(500, "failed to contact engine", err)
 			}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -260,6 +261,9 @@ func (t TLineAtom) String() string {
 
 func (t *TLineAtom) fromString(s string) error {
 	sparts := strings.Split(s, ":")
+	if len(sparts) < 4 {
+		return errors.New("invalid tline atom")
+	}
 	t.Mside = sparts[0]
 	t.Mtype = sparts[1]
 	mtime, err := strconv.Atoi(sparts[len(sparts)-1])
@@ -267,10 +271,7 @@ func (t *TLineAtom) fromString(s string) error {
 		return err
 	}
 	t.Time = time.UnixMilli(int64(mtime))
-	t.Msg = ""
-	for _, mpart := range sparts[2 : len(sparts)-1] {
-		t.Msg += mpart
-	}
+	t.Msg = strings.Join(sparts[2:len(sparts)-1], ":")
 	return nil
 }
 
