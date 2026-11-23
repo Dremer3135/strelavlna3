@@ -18,6 +18,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -229,6 +230,15 @@ type TeamGameData struct {
 	Bought []string
 	Solved []string
 	Sold   []string
+}
+
+func reinterpretInLocation(t time.Time, loc *time.Location) time.Time {
+	t = t.UTC()
+	return time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(),
+		loc,
+	)
 }
 
 func main() {
@@ -1893,8 +1903,13 @@ func main() {
 
 				setState(rdb, StateBefore)
 
-				setStart(rdb, contest.GetDateTime("onlineStart").Time().Local())
-				setEnd(rdb, contest.GetDateTime("onlineEnd").Time().Local())
+				loc, err := time.LoadLocation("Europe/Prague")
+				if err != nil {
+					return err
+				}
+
+				setStart(rdb, reinterpretInLocation(contest.GetDateTime("onlineStart").Time(), loc))
+				setEnd(rdb, reinterpretInLocation(contest.GetDateTime("onlineEnd").Time(), loc))
 
 				constants, err := e.App.FindAllRecords("constants")
 				if err != nil {
