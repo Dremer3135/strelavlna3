@@ -46,7 +46,6 @@
             <h2>settings</h2>
         </div>
         <div class="right">
-            <button class="save-changes" onclick={ () => { dispatch("push-prob", {}); } }>Push to game</button>
             <button class="save-changes" class:saved={ changesSaved } onclick={ () => { dispatch("save-changes", {}); } }>Save changes</button>
         </div>
     </div>
@@ -123,6 +122,7 @@
                 {/if}
             </div>
         </div>
+        <button class="save-changes" onclick={ () => { dispatch("push-prob", {}); } }>Push to game</button>
     </div>
 </main>
 
