@@ -39,6 +39,10 @@
     async function end() {
       await pocketbase.send("/api/end")
     }
+
+    async function hashProbs() {
+      await pocketbase.send("/api/end")
+    }
 </script>
 
 <main>
@@ -56,9 +60,6 @@
     <br>
     <input type="text" bind:value={sql}>
     <button onclick={sendSql}>SendSql</button>
-    <pre>
-      select name, json_extract(inPersonData, '$.Money') as money from teams where json_array_length(inPersonData, '$.Bought') > 0 or json_array_length(inPersonData, '$.Sold') > 0 or json_array_length(inPersonData, '$.Solved') > 0 and contest = 'p2wd6fb1lcuyqbl' order by money desc
-    </pre>
     <br>
     <input type="text" bind:value={rdbid}>
     <button onclick={genRdb}>GenRdb</button>
@@ -67,6 +68,11 @@
     <br>
     <button onclick={end}>End</button>
     <br>
+    <button onclick={hashProbs}>Rehash all probs</button>
+    <br>
     <textarea bind:value={admintext}>Cerate admins here</textarea>
     <button onclick={genAdmins}>Create</button>
+    <pre>
+      select name, json_extract(inPersonData, '$.Money') as money from teams where json_array_length(inPersonData, '$.Bought') > 0 or json_array_length(inPersonData, '$.Sold') > 0 or json_array_length(inPersonData, '$.Solved') > 0 and contest = 'p2wd6fb1lcuyqbl' order by money desc
+    </pre>
 </main>

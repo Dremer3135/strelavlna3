@@ -14,19 +14,19 @@ var ctx = context.Background()
 var DIFFS = []string{"A", "B", "C"}
 
 const (
-	StateBefore = "before"
+	StateBefore  = "before"
 	StateRunning = "running"
-	StateAfter = "after"
+	StateAfter   = "after"
 	StateResults = "results"
-	StatePaused = "paused"
+	StatePaused  = "paused"
 
-	DecisionCorrect = "correct"
+	DecisionCorrect   = "correct"
 	DecisionIncorrect = "incorrect"
 )
 
 func parseTicketId(tid string) (teamid string, probid string) {
 	parts := strings.SplitN(tid, ":", 2)
-	teamid = parts[0]buy
+	teamid = parts[0]
 	probid = parts[1]
 	return
 }
@@ -78,19 +78,19 @@ func setEnd(conn *redis.Client, end time.Time) error {
 }
 
 func getCorrTickets(conn *redis.Client, corrid string) ([]string, error) {
-	return conn.SMembers(ctx, "corrtickets:" + corrid).Result()
+	return conn.SMembers(ctx, "corrtickets:"+corrid).Result()
 }
 
 func addCorrTicket(conn *redis.Client, corrid, teamid, probid string) error {
-	return conn.SAdd(ctx, "corrtickets:" + corrid, teamid + ":" + probid).Err()
+	return conn.SAdd(ctx, "corrtickets:"+corrid, teamid+":"+probid).Err()
 }
 
 func clearCorrTickets(conn *redis.Client, corrid string) error {
-	return conn.Del(ctx, "corrtickets:" + corrid).Err()
+	return conn.Del(ctx, "corrtickets:"+corrid).Err()
 }
 
 func getMoney(conn *redis.Client, teamid string) (int, error) {
-	m, err := conn.Get(ctx, "money:" + teamid).Int()
+	m, err := conn.Get(ctx, "money:"+teamid).Int()
 	if err == redis.Nil {
 		return 0, nil
 	}
@@ -101,37 +101,41 @@ func getMoney(conn *redis.Client, teamid string) (int, error) {
 }
 
 func setMoney(conn *redis.Client, teamid string, money int) error {
-	return conn.Set(ctx, "money:" + teamid, money, time.Duration(0)).Err()
+	return conn.Set(ctx, "money:"+teamid, money, time.Duration(0)).Err()
 }
 
 type Prob struct {
-	Id string `json:"id" redis:"id"`
-	Name string `json:"name" redis:"name"`
-	Diff string `json:"diff" redis:"diff"`
-	Text string `json:"text" redis:"text"`
-	Answer string `json:"answer" redis:"answer"`
-	Code string `json:"code" redis:"code"`
-	Auto bool `json:"auto" redis:"auto"`
-	Infinite bool `json:"infinite" redis:"infinite"`
-	Queue []string `json:"queue" redis:"queue"`
-	Images []string `json:"images" redis:"images"`
+	Id       string   `json:"id" redis:"id"`
+	Name     string   `json:"name" redis:"name"`
+	Diff     string   `json:"diff" redis:"diff"`
+	Text     string   `json:"text" redis:"text"`
+	Answer   string   `json:"answer" redis:"answer"`
+	Code     string   `json:"code" redis:"code"`
+	Auto     bool     `json:"auto" redis:"auto"`
+	Infinite bool     `json:"infinite" redis:"infinite"`
+	Queue    []string `json:"queue" redis:"queue"`
+	Images   []string `json:"images" redis:"images"`
 }
 
 func (p Prob) toMap() map[string]string {
 	res := map[string]string{
-		"id": p.Id,
-		"name": p.Name,
-		"diff": p.Diff,
-		"text": p.Text,
-		"answer": p.Answer,
-		"code": p.Code,
-		"auto": "false",
+		"id":       p.Id,
+		"name":     p.Name,
+		"diff":     p.Diff,
+		"text":     p.Text,
+		"answer":   p.Answer,
+		"code":     p.Code,
+		"auto":     "false",
 		"infinite": "false",
-		"queue": strings.Join(p.Queue, ":"),
-		"images": strings.Join(p.Images, "\\"),
+		"queue":    strings.Join(p.Queue, ":"),
+		"images":   strings.Join(p.Images, "\\"),
 	}
-	if p.Auto { res["auto"] = "true" }
-	if p.Infinite { res["infinite"] = "true" }
+	if p.Auto {
+		res["auto"] = "true"
+	}
+	if p.Infinite {
+		res["infinite"] = "true"
+	}
 	return res
 }
 
@@ -146,11 +150,13 @@ func (p *Prob) fromMap(m map[string]string) {
 	p.Infinite = m["infinite"] == "true"
 	p.Queue = strings.Split(m["queue"], ":")
 	p.Images = strings.Split(m["images"], "\\")
-	if m["images"] == "" { p.Images = []string{} }
-} 
+	if m["images"] == "" {
+		p.Images = []string{}
+	}
+}
 
 func getProb(conn *redis.Client, probid string) (Prob, error) {
-	pmap, err := conn.HGetAll(ctx, "prob:" + probid).Result()
+	pmap, err := conn.HGetAll(ctx, "prob:"+probid).Result()
 	if err == redis.Nil {
 		return Prob{}, nil
 	}
@@ -165,11 +171,11 @@ func getProb(conn *redis.Client, probid string) (Prob, error) {
 }
 
 func setProb(conn *redis.Client, prob Prob) error {
-	return conn.HSet(ctx, "prob:" + prob.Id, prob.toMap()).Err()
+	return conn.HSet(ctx, "prob:"+prob.Id, prob.toMap()).Err()
 }
 
 func getPlayToken(conn *redis.Client, token string) (string, error) {
-	id, err := conn.Get(ctx, "playtoken:" + token).Result()
+	id, err := conn.Get(ctx, "playtoken:"+token).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -177,11 +183,11 @@ func getPlayToken(conn *redis.Client, token string) (string, error) {
 }
 
 func setPlayToken(conn *redis.Client, token string, teamid string) error {
-	return conn.Set(ctx, "playtoken:" + token, teamid, time.Duration(0)).Err()
+	return conn.Set(ctx, "playtoken:"+token, teamid, time.Duration(0)).Err()
 }
 
 func getCorrToken(conn *redis.Client, token string) (string, error) {
-	id, err := conn.Get(ctx, "corrtoken:" + token).Result()
+	id, err := conn.Get(ctx, "corrtoken:"+token).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -189,17 +195,17 @@ func getCorrToken(conn *redis.Client, token string) (string, error) {
 }
 
 func setCorrToken(conn *redis.Client, token string, teamid string) error {
-	return conn.Set(ctx, "corrtoken:" + token, teamid, time.Duration(0)).Err()
+	return conn.Set(ctx, "corrtoken:"+token, teamid, time.Duration(0)).Err()
 }
 
 const (
-	PriceBuy = "buy"
-	PriceSell = "sell"
+	PriceBuy   = "buy"
+	PriceSell  = "sell"
 	PriceSolve = "solve"
 )
 
 func getPrice(conn *redis.Client, ptype string, diff string) (int, error) {
-	res, err := conn.Get(ctx, "price:" + ptype + ":" + diff).Int()
+	res, err := conn.Get(ctx, "price:"+ptype+":"+diff).Int()
 	if err == redis.Nil {
 		return 0, nil
 	}
@@ -210,22 +216,22 @@ func getPrice(conn *redis.Client, ptype string, diff string) (int, error) {
 }
 
 func setPrice(conn *redis.Client, ptype string, diff string, price int) error {
-	return conn.Set(ctx, "price:" + ptype + ":" + diff, price, time.Duration(0)).Err()
+	return conn.Set(ctx, "price:"+ptype+":"+diff, price, time.Duration(0)).Err()
 }
 
 const (
-	OwnedFree = "free"
+	OwnedFree   = "free"
 	OwnedBought = "bought"
-	OwnedSold = "sold"
+	OwnedSold   = "sold"
 	OwnedSolved = "solved"
 )
 
 func getOwnedProbs(conn *redis.Client, teamid, otype, diff string) ([]string, error) {
-	return conn.SMembers(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff).Result()
+	return conn.SMembers(ctx, "oprobs:"+teamid+":"+otype+":"+diff).Result()
 }
 
 func popOwnedProb(conn *redis.Client, teamid, otype, diff string) (string, error) {
-	res, err := conn.SPop(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff).Result()
+	res, err := conn.SPop(ctx, "oprobs:"+teamid+":"+otype+":"+diff).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -233,19 +239,19 @@ func popOwnedProb(conn *redis.Client, teamid, otype, diff string) (string, error
 }
 
 func addOwnedProb(conn *redis.Client, teamid, otype, diff, probid string) error {
-	_, err := conn.SAdd(ctx, "oprobs:" + teamid + ":" + otype + ":" + diff, probid).Result()
+	_, err := conn.SAdd(ctx, "oprobs:"+teamid+":"+otype+":"+diff, probid).Result()
 	return err
 }
 
 func moveOwnedProb(conn *redis.Client, teamid, diff, probid, srcotype, dstotype string) error {
-	return conn.SMove(ctx, "oprobs:" + teamid + ":" + srcotype + ":" + diff, "oprobs:" + teamid + ":" + dstotype + ":" + diff, probid).Err()
+	return conn.SMove(ctx, "oprobs:"+teamid+":"+srcotype+":"+diff, "oprobs:"+teamid+":"+dstotype+":"+diff, probid).Err()
 }
 
 type TLineAtom struct {
-	Mside string `json:"mside"`
-	Mtype string `json:"mtype"`
-	Msg string `json:"msg"`
-	Time time.Time `json:"time"`
+	Mside string    `json:"mside"`
+	Mtype string    `json:"mtype"`
+	Msg   string    `json:"msg"`
+	Time  time.Time `json:"time"`
 }
 
 func (t TLineAtom) String() string {
@@ -262,33 +268,33 @@ func (t *TLineAtom) fromString(s string) error {
 	}
 	t.Time = time.UnixMilli(int64(mtime))
 	t.Msg = ""
-	for _, mpart := range sparts[2:len(sparts)-1] {
+	for _, mpart := range sparts[2 : len(sparts)-1] {
 		t.Msg += mpart
 	}
 	return nil
 }
 
 const (
-	MSideAdmin = "admin"
+	MSideAdmin  = "admin"
 	MSidePlayer = "player"
-	MTypeText = "message"
-	MTypeGif = "gif"
-	MTypeSolve = "answer"
-	MTypeGrade = "grade"
+	MTypeText   = "message"
+	MTypeGif    = "gif"
+	MTypeSolve  = "answer"
+	MTypeGrade  = "grade"
 	MTypeBought = "bought"
-	MTypeSold = "sold"
+	MTypeSold   = "sold"
 	MTypeSolved = "solved"
-	MTypePaste = "paste"
-	MTypeCopy = "copy"
-	MTypeFocus = "window-focus"
+	MTypePaste  = "paste"
+	MTypeCopy   = "copy"
+	MTypeFocus  = "window-focus"
 )
 
 func pushTLine(conn *redis.Client, teamid, probid string, tla TLineAtom) error {
-	return conn.RPush(ctx, "tline:" + teamid + ":" + probid, tla.String()).Err()
+	return conn.RPush(ctx, "tline:"+teamid+":"+probid, tla.String()).Err()
 }
 
 func readTLine(conn *redis.Client, teamid, probid string) ([]TLineAtom, error) {
-	sres, err := conn.LRange(ctx, "tline:" + teamid + ":" + probid, 0, -1).Result()
+	sres, err := conn.LRange(ctx, "tline:"+teamid+":"+probid, 0, -1).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +314,7 @@ func readTLine(conn *redis.Client, teamid, probid string) ([]TLineAtom, error) {
 
 // Owned
 func getTState(conn *redis.Client, teamid, probid string) (string, error) {
-	res, err := conn.Get(ctx, "tstate:" + teamid + ":" + probid).Result()
+	res, err := conn.Get(ctx, "tstate:"+teamid+":"+probid).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -319,11 +325,11 @@ func getTState(conn *redis.Client, teamid, probid string) (string, error) {
 }
 
 func setTState(conn *redis.Client, teamid, probid, state string) error {
-	return conn.Set(ctx, "tstate:" + teamid + ":" + probid, state, time.Duration(0)).Err()
+	return conn.Set(ctx, "tstate:"+teamid+":"+probid, state, time.Duration(0)).Err()
 }
 
 func getTCorr(conn *redis.Client, teamid, probid string) (string, error) {
-	res, err := conn.Get(ctx, "tcorr:" + teamid + ":" + probid).Result()
+	res, err := conn.Get(ctx, "tcorr:"+teamid+":"+probid).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -334,11 +340,11 @@ func getTCorr(conn *redis.Client, teamid, probid string) (string, error) {
 }
 
 func setTCorr(conn *redis.Client, teamid, probid, corr string) error {
-	return conn.Set(ctx, "tcorr:" + teamid + ":" + probid, corr, time.Duration(0)).Err()
+	return conn.Set(ctx, "tcorr:"+teamid+":"+probid, corr, time.Duration(0)).Err()
 }
 
 func getRank(conn *redis.Client, teamid string) (int, error) {
-	res, err := conn.Get(ctx, "rank:" + teamid).Int()
+	res, err := conn.Get(ctx, "rank:"+teamid).Int()
 	if err == redis.Nil {
 		return 0, nil
 	}
@@ -349,11 +355,11 @@ func getRank(conn *redis.Client, teamid string) (int, error) {
 }
 
 func setRank(conn *redis.Client, teamid string, rank int) error {
-	return conn.Set(ctx, "rank:" + teamid, rank, time.Duration(0)).Err()
+	return conn.Set(ctx, "rank:"+teamid, rank, time.Duration(0)).Err()
 }
 
 func getProbDiffValidity(conn *redis.Client, probid string) (string, error) {
-	res, err := conn.HGet(ctx, "prob:" + probid, "diff").Result()
+	res, err := conn.HGet(ctx, "prob:"+probid, "diff").Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -361,7 +367,7 @@ func getProbDiffValidity(conn *redis.Client, probid string) (string, error) {
 }
 
 func getProbAnswerValidity(conn *redis.Client, probid string) (string, error) {
-	res, err := conn.HGet(ctx, "prob:" + probid, "answer").Result()
+	res, err := conn.HGet(ctx, "prob:"+probid, "answer").Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -369,7 +375,7 @@ func getProbAnswerValidity(conn *redis.Client, probid string) (string, error) {
 }
 
 func getTeamName(conn *redis.Client, teamid string) (string, error) {
-	res, err := conn.Get(ctx, "teamname:" + teamid).Result()
+	res, err := conn.Get(ctx, "teamname:"+teamid).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
@@ -380,12 +386,14 @@ func getTeamName(conn *redis.Client, teamid string) (string, error) {
 }
 
 func setTeamName(conn *redis.Client, teamid string, name string) error {
-	return conn.Set(ctx, "teamname:" + teamid, name, time.Duration(0)).Err()
+	return conn.Set(ctx, "teamname:"+teamid, name, time.Duration(0)).Err()
 }
 
 func getNumberRemProbs(conn *redis.Client, teamid string, diff string) (int, error) {
-	res, err := conn.SCard(ctx, "oprobs:" + teamid + ":" + OwnedFree + ":" + diff).Result()
-	if diff == "A" { return -1, nil } // TODO: quickfix
+	res, err := conn.SCard(ctx, "oprobs:"+teamid+":"+OwnedFree+":"+diff).Result()
+	if diff == "A" {
+		return -1, nil
+	} // TODO: quickfix
 	return int(res), err
 }
 
@@ -402,11 +410,11 @@ func getTeams(conn *redis.Client) ([]string, error) {
 }
 
 func setCorrAdmin(conn *redis.Client, adminid string, admin bool) error {
-	return conn.Set(ctx, "corradmin:" + adminid, admin, time.Duration(0)).Err()
+	return conn.Set(ctx, "corradmin:"+adminid, admin, time.Duration(0)).Err()
 }
 
 func getCorrAdmin(conn *redis.Client, adminid string) (bool, error) {
-	res, err := conn.Get(ctx, "corradmin:" + adminid).Bool()
+	res, err := conn.Get(ctx, "corradmin:"+adminid).Bool()
 	if err == redis.Nil {
 		return false, nil
 	}

@@ -622,6 +622,61 @@ func main() {
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
+		e.Router.GET("/api/hashprobs", func(e *core.RequestEvent) error {
+			correctors := []*core.Record{}
+
+			err := e.App.RecordQuery("correctors").All(&correctors)
+			if err != nil {
+				return err
+			}
+
+			err = e.App.RunInTransaction(func(txApp core.App) error {
+				probs, err := txApp.FindAllRecords("probs")
+				if err != nil {
+					return err
+				}
+				for _, prob := range probs {
+					author := prob.GetString("author")
+
+					corrids := make([]string, len(correctors))
+					for i, corr := range correctors {
+						corrids[i] = corr.GetString("id")
+					}
+
+					rand.Shuffle(len(corrids), func(i, j int) {
+						corrids[i], corrids[j] = corrids[j], corrids[i]
+					})
+
+					if slices.Contains(corrids, author) {
+						ncorrids := make([]string, 1, len(corrids))
+						ncorrids[0] = author
+						for _, corr := range corrids {
+							if corr != author {
+								ncorrids = append(ncorrids, corr)
+							}
+						}
+						corrids = ncorrids
+					}
+
+					prob.Set("queue", corrids)
+
+					err = txApp.Save(prob)
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+
+			return e.String(200, "ok")
+
+		}).Bind(RequireAuth())
+
 		e.Router.GET("/api/setgamedata", func(e *core.RequestEvent) error {
 			teamf := e.Request.URL.Query().Get("teamf")
 			probf := e.Request.URL.Query().Get("probf")
@@ -1859,7 +1914,7 @@ func main() {
 		return e.Next()
 	})
 
-	app.OnRecordUpdate("probs").BindFunc(func(e *core.RecordEvent) error {
+	app.OnRecordCreate("probs").BindFunc(func(e *core.RecordEvent) error {
 		// if len(e.Record.GetStringSlice("queue")) > 0 {
 		// 	return e.Next()
 		// }
