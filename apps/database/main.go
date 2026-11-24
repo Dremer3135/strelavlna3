@@ -632,7 +632,7 @@ func main() {
 
 	app.Cron().MustAdd(
 		"corr_token_mail_onetime",
-		"* * * * */10",
+		"* * * * */6",
 		func() {
 			corrs := []*core.Record{}
 
