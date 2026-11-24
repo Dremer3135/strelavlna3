@@ -718,6 +718,8 @@ func main() {
 						corrids[i] = corr.GetString("id")
 					}
 
+					corrids[0] = author
+
 					rand.Shuffle(len(corrids), func(i, j int) {
 						corrids[i], corrids[j] = corrids[j], corrids[i]
 					})
