@@ -69,6 +69,10 @@
                     return probIds.filter(probId => getProbEditedState($editableProbs[probId]).contests.includes(getContestEditedState(contest[1]).id));
                 }
             }))
+        ],[
+        {name: "all", function: (probIds: string[]) => {return probIds; }},
+        {name: "online", function: (probIds: string[]) => { return probIds.filter( probId => getProbEditedState($editableProbs[probId]).online )}},
+        {name: "offline", function: (probIds: string[]) => { return probIds.filter( probId => !getProbEditedState($editableProbs[probId]).online )}},
         ]
     ]);
 
@@ -253,6 +257,23 @@
         } catch (err) {
             console.error('Failed to save changes:', err);
             alert('Failed to save changes.');
+        }
+    }
+
+    async function pushProb() {
+        if (!selectedProb) return;
+        const probId = selectedProb.prob.id;
+        if (!changesSaved) {
+            await saveChanges();
+        }
+        try {
+            await pocketbase.send('/api/chprob', {
+                body: { id: probId },
+                method: 'post'
+            });
+        } catch (err) {
+            console.error('Failed to push prob:', err);
+            alert('Failed to push prob to game.');
         }
     }
 
@@ -551,6 +572,7 @@
                 return currentProbs;
             }); }}
             on:save-changes={(e) => { saveChanges(); }}
+            on:push-prob={(e) => { pushProb(); }}
             />
         {/if}
     </div>

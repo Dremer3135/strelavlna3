@@ -176,6 +176,22 @@
           }
         }
         currentState.update((e) => { return {...e, runningState: "results", results: nresults}})
+      } else if (data.name === "chprob") {
+        probs.update((e) => {
+          const key = data.teamid + ":" + data.prob.id;
+          if (e[key]) {
+            const teamPrefix = e[key].name.includes(": ") ? e[key].name.split(": ")[0] + ": " : "";
+            e[key] = {
+              ...e[key],
+              name: teamPrefix ? teamPrefix + data.prob.name : data.prob.name,
+              text: data.prob.text,
+              answer: data.prob.answer,
+              diff: data.prob.diff,
+              images: data.prob.images,
+            };
+          }
+          return e;
+        });
       }
     });
 

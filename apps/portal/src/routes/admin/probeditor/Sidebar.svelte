@@ -26,7 +26,8 @@
         "change-online": { value: boolean },
         "change-contests": { value: string[] },
         "change-author": { value: string },
-        "save-changes": {}
+        "save-changes": {},
+        "push-prob": {}
     }>();
 
 
@@ -121,6 +122,7 @@
                 {/if}
             </div>
         </div>
+        <button class="save-changes" onclick={ () => { dispatch("push-prob", {}); } }>Push to game</button>
     </div>
 </main>
 
@@ -169,6 +171,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                gap: 8px;
 
                 button.save-changes {
                     all: unset;

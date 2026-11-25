@@ -2,37 +2,36 @@
     import type { MessageType } from "$lib/types";
     let { message, type, showAdvanced = false }: { message: MessageType, type: "player" | "corrector", showAdvanced?: boolean } = $props();
     
-    let sentTimeStringShort = $derived(
-        `${String(message.sentTime.getHours()).padStart(2, '0')}:` +
-        `${String(message.sentTime.getMinutes()).padStart(2, '0')}`);
-    
-        let sentTimeString = $derived(
+    let sentTimeString = $derived(
         `${String(message.sentTime.getHours()).padStart(2, '0')}:` +
         `${String(message.sentTime.getMinutes()).padStart(2, '0')}:` + 
         `${String(message.sentTime.getSeconds()).padStart(2, '0')}`);
-    
 
-
+    let imageUrl = $derived(
+        message.type === "message"
+            ? (message.value.trim().match(/^@(https?:\/\/\S+)$/)?.[1] ?? null)
+            : null
+    );
 </script>
 {#if message.type == "copy" || message.type == "paste" || message.type == "window-focus"}
 <main>
     {#if message.type == "copy" && type == "corrector" && showAdvanced}
     <div class="copy-paste" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
+        <p class="time">{sentTimeString}</p>
         <div class="content">
             <p>Hráč zkopíroval: <span class="bold">{message.value}</span></p>
         </div>
     </div>
     {:else if message.type == "paste" && type == "corrector" && showAdvanced}
     <div class="copy-paste" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
+        <p class="time">{sentTimeString}</p>
         <div class="content">
             <p>Hráč vložil: <span class="bold">{message.value}</span></p>
         </div>
     </div>
     {:else if message.type == "window-focus" && type == "corrector" && showAdvanced}
     <div class="window-focus" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
+        <p class="time">{sentTimeString}</p>
         <div class="content">
             {#if message.value.split(" ")[0] == "focus"}
                 <p><span class="bold">{message.value.split(" ")[1]}</span> přišel</p>
@@ -49,14 +48,18 @@
 <main>
     {#if message.type == "message"}
     <div class="message" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
+        <p class="time">{sentTimeString}</p>
         <div class="content">
-            <p>{message.value}</p>
+            {#if imageUrl}
+                <img src={imageUrl} alt="Příloha" />
+            {:else}
+                <p>{message.value}</p>
+            {/if}
         </div>
     </div>
     {:else if message.type == "grade"}
     <div class="grade" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
+        <p class="time">{sentTimeString}</p>
         <div class="content">
             {#if message.value == "correct"}
             <p>Odpověď byla uznána!</p>
@@ -69,7 +72,7 @@
     </div>
     {:else if message.type == "answer"}
     <div class="answer" class:sent={message.origin === "sent"}>
-        <p class="time">{sentTimeStringShort}</p>
+        <p class="time">{sentTimeString}</p>
         <div class="content">
             {#if type == "player"}
             <p>Odpověděli jste: <span class="bold">{message.value}</span></p>
@@ -96,11 +99,12 @@
             top: 0px;
             margin: 0px;
             margin-top: 2px;
+            white-space: nowrap;
         }
         
         .sent {
             margin-right: 0px !important;
-            margin-left: 50px !important;
+            margin-left: 80px !important;
     
             .time {
                 right: unset;
@@ -116,7 +120,7 @@
             background-color: color-mix(in srgb, var(--color-pink) 5%, transparent 95%);
             padding: 10px;
             box-sizing: border-box;
-            margin-right: 50px;
+            margin-right: 80px;
 
 
             .content {
@@ -126,11 +130,21 @@
                     font-weight: 500;
                     margin: 0px;
                 }
+
+                img {
+                    display: block;
+                    max-width: 100%;
+                    max-height: 250px;
+                    width: auto;
+                    height: auto;
+                    border-radius: 3px;
+                    object-fit: contain;
+                }
             }
 
             &.sent {
                 margin-right: 0px;
-                margin-left: 30px;
+                margin-left: 80px;
                 background-color: var(--color-pink);
             
                 .content {
@@ -149,7 +163,7 @@
             border-radius: 5px;
             padding: 10px;
             box-sizing: border-box;
-            margin-right: 50px;
+            margin-right: 80px;
 
             background-image: repeating-linear-gradient(
                 -45deg,
@@ -191,7 +205,7 @@
             border-radius: 5px;
             padding: 10px;
             box-sizing: border-box;
-            margin-right: 50px;
+            margin-right: 80px;
 
             background-image: repeating-linear-gradient(
                 -45deg,
@@ -227,7 +241,7 @@
             border-radius: 5px;
             padding: 10px;
             box-sizing: border-box;
-            margin-right: 50px;
+            margin-right: 80px;
 
             background-image: repeating-linear-gradient(
                 -45deg,
@@ -258,7 +272,7 @@
             border-radius: 5px;
             padding: 10px;
             box-sizing: border-box;
-            margin-right: 50px;
+            margin-right: 80px;
             
             background-image: repeating-linear-gradient(
                 -45deg,

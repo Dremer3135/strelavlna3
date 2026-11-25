@@ -165,6 +165,20 @@
         currentState.update((e) => { return {...e, runningState: "running"}})
       } else if (data.name === "chmoney") {
         currentState.update((e) => { return {...e, money: data.money}})
+      } else if (data.name === "chprob") {
+        probs.update((e) => {
+          if (e[data.prob.id]) {
+            e[data.prob.id] = {
+              ...e[data.prob.id],
+              name: data.prob.name,
+              text: data.prob.text,
+              answer: data.prob.answer,
+              diff: data.prob.diff,
+              images: data.prob.images,
+            };
+          }
+          return e;
+        });
       }
 
 

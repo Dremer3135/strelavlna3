@@ -18,13 +18,17 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	// "github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/mails"
 	"github.com/pocketbase/pocketbase/tools/hook"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 	"github.com/pocketbase/pocketbase/tools/security"
@@ -49,15 +53,16 @@ func printingSocketLoop(index string) func(*websocket.Conn) {
 	ch := printSocketChanMap[index]
 	return func(conn *websocket.Conn) {
 		clchan := make(chan bool)
-		go func(){
+		go func() {
 			conn.ReadMessage()
 			clchan <- true
 		}()
-		loop: for {
+	loop:
+		for {
 			select {
 			case <-clchan:
 				break loop
-			case prob, ok := <- ch:
+			case prob, ok := <-ch:
 				if !ok {
 					conn.WriteJSON(map[string]any{
 						"error": "chan closed",
@@ -71,42 +76,42 @@ func printingSocketLoop(index string) func(*websocket.Conn) {
 }
 
 type PrinterProb struct {
-	Diff string
-	Name string
-	Id string
+	Diff     string
+	Name     string
+	Id       string
 	TeamName string
-	Code string
+	Code     string
 }
 
 type PaperProb struct {
-  Diff string
-  Name string
-  Index int
-  Text string
-  Img []string
-  Buy int
-  Sell int
-  Solve int
-  TeamName string
-  Id string
-  AuthorName string
-  AuthorSocials string
+	Diff          string
+	Name          string
+	Index         int
+	Text          string
+	Img           []string
+	Buy           int
+	Sell          int
+	Solve         int
+	TeamName      string
+	Id            string
+	AuthorName    string
+	AuthorSocials string
 }
 
 type PaperSol struct {
-  Name string
-  Index int
-  Solution string
+	Name     string
+	Index    int
+	Solution string
 }
 
 type PaperConstant struct {
-  Id string
-  Value float64
-  Name string
-  Symbol string
-  Unit string
-  Desc string
-  Group string
+	Id     string
+	Value  float64
+	Name   string
+	Symbol string
+	Unit   string
+	Desc   string
+	Group  string
 }
 
 func RequireAuth() *hook.Handler[*core.RequestEvent] {
@@ -150,13 +155,13 @@ func genProb(app core.App, id string) (string, string, error) {
 	for _, cnst := range consts {
 		constsMap[cnst.GetString("variable_name")] = cnst.GetFloat("value")
 	}
-	jbody, err := json.Marshal(struct{
-		Code string `json:"code"`
-		Text string `json:"text"`
-		Answer string `json:"answer"`
-		Consts map[string]float64 `json:"consts"`
-		Timeout float32 `json:"timeout"`
-		MemMB int `json:"mem_mb"`
+	jbody, err := json.Marshal(struct {
+		Code    string             `json:"code"`
+		Text    string             `json:"text"`
+		Answer  string             `json:"answer"`
+		Consts  map[string]float64 `json:"consts"`
+		Timeout float32            `json:"timeout"`
+		MemMB   int                `json:"mem_mb"`
 	}{
 		rec.GetString("code"),
 		rec.GetString("text"),
@@ -198,33 +203,42 @@ func genProb(app core.App, id string) (string, string, error) {
 }
 
 func latexEscapeComment(s string) string {
-  res := s
-  res = strings.ReplaceAll(res, `%`, `\%`)
-  res = strings.ReplaceAll(res, `<br>`, `\n`)
-  res = strings.ReplaceAll(res, `°`, `\degree`)
-  return res
+	res := s
+	res = strings.ReplaceAll(res, `%`, `\%`)
+	res = strings.ReplaceAll(res, `<br>`, `\n`)
+	res = strings.ReplaceAll(res, `°`, `\degree`)
+	return res
 }
 
 func latexEscape(s string) string {
-  res := s
-  res = strings.ReplaceAll(res, `%`, `\%`)
-  res = strings.ReplaceAll(res, `{`, `\{`)
-  res = strings.ReplaceAll(res, `}`, `\}`)
-  res = strings.ReplaceAll(res, `&`, `\&`)
-  res = strings.ReplaceAll(res, `^`, `\^`)
-  res = strings.ReplaceAll(res, `#`, `\#`)
-  res = strings.ReplaceAll(res, `_`, `\_`)
-  res = strings.ReplaceAll(res, `$`, `\$`)
-  res = strings.ReplaceAll(res, `<br>`, `\n`)
-  return res
+	res := s
+	res = strings.ReplaceAll(res, `%`, `\%`)
+	res = strings.ReplaceAll(res, `{`, `\{`)
+	res = strings.ReplaceAll(res, `}`, `\}`)
+	res = strings.ReplaceAll(res, `&`, `\&`)
+	res = strings.ReplaceAll(res, `^`, `\^`)
+	res = strings.ReplaceAll(res, `#`, `\#`)
+	res = strings.ReplaceAll(res, `_`, `\_`)
+	res = strings.ReplaceAll(res, `$`, `\$`)
+	res = strings.ReplaceAll(res, `<br>`, `\n`)
+	return res
 }
 
 type TeamGameData struct {
-	Money int
-	Free []string
+	Money  int
+	Free   []string
 	Bought []string
 	Solved []string
-	Sold []string
+	Sold   []string
+}
+
+func reinterpretInLocation(t time.Time, loc *time.Location) time.Time {
+	t = t.UTC()
+	return time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(),
+		loc,
+	)
 }
 
 func main() {
@@ -274,19 +288,21 @@ func main() {
 					return
 				}
 				addr, err := mail.ParseAddress(email)
-				if err != nil { continue }
+				if err != nil {
+					continue
+				}
 				schoolmails = append(schoolmails, *addr)
 			}
 
 			msg := &mailer.Message{
 				From: mail.Address{
-					Name: app.Settings().Meta.SenderName,
+					Name:    app.Settings().Meta.SenderName,
 					Address: app.Settings().Meta.SenderAddress,
 				},
-				To: schoolmails[0:1],
-				Bcc: schoolmails[1:],
+				To:      schoolmails[0:1],
+				Bcc:     schoolmails[1:],
 				Subject: text.GetString("data"),
-				HTML: text.GetString("text"),
+				HTML:    text.GetString("text"),
 			}
 
 			err = app.NewMailClient().Send(msg)
@@ -298,9 +314,9 @@ func main() {
 			for _, school := range schools {
 				// school.Set("spam", true)
 				// err := app.Save(school)
-				err := app.DB().Update("skoly", dbx.Params{"spam": true}, dbx.HashExp{"id": school.Id})
+				_, err := app.DB().Update("skoly", dbx.Params{"spam": true}, dbx.HashExp{"id": school.Id}).Execute()
 				if err != nil {
-					app.Logger().Error("app.Save failed", "err", err)
+					app.Logger().Error(fmt.Sprintf("app.Save failed: %v = %#v", err, err))
 				}
 			}
 
@@ -311,6 +327,8 @@ func main() {
 		"final_mail",
 		"* * * * *",
 		func() {
+			// return
+
 			teams := []*core.Record{}
 
 			err := app.RecordQuery("teams").
@@ -356,7 +374,7 @@ func main() {
 				app.Logger().Error("texttempl query failed", "err", err)
 				return
 			}
-			err = tmpl.Execute(&renbuf, struct{
+			err = tmpl.Execute(&renbuf, struct {
 				Code,
 				CompSubject,
 				CompName,
@@ -405,9 +423,9 @@ func main() {
 			err = app.NewMailClient().Send(&mailer.Message{
 				From: mail.Address{
 					Address: "strela-vlna@gchd.cz",
-					Name: "Střela Vlna",
+					Name:    "Střela Vlna",
 				},
-				To: []mail.Address{ {Address: teacher.GetString("email")}, },
+				To: []mail.Address{{Address: teacher.GetString("email")}},
 				Cc: []mail.Address{
 					{Address: team.GetString("player1email")},
 					{Address: team.GetString("player2email")},
@@ -416,7 +434,7 @@ func main() {
 					{Address: team.GetString("player5email")},
 				},
 				Subject: "Potvrzení registrace do soutěže " + contest.GetString("name"),
-				HTML: msg,
+				HTML:    msg,
 			})
 			if err != nil {
 				app.Logger().Error("mail failed", "err", err)
@@ -485,7 +503,7 @@ func main() {
 				app.Logger().Error("texttempl query failed", "err", err)
 				return
 			}
-			err = tmpl.Execute(&renbuf, struct{
+			err = tmpl.Execute(&renbuf, struct {
 				CompName,
 				TeamName,
 				Rank string
@@ -510,9 +528,9 @@ func main() {
 			err = app.NewMailClient().Send(&mailer.Message{
 				From: mail.Address{
 					Address: "strela-vlna@gchd.cz",
-					Name: "Střela Vlna",
+					Name:    "Střela Vlna",
 				},
-				To: []mail.Address{ {Address: teacher.GetString("email")}, },
+				To: []mail.Address{{Address: teacher.GetString("email")}},
 				Cc: []mail.Address{
 					{Address: team.GetString("player1email")},
 					{Address: team.GetString("player2email")},
@@ -521,7 +539,7 @@ func main() {
 					{Address: team.GetString("player5email")},
 				},
 				Subject: "Děkujeme za účast v " + contest.GetString("name"),
-				HTML: msg,
+				HTML:    msg,
 			})
 			if err != nil {
 				app.Logger().Error("mail failed", "err", err)
@@ -579,10 +597,10 @@ func main() {
 				app.Logger().Error("texttempl query failed", "err", err)
 				return
 			}
-			err = tmpl.Execute(&renbuf, struct{
-				Token string 
-				Name string
-			}{ token, corr.GetString("username") })
+			err = tmpl.Execute(&renbuf, struct {
+				Token string
+				Name  string
+			}{token, corr.GetString("username")})
 			if err != nil {
 				app.Logger().Error("templ failed", "err", err)
 				return
@@ -593,11 +611,11 @@ func main() {
 			err = app.NewMailClient().Send(&mailer.Message{
 				From: mail.Address{
 					Address: "strela-vlna@gchd.cz",
-					Name: "Střela Vlna",
+					Name:    "Střela Vlna",
 				},
-				To: []mail.Address{ {Address: corr.GetString("email")}, },
+				To:      []mail.Address{{Address: corr.GetString("email")}},
 				Subject: text.GetString("data"),
-				HTML: msg,
+				HTML:    msg,
 			})
 			if err != nil {
 				app.Logger().Error("mail failed", "err", err)
@@ -612,7 +630,129 @@ func main() {
 		},
 	)
 
+	app.Cron().MustAdd(
+		"corr_token_mail_onetime",
+		"* * * * */6",
+		func() {
+			corrs := []*core.Record{}
+
+			err := app.RecordQuery("correctors").All(&corrs)
+
+			if len(corrs) < 1 {
+				return
+			}
+
+			if err != nil {
+				app.Logger().Error("corr query failed", "err", err)
+				return
+			}
+
+			text := core.Record{}
+
+			err = app.RecordQuery("texts").
+				AndWhere(dbx.HashExp{"name": "corr_token_mail"}).
+				Limit(1).
+				One(&text)
+
+			if err != nil {
+				app.Logger().Error("text query failed", "err", err)
+				return
+			}
+
+			for _, corr := range corrs {
+
+				var renbuf bytes.Buffer
+				tmpl, err := template.New("corr_token_mail").Parse(text.GetString("text"))
+				if err != nil {
+					app.Logger().Error("texttempl query failed", "err", err)
+					return
+				}
+				err = tmpl.Execute(&renbuf, struct {
+					Token string
+					Name  string
+				}{corr.GetString("token"), corr.GetString("username")})
+				if err != nil {
+					app.Logger().Error("templ failed", "err", err)
+					return
+				}
+
+				msg := renbuf.String()
+
+				err = app.NewMailClient().Send(&mailer.Message{
+					From: mail.Address{
+						Address: "strela-vlna@gchd.cz",
+						Name:    "Střela Vlna",
+					},
+					To:      []mail.Address{{Address: corr.GetString("email")}},
+					Subject: text.GetString("data"),
+					HTML:    msg,
+				})
+				if err != nil {
+					app.Logger().Error("mail failed", "err", err)
+					return
+				}
+			}
+		},
+	)
+
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+
+		e.Router.GET("/api/hashprobs", func(e *core.RequestEvent) error {
+			correctors := []*core.Record{}
+
+			err := e.App.RecordQuery("correctors").All(&correctors)
+			if err != nil {
+				return err
+			}
+
+			err = e.App.RunInTransaction(func(txApp core.App) error {
+				probs, err := txApp.FindAllRecords("probs")
+				if err != nil {
+					return err
+				}
+				for _, prob := range probs {
+					author := prob.GetString("author")
+
+					corrids := make([]string, len(correctors))
+					for i, corr := range correctors {
+						corrids[i] = corr.GetString("id")
+					}
+
+					corrids[0] = author
+
+					rand.Shuffle(len(corrids), func(i, j int) {
+						corrids[i], corrids[j] = corrids[j], corrids[i]
+					})
+
+					if slices.Contains(corrids, author) {
+						ncorrids := make([]string, 1, len(corrids))
+						ncorrids[0] = author
+						for _, corr := range corrids {
+							if corr != author {
+								ncorrids = append(ncorrids, corr)
+							}
+						}
+						corrids = ncorrids
+					}
+
+					prob.Set("queue", corrids)
+
+					err = txApp.Save(prob)
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+
+			return e.String(200, "ok")
+
+		}).Bind(RequireAuth())
 
 		e.Router.GET("/api/setgamedata", func(e *core.RequestEvent) error {
 			teamf := e.Request.URL.Query().Get("teamf")
@@ -622,10 +762,14 @@ func main() {
 			fmt.Println(probf)
 
 			probs, err := e.App.FindRecordsByFilter("probs", probf, "created", -1, 0)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			teams, err := e.App.FindRecordsByFilter("teams", teamf, "created", -1, 0)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			gamedata := TeamGameData{140, []string{}, []string{}, []string{}, []string{}}
 
@@ -634,12 +778,16 @@ func main() {
 			}
 
 			bts, err := json.Marshal(gamedata)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			for _, team := range teams {
 				team.Set("inPersonData", string(bts))
 				err := e.App.Save(team)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -650,12 +798,16 @@ func main() {
 			teamf := e.Request.URL.Query().Get("teamf")
 			probf := e.Request.URL.Query().Get("probf")
 
-			 err := e.App.RunInTransaction(func(txApp core.App) error {
+			err := e.App.RunInTransaction(func(txApp core.App) error {
 				probs, err := txApp.FindRecordsByFilter("probs", probf, "created", -1, 0)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				teams, err := txApp.FindRecordsByFilter("teams", teamf, "created", -1, 0)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				probids := []string{}
 				for _, prob := range probs {
@@ -663,27 +815,37 @@ func main() {
 				}
 
 				for _, team := range teams {
-					if team.GetString("inPersonData") == "null" { continue }
+					if team.GetString("inPersonData") == "null" {
+						continue
+					}
 
 					gamedata := TeamGameData{}
 					err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					gamedata.Free = append(gamedata.Free, probids...)
 
 					datab, err := json.Marshal(gamedata)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					team.Set("inPersonData", string(datab))
 
 					err = txApp.Save(team)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 				}
 
 				return nil
 			})
 
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			return e.String(200, "ok")
 		})
@@ -691,35 +853,43 @@ func main() {
 		e.Router.POST("/api/cash", func(e *core.RequestEvent) error {
 			req := make(map[string]string)
 			err := json.NewDecoder(e.Request.Body).Decode(&req)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 			defer e.Request.Body.Close()
 			returned := false
 			switch req["typ"] {
 			case "overeni":
-			  // diff := req["uloha"]
+				// diff := req["uloha"]
 				cardid := req["id"]
 				// printid := req["ctecka"]
 				err := e.App.RunInTransaction(func(txApp core.App) error {
 					fmt.Printf("$$$$ %#v\n", cardid)
 					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					gamedata := TeamGameData{}
 					err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					returned = true
 					return e.JSON(200, map[string]string{
-						"key": "k",
-						"nazev": team.GetString("name"),
+						"key":    "k",
+						"nazev":  team.GetString("name"),
 						"penize": strconv.Itoa(gamedata.Money),
 					})
 				})
 				if !returned {
-					if err != nil { return e.String(200, `{"key": "n"}`)}
+					if err != nil {
+						return e.String(200, `{"key": "n"}`)
+					}
 				}
 			case "akce":
-			  diffi := req["uloha"]
+				diffi := req["uloha"]
 				diff := "A"
 				if diffi == "0" {
 					diff = "A"
@@ -736,23 +906,31 @@ func main() {
 				err := e.App.RunInTransaction(func(txApp core.App) error {
 
 					team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					gamedata := TeamGameData{}
 					err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					sconfig := contest.GetString("config")
-					config := struct{
-						Buy map[string]int
-						Sell map[string]int
+					config := struct {
+						Buy   map[string]int
+						Sell  map[string]int
 						Solve map[string]int
 					}{}
 					err = json.Unmarshal([]byte(sconfig), &config)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					fmt.Printf("h: %#v\n", config)
 
@@ -765,8 +943,12 @@ func main() {
 					for range len(gamedata.Free) {
 						probid := gamedata.Free[rand.Intn(len(gamedata.Free))]
 						prob, err = txApp.FindRecordById("probs", probid)
-						if err != nil { return err }
-						if prob.GetString("diff") == diff { break }
+						if err != nil {
+							return err
+						}
+						if prob.GetString("diff") == diff {
+							break
+						}
 						prob = nil
 					}
 
@@ -778,11 +960,15 @@ func main() {
 
 					if prob.GetBool("auto") {
 						text, ans, err = genProb(txApp, prob.Id)
-						if err != nil { return err }
+						if err != nil {
+							return err
+						}
 					}
 
 					coll, err := txApp.FindCollectionByNameOrId("tickets")
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					tick := core.NewRecord(coll)
 
@@ -793,7 +979,9 @@ func main() {
 					tick.Set("answer", ans)
 
 					err = txApp.Save(tick)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					if !prob.GetBool("infinite") {
 						gamedata.Free = slices.DeleteFunc(gamedata.Free, func(a string) bool { return a == prob.Id })
@@ -803,26 +991,32 @@ func main() {
 					gamedata.Money -= config.Buy[diff]
 
 					datab, err := json.Marshal(gamedata)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					fmt.Printf("67: %#v\n", string(datab))
 
 					team.Set("inPersonData", string(datab))
 
 					err = txApp.Save(team)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 
 					printSocketChanMap[printid] <- PrinterProb{
-						Diff: prob.GetString("diff"),
-						Name: prob.GetString("name"),
-						Id: prob.Id,
+						Diff:     prob.GetString("diff"),
+						Name:     prob.GetString("name"),
+						Id:       prob.Id,
 						TeamName: team.GetString("name"),
-						Code: tick.GetString("code"),
+						Code:     tick.GetString("code"),
 					}
 					return nil
 				})
 				if !returned {
-					if err != nil {  return e.String(200, `{"key": "n"}`)}
+					if err != nil {
+						return e.String(200, `{"key": "n"}`)
+					}
 				}
 			}
 
@@ -840,23 +1034,31 @@ func main() {
 			err := e.App.RunInTransaction(func(txApp core.App) error {
 
 				team, err := txApp.FindFirstRecordByData("teams", "card", cardid)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				gamedata := TeamGameData{}
 				err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sconfig := contest.GetString("config")
-				config := struct{
-					Buy map[string]int
-					Sell map[string]int
+				config := struct {
+					Buy   map[string]int
+					Sell  map[string]int
 					Solve map[string]int
 				}{}
 				err = json.Unmarshal([]byte(sconfig), &config)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				if gamedata.Money < config.Buy[diff] {
 					return errors.New("not enough money")
@@ -867,8 +1069,12 @@ func main() {
 				for range len(gamedata.Free) {
 					probid := gamedata.Free[rand.Intn(len(gamedata.Free))]
 					prob, err = txApp.FindRecordById("probs", probid)
-					if err != nil { return err }
-					if prob.GetString("diff") == diff { break }
+					if err != nil {
+						return err
+					}
+					if prob.GetString("diff") == diff {
+						break
+					}
 				}
 
 				if prob == nil {
@@ -879,11 +1085,15 @@ func main() {
 
 				if prob.GetBool("auto") {
 					text, ans, err = genProb(txApp, prob.Id)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 				}
 
 				coll, err := txApp.FindCollectionByNameOrId("tickets")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				tick := core.NewRecord(coll)
 
@@ -894,7 +1104,9 @@ func main() {
 				tick.Set("answer", ans)
 
 				err = txApp.Save(tick)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				if !prob.GetBool("infinite") {
 					gamedata.Free = slices.DeleteFunc(gamedata.Free, func(a string) bool { return a == prob.Id })
@@ -904,24 +1116,30 @@ func main() {
 				gamedata.Money -= config.Buy[diff]
 
 				datab, err := json.Marshal(gamedata)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				team.Set("inPersonData", string(datab))
 
 				err = txApp.Save(team)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				printSocketChanMap[printid] <- PrinterProb{
-					Diff: prob.GetString("diff"),
-					Name: prob.GetString("name"),
-					Id: prob.Id,
+					Diff:     prob.GetString("diff"),
+					Name:     prob.GetString("name"),
+					Id:       prob.Id,
 					TeamName: team.GetString("name"),
-					Code: tick.GetString("code"),
+					Code:     tick.GetString("code"),
 				}
 				return nil
 			})
 
-			if err != nil { return e.String(400, err.Error()) }
+			if err != nil {
+				return e.String(400, err.Error())
+			}
 
 			return e.String(200, "ok")
 		})
@@ -930,14 +1148,20 @@ func main() {
 			tickid := e.Request.URL.Query().Get("id")
 
 			tick, err := e.App.FindFirstRecordByData("tickets", "code", tickid)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			team, err := e.App.FindRecordById("teams", tick.GetString("team"))
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			gamedata := TeamGameData{}
 			err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			state := "invalid"
 			if slices.Contains(gamedata.Bought, tick.GetString("prob")) {
@@ -952,8 +1176,8 @@ func main() {
 
 			return e.JSON(200, map[string]any{
 				"answer": tick.GetString("answer"),
-				"money": gamedata.Money,
-				"state": state,
+				"money":  gamedata.Money,
+				"state":  state,
 			})
 		})
 
@@ -962,26 +1186,36 @@ func main() {
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
 				tick, err := txApp.FindFirstRecordByData("tickets", "code", tickid)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				team, err := txApp.FindRecordById("teams", tick.GetString("team"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				gamedata := TeamGameData{}
 				err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sconfig := contest.GetString("config")
-				config := struct{
-					Buy map[string]int
-					Sell map[string]int
+				config := struct {
+					Buy   map[string]int
+					Sell  map[string]int
 					Solve map[string]int
 				}{}
 				err = json.Unmarshal([]byte(sconfig), &config)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				if !slices.Contains(gamedata.Bought, tick.GetString("prob")) {
 					return errors.New("not bought")
@@ -991,21 +1225,29 @@ func main() {
 				gamedata.Solved = append(gamedata.Solved, tick.GetString("prob"))
 
 				prob, err := txApp.FindRecordById("probs", tick.GetString("prob"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 				gamedata.Money += config.Solve[prob.GetString("diff")]
 
 				datab, err := json.Marshal(gamedata)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				team.Set("inPersonData", string(datab))
 
 				err = txApp.Save(team)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				return nil
 			})
 
-			if err != nil { return e.String(400, err.Error()) }
+			if err != nil {
+				return e.String(400, err.Error())
+			}
 
 			return e.String(200, "ok")
 		})
@@ -1015,26 +1257,36 @@ func main() {
 
 			err := e.App.RunInTransaction(func(txApp core.App) error {
 				tick, err := txApp.FindFirstRecordByData("tickets", "code", tickid)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				team, err := txApp.FindRecordById("teams", tick.GetString("team"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				gamedata := TeamGameData{}
 				err = json.Unmarshal([]byte(team.GetString("inPersonData")), &gamedata)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				contest, err := txApp.FindRecordById("contests", team.GetString("contest"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sconfig := contest.GetString("config")
-				config := struct{
-					Buy map[string]int
-					Sell map[string]int
+				config := struct {
+					Buy   map[string]int
+					Sell  map[string]int
 					Solve map[string]int
 				}{}
 				err = json.Unmarshal([]byte(sconfig), &config)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				if !slices.Contains(gamedata.Bought, tick.GetString("prob")) {
 					return errors.New("not bought")
@@ -1044,21 +1296,29 @@ func main() {
 				gamedata.Sold = append(gamedata.Sold, tick.GetString("prob"))
 
 				prob, err := txApp.FindRecordById("probs", tick.GetString("prob"))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 				gamedata.Money += config.Sell[prob.GetString("diff")]
 
 				datab, err := json.Marshal(gamedata)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				team.Set("inPersonData", string(datab))
 
 				err = txApp.Save(team)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				return nil
 			})
 
-			if err != nil { return e.String(400, err.Error()) }
+			if err != nil {
+				return e.String(400, err.Error())
+			}
 
 			return e.String(200, "ok")
 		})
@@ -1066,26 +1326,36 @@ func main() {
 		e.Router.GET("/api/paperprob", func(e *core.RequestEvent) error {
 			id := e.Request.URL.Query().Get("id")
 			tick, err := e.App.FindFirstRecordByData("tickets", "code", id)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			prob, err := e.App.FindRecordById("probs", tick.GetString("prob"))
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_templ_box.tex")
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			tmpl, err := template.New("box_probs_papers").Parse(string(bts))
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			renbuf := bytes.Buffer{}
-			err = tmpl.Execute(&renbuf, struct{
-				Text string
-				Imgs []string
-				Diff string
-				Name string
+			err = tmpl.Execute(&renbuf, struct {
+				Text  string
+				Imgs  []string
+				Diff  string
+				Name  string
 				Index int
 			}{tick.GetString("text"), prob.GetStringSlice("images"), prob.GetString("diff"), prob.GetString("name"), -1})
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			papers := renbuf.String()
 			papers = html.UnescapeString(papers)
@@ -1094,7 +1364,7 @@ func main() {
 			papers = strings.ReplaceAll(papers, "<br>", "\n")
 
 			for _, img := range prob.GetStringSlice("images") {
-				papers = strings.ReplaceAll(papers, " " + img + " ", img)
+				papers = strings.ReplaceAll(papers, " "+img+" ", img)
 			}
 
 			args := []string{"/home/strelavlna/strelavlna3/apps/database/texprob.sh", "/home/strelavlna/strelavlna3/apps/database/pb_data/storage/" + prob.BaseFilesPath(), papers}
@@ -1120,7 +1390,7 @@ func main() {
 		})
 
 		e.Router.POST("/api/code", func(e *core.RequestEvent) error {
-			data := struct{
+			data := struct {
 				Id string `json:"id"`
 			}{}
 			err := e.BindBody(&data)
@@ -1138,13 +1408,13 @@ func main() {
 				nimages[i] = "https://strela-vlna.gchd.cz/api/files/probs/" + rec.Id + "/" + img
 			}
 			if !rec.GetBool("auto") {
-				return e.JSON(200, struct{
-					Text string `json:"text"`
-					Answer string `json:"answer"`
+				return e.JSON(200, struct {
+					Text   string   `json:"text"`
+					Answer string   `json:"answer"`
 					Images []string `json:"images"`
-					Diff string `json:"diff"`
-					Name string `json:"name"`
-					Id string `json:"id"`
+					Diff   string   `json:"diff"`
+					Name   string   `json:"name"`
+					Id     string   `json:"id"`
 				}{rec.GetString("text"), rec.GetString("answer"), nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
 			}
 			consts := []*core.Record{}
@@ -1156,13 +1426,13 @@ func main() {
 			for _, cnst := range consts {
 				constsMap[cnst.GetString("variable_name")] = cnst.GetFloat("value")
 			}
-			jbody, err := json.Marshal(struct{
-				Code string `json:"code"`
-				Text string `json:"text"`
-				Answer string `json:"answer"`
-				Consts map[string]float64 `json:"consts"`
-				Timeout float32 `json:"timeout"`
-				MemMB int `json:"mem_mb"`
+			jbody, err := json.Marshal(struct {
+				Code    string             `json:"code"`
+				Text    string             `json:"text"`
+				Answer  string             `json:"answer"`
+				Consts  map[string]float64 `json:"consts"`
+				Timeout float32            `json:"timeout"`
+				MemMB   int                `json:"mem_mb"`
 			}{
 				rec.GetString("code"),
 				rec.GetString("text"),
@@ -1190,9 +1460,8 @@ func main() {
 			}
 			succ, ok := presp["success"].(bool)
 			if !ok || !succ {
-				return e.JSON(400, struct{
+				return e.JSON(400, struct {
 					Data string `json:"data"`
-
 				}{Data: fmt.Sprint(presp["error"])})
 			}
 			text, ok := presp["text"].(string)
@@ -1203,20 +1472,70 @@ func main() {
 			if !ok {
 				return e.Error(500, "atp idk bro", err)
 			}
-			return e.JSON(200, struct{
-				Text string `json:"text"`
-				Answer string `json:"answer"`
+			return e.JSON(200, struct {
+				Text   string   `json:"text"`
+				Answer string   `json:"answer"`
 				Images []string `json:"images"`
-				Diff string `json:"diff"`
-				Name string `json:"name"`
-				Id string `json:"id"`
+				Diff   string   `json:"diff"`
+				Name   string   `json:"name"`
+				Id     string   `json:"id"`
 			}{text, answer, nimages, rec.GetString("diff"), rec.GetString("name"), rec.Id})
+		}).Bind(apis.RequireAuth("correctors"))
+
+		e.Router.POST("/api/chprob", func(e *core.RequestEvent) error {
+			data := struct {
+				Id string `json:"id"`
+			}{}
+			_ = e.BindBody(&data)
+			if data.Id == "" {
+				data.Id = e.Request.URL.Query().Get("id")
+			}
+			if data.Id == "" {
+				return e.Error(400, "invalid data", nil)
+			}
+			prob, err := e.App.FindRecordById("probs", data.Id)
+			if err != nil {
+				return e.Error(400, "invalid prob id", err)
+			}
+			imgs := []string{}
+			for _, img := range prob.GetStringSlice("images") {
+				imgs = append(imgs, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
+			}
+			p := Prob{
+				Id:       prob.Id,
+				Name:     prob.GetString("name"),
+				Diff:     prob.GetString("diff"),
+				Text:     prob.GetString("text"),
+				Answer:   prob.GetString("answer"),
+				Code:     prob.GetString("code"),
+				Auto:     prob.GetBool("auto"),
+				Infinite: prob.GetBool("infinite"),
+				Queue:    prob.GetStringSlice("queue"),
+				Images:   imgs,
+			}
+			jbody, err := json.Marshal(p)
+			if err != nil {
+				return e.Error(500, "failed to marshal prob", err)
+			}
+			token := e.Auth.GetString("token")
+			resp, err := http.DefaultClient.Post("https://sv.skrat.org/api/chprob?token="+token, "application/json", bytes.NewBuffer(jbody))
+			if err != nil {
+				return e.Error(500, "failed to contact engine", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				b, _ := io.ReadAll(resp.Body)
+				return e.Error(resp.StatusCode, string(b), nil)
+			}
+			return e.String(200, "ok")
 		}).Bind(apis.RequireAuth("correctors"))
 
 		e.Router.GET("/api/printsocket", func(e *core.RequestEvent) error {
 			printid := e.Request.URL.Query().Get("id")
 			conn, err := upgrader.Upgrade(e.Response, e.Request, nil)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 			go printingSocketLoop(printid)(conn)
 			return nil
 		})
@@ -1229,17 +1548,23 @@ func main() {
 
 			if probid == "" {
 				probs, err := e.App.FindAllRecords("probs")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				prob = probs[rand.Intn(len(probs))]
 			} else {
 				var err error
 				prob, err = e.App.FindRecordById("probs", probid)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 			}
 
 			coll, err := e.App.FindCollectionByNameOrId("tickets")
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			tick := core.NewRecord(coll)
 
@@ -1247,7 +1572,9 @@ func main() {
 
 			if prob.GetBool("auto") {
 				text, ans, err = genProb(e.App, prob.Id)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 			}
 
 			tick.Set("team", "b881f9jlij0e4vz")
@@ -1257,14 +1584,16 @@ func main() {
 			tick.Set("answer", ans)
 
 			err = e.App.Save(tick)
-			if err != nil { return err }
+			if err != nil {
+				return err
+			}
 
 			printSocketChanMap[printid] <- PrinterProb{
-				Diff: prob.GetString("diff"),
-				Name: prob.GetString("name"),
-				Id: prob.Id,
+				Diff:     prob.GetString("diff"),
+				Name:     prob.GetString("name"),
+				Id:       prob.Id,
 				TeamName: "Zvlněný goonmaster",
-				Code: tick.GetString("code"),
+				Code:     tick.GetString("code"),
 			}
 			return e.String(200, "ok")
 		})
@@ -1302,23 +1631,31 @@ func main() {
 			"/api/sql",
 			func(e *core.RequestEvent) error {
 				data, err := io.ReadAll(e.Request.Body)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 				body := string(data)
 
 				e.Request.Body.Close()
 
 				rows, err := app.DB().NewQuery(body).Rows()
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				res := []map[string]string{}
 
 				for rows.Next() {
 					row := dbx.NullStringMap{}
 					err := rows.ScanMap(row)
-					if err != nil { return err }
+					if err != nil {
+						return err
+					}
 					rrow := map[string]string{}
 					for k, v := range row {
-						if !v.Valid { continue }
+						if !v.Valid {
+							continue
+						}
 						rrow[k] = v.String
 					}
 					res = append(res, rrow)
@@ -1329,25 +1666,63 @@ func main() {
 		).Bind(RequireAuth())
 
 		e.Router.GET(
+			"/api/createadmins",
+			func(e *core.RequestEvent) error {
+				text := e.Request.URL.Query().Get("text")
+				admins := strings.Split(text, "\n")
+				for i := range admins {
+					admins[i] = strings.TrimSpace(admins[i])
+				}
+				coll, err := app.FindCollectionByNameOrId("correctors")
+				if err != nil {
+					return err
+				}
+				for _, admin := range admins {
+					rec := core.NewRecord(coll)
+					rec.Set("email", admin)
+					eparts := strings.Split(admin, "@")
+					name := eparts[0]
+					rec.Set("username", cases.Title(language.Czech).String(name))
+					rec.Set("password", security.RandomString(10))
+					err := app.Save(rec)
+					if err != nil {
+						return err
+					}
+					err = mails.SendRecordPasswordReset(app, rec)
+					if err != nil {
+						return err
+					}
+				}
+				return e.String(200, "")
+			},
+		).Bind(RequireAuth())
+
+		e.Router.GET(
 			"/api/papers",
 			func(e *core.RequestEvent) error {
 				id := e.Request.URL.Query().Get("id")
 				filter := e.Request.URL.Query().Get("filter")
 
 				contest, err := e.App.FindRecordById("contests", id)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sconfig := contest.GetString("config")
-				config := struct{
-					Buy map[string]int
-					Sell map[string]int
+				config := struct {
+					Buy   map[string]int
+					Sell  map[string]int
 					Solve map[string]int
 				}{}
 				err = json.Unmarshal([]byte(sconfig), &config)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				probs, err := e.App.FindRecordsByFilter("probs", filter, "created", -1, 0)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				fmt.Println(len(probs))
 
@@ -1355,7 +1730,9 @@ func main() {
 				// if err != nil { return err }
 
 				consts, err := e.App.FindAllRecords("constants")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				gprobs := make([]PaperProb, 0)
 				gsols := make([]PaperSol, 0)
@@ -1365,32 +1742,43 @@ func main() {
 
 				i := 1
 				for _, prob := range probs {
+					errs := app.ExpandRecord(prob, []string{"author"}, nil)
+					for name, err := range errs {
+						fmt.Printf("ERROR EXPAND %s\n", name)
+						return err
+					}
 					for _, img := range prob.GetStringSlice("images") {
-						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/" + prob.Id + "/" + img)
+						imgsurls = append(imgsurls, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
+					}
+					authorName := "anonym 💔🤨"
+					if prob.ExpandedOne("author") != nil {
+						authorName = prob.ExpandedOne("author").GetString("username")
 					}
 					res := PaperProb{
-						Diff: prob.GetString("diff"),
-						Name: latexEscape(prob.GetString("name")),
-						Index: i,
-						Text: latexEscapeComment(prob.GetString("text")),
-						Img: prob.GetStringSlice("images"),
-						Buy: config.Buy[prob.GetString("diff")],
-						Sell: config.Sell[prob.GetString("diff")],
-						Solve: config.Solve[prob.GetString("diff")],
-						TeamName: "",
-						Id: prob.Id,
-						AuthorName: "",
+						Diff:          prob.GetString("diff"),
+						Name:          latexEscape(prob.GetString("name")),
+						Index:         i,
+						Text:          latexEscapeComment(prob.GetString("text")),
+						Img:           prob.GetStringSlice("images"),
+						Buy:           config.Buy[prob.GetString("diff")],
+						Sell:          config.Sell[prob.GetString("diff")],
+						Solve:         config.Solve[prob.GetString("diff")],
+						TeamName:      "",
+						Id:            prob.Id,
+						AuthorName:    authorName,
 						AuthorSocials: "",
 					}
 					sres := PaperSol{
-						Name: prob.GetString("name"),
-						Index: i,
+						Name:     prob.GetString("name"),
+						Index:    i,
 						Solution: prob.GetString("answer"),
 					}
 
 					if prob.GetBool("auto") {
 						text, ans, err := genProb(e.App, prob.Id)
-						if err != nil { return err }
+						if err != nil {
+							return err
+						}
 						res.Text = text
 						sres.Solution = ans
 					}
@@ -1403,69 +1791,84 @@ func main() {
 
 				npprobs := make([]PaperProb, 0)
 				// for _, tm := range teams {
-					for _, pr := range gprobs {
-						// pr.TeamName = tm.GetString("name")
-						npprobs = append(npprobs, pr)
-					}
+				for _, pr := range gprobs {
+					// pr.TeamName = tm.GetString("name")
+					npprobs = append(npprobs, pr)
+				}
 				// }
 
 				for _, cnst := range consts {
 					gconsts = append(gconsts, PaperConstant{
-						Id: cnst.Id,
-						Value: cnst.GetFloat("value"),
-						Name: cnst.GetString("name"),
+						Id:     cnst.Id,
+						Value:  cnst.GetFloat("value"),
+						Name:   cnst.GetString("name"),
 						Symbol: cnst.GetString("symbol"),
-						Unit: cnst.GetString("unit"),
-						Desc: cnst.GetString("desc"),
-						Group: cnst.GetString("group"),
+						Unit:   cnst.GetString("unit"),
+						Desc:   cnst.GetString("desc"),
+						Group:  cnst.GetString("group"),
 					})
 				}
 
-				funcsmap := template.FuncMap{ "iseven": func(i int) bool { return i % 2 == 0 } }
-
+				funcsmap := template.FuncMap{"iseven": func(i int) bool { return i%2 == 0 }}
 
 				bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_templ.tex")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				tmpl, err := template.New("probs_papers").Funcs(funcsmap).Parse(string(bts))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				renbuf := bytes.Buffer{}
 				err = tmpl.Execute(&renbuf, npprobs)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				papers := renbuf.String()
 				papers = html.UnescapeString(papers)
 
-
 				sol_bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/prob_sol_templ.tex")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sol_tmpl, err := template.New("probs_sol_papers").Funcs(funcsmap).Parse(string(sol_bts))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sol_renbuf := bytes.Buffer{}
 				err = sol_tmpl.Execute(&sol_renbuf, gsols)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sol_papers := sol_renbuf.String()
 				sol_papers = html.UnescapeString(sol_papers)
 
-
 				const_bts, err := os.ReadFile("/home/strelavlna/strelavlna3/apps/database/consts_templ.tex")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				const_tmpl, err := template.New("const_papers").Funcs(funcsmap).Parse(string(const_bts))
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				const_renbuf := bytes.Buffer{}
 				err = const_tmpl.Execute(&const_renbuf, gconsts)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				const_papers := const_renbuf.String()
 				const_papers = html.UnescapeString(const_papers)
 
-				return e.String(200, papers + "\n\n\n" + sol_papers + "\n\n\n" + const_papers + "\n\n\n" + strings.Join(imgsurls, " "))
+				return e.String(200, papers+"\n\n\n"+sol_papers+"\n\n\n"+const_papers+"\n\n\n"+strings.Join(imgsurls, " "))
 			},
 		).Bind(RequireAuth())
 
@@ -1480,16 +1883,20 @@ func main() {
 				})
 
 				contest, err := e.App.FindRecordById("contests", id)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				sconfig := contest.GetString("config")
-				config := struct{
-					Buy map[string]int
-					Sell map[string]int
+				config := struct {
+					Buy   map[string]int
+					Sell  map[string]int
 					Solve map[string]int
 				}{}
 				err = json.Unmarshal([]byte(sconfig), &config)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				for d, c := range config.Buy {
 					setPrice(rdb, PriceBuy, d, c)
@@ -1502,7 +1909,9 @@ func main() {
 				}
 
 				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				teamids := []string{}
 				for _, team := range teams {
@@ -1513,29 +1922,36 @@ func main() {
 
 				for _, team := range teams {
 					setMoney(rdb, team.Id, 100)
-					setPlayToken(rdb, team.GetString("token"), team.Id)
+					// DEBUG: empty token to random
+					token := team.GetString("token")
+					if token == "" {
+						token = "^" + security.RandomString(5)
+					}
+					setPlayToken(rdb, token, team.Id)
 					setTeamName(rdb, team.Id, team.GetString("name"))
 				}
 
 				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", id), dbx.HashExp{"online": true})
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				for _, prob := range probs {
 					imgs := []string{}
 					for _, img := range prob.GetStringSlice("images") {
-						imgs = append(imgs, "https://strela-vlna.gchd.cz/api/files/probs/" + prob.Id + "/" + img)
+						imgs = append(imgs, "https://strela-vlna.gchd.cz/api/files/probs/"+prob.Id+"/"+img)
 					}
 					setProb(rdb, Prob{
-						Id: prob.Id,
-						Name: prob.GetString("name"),
-						Diff: prob.GetString("diff"),
-						Text: prob.GetString("text"),
-						Answer: prob.GetString("answer"),
-						Code: prob.GetString("code"),
-						Auto: prob.GetBool("auto"),
+						Id:       prob.Id,
+						Name:     prob.GetString("name"),
+						Diff:     prob.GetString("diff"),
+						Text:     prob.GetString("text"),
+						Answer:   prob.GetString("answer"),
+						Code:     prob.GetString("code"),
+						Auto:     prob.GetBool("auto"),
 						Infinite: prob.GetBool("infinite"),
-						Queue: prob.GetStringSlice("queue"),
-						Images: imgs,
+						Queue:    prob.GetStringSlice("queue"),
+						Images:   imgs,
 					})
 					for _, team := range teams {
 						addOwnedProb(rdb, team.Id, OwnedFree, prob.GetString("diff"), prob.Id)
@@ -1543,7 +1959,9 @@ func main() {
 				}
 
 				corectors, err := e.App.FindAllRecords("correctors")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				for _, corr := range corectors {
 					setCorrToken(rdb, corr.GetString("token"), corr.Id)
@@ -1552,11 +1970,18 @@ func main() {
 
 				setState(rdb, StateBefore)
 
-				setStart(rdb, contest.GetDateTime("onlineStart").Time())
-				setEnd(rdb, contest.GetDateTime("onlineEnd").Time())
+				loc, err := time.LoadLocation("Europe/Prague")
+				if err != nil {
+					return err
+				}
+
+				setStart(rdb, reinterpretInLocation(contest.GetDateTime("onlineStart").Time(), loc))
+				setEnd(rdb, reinterpretInLocation(contest.GetDateTime("onlineEnd").Time(), loc))
 
 				constants, err := e.App.FindAllRecords("constants")
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 
 				for _, con := range constants {
 					addConstant(rdb, con.GetString("variable_name"), con.GetFloat("value"))
@@ -1571,14 +1996,16 @@ func main() {
 		return e.Next()
 	})
 
-	app.OnRecordUpdate("probs").BindFunc(func(e *core.RecordEvent) error {
+	app.OnRecordCreate("probs").BindFunc(func(e *core.RecordEvent) error {
 		// if len(e.Record.GetStringSlice("queue")) > 0 {
 		// 	return e.Next()
 		// }
 		correctors := []*core.Record{}
 
 		err := e.App.RecordQuery("correctors").All(&correctors)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		author := e.Record.GetString("author")
 
@@ -1607,8 +2034,7 @@ func main() {
 		return e.Next()
 	})
 
-
 	if err := app.Start(); err != nil {
-			log.Fatal(err)
+		log.Fatal(err)
 	}
 }
