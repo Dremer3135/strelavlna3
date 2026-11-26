@@ -1881,6 +1881,7 @@ func main() {
 				rdb := redis.NewClient(&redis.Options{
 					Addr: "localhost:6379",
 				})
+				defer rdb.Close()
 
 				contest, err := e.App.FindRecordById("contests", id)
 				if err != nil {
@@ -1898,6 +1899,35 @@ func main() {
 					return err
 				}
 
+				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
+				if err != nil {
+					return err
+				}
+
+				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", id), dbx.HashExp{"online": true})
+				if err != nil {
+					return err
+				}
+
+				corectors, err := e.App.FindAllRecords("correctors")
+				if err != nil {
+					return err
+				}
+
+				loc, err := time.LoadLocation("Europe/Prague")
+				if err != nil {
+					return err
+				}
+
+				constants, err := e.App.FindAllRecords("constants")
+				if err != nil {
+					return err
+				}
+
+				if err := rdb.FlushDB(ctx).Err(); err != nil {
+					return err
+				}
+
 				for d, c := range config.Buy {
 					setPrice(rdb, PriceBuy, d, c)
 				}
@@ -1906,11 +1936,6 @@ func main() {
 				}
 				for d, c := range config.Solve {
 					setPrice(rdb, PriceSolve, d, c)
-				}
-
-				teams, err := e.App.FindAllRecords("teams", dbx.HashExp{"contest": id})
-				if err != nil {
-					return err
 				}
 
 				teamids := []string{}
@@ -1929,11 +1954,6 @@ func main() {
 					}
 					setPlayToken(rdb, token, team.Id)
 					setTeamName(rdb, team.Id, team.GetString("name"))
-				}
-
-				probs, err := e.App.FindAllRecords("probs", dbx.Like("contests", id), dbx.HashExp{"online": true})
-				if err != nil {
-					return err
 				}
 
 				for _, prob := range probs {
@@ -1958,11 +1978,6 @@ func main() {
 					}
 				}
 
-				corectors, err := e.App.FindAllRecords("correctors")
-				if err != nil {
-					return err
-				}
-
 				for _, corr := range corectors {
 					setCorrToken(rdb, corr.GetString("token"), corr.Id)
 					setCorrAdmin(rdb, corr.Id, corr.GetBool("admin"))
@@ -1970,24 +1985,16 @@ func main() {
 
 				setState(rdb, StateBefore)
 
-				loc, err := time.LoadLocation("Europe/Prague")
-				if err != nil {
-					return err
-				}
-
 				setStart(rdb, reinterpretInLocation(contest.GetDateTime("onlineStart").Time(), loc))
 				setEnd(rdb, reinterpretInLocation(contest.GetDateTime("onlineEnd").Time(), loc))
-
-				constants, err := e.App.FindAllRecords("constants")
-				if err != nil {
-					return err
-				}
 
 				for _, con := range constants {
 					addConstant(rdb, con.GetString("variable_name"), con.GetFloat("value"))
 				}
 
-				rdb.Save(ctx).Result()
+				if err := rdb.Save(ctx).Err(); err != nil {
+					return err
+				}
 
 				return e.String(200, "ok")
 			},

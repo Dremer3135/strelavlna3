@@ -334,11 +334,16 @@ func setTeamName(conn *redis.Client, teamid string, name string) {
 }
 
 func setTeams(conn *redis.Client, teams []string) {
-	teamsany := []any{}
-	for _, team := range teams {
-		teamsany = append(teamsany, team)
+	err := conn.Del(ctx, "teams").Err()
+	if err != nil { panic(err) }
+	if len(teams) == 0 {
+		return
 	}
-	err := conn.SAdd(ctx, "teams", teamsany...).Err()
+	teamsany := make([]any, len(teams))
+	for i, team := range teams {
+		teamsany[i] = team
+	}
+	err = conn.SAdd(ctx, "teams", teamsany...).Err()
 	if err != nil { panic(err) }
 }
 
