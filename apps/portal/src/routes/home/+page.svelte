@@ -317,15 +317,15 @@ $effect(() => {
 </div>
 <div id="main">
     <div class="result-section">
-        <h1>Výsledky 2025</h1>
+        <h1>Výsledky 2026</h1>
         <div class="buttons">
-            <a href="/home/results/strela-2025-online"><button class="result-button">Pražská střela online</button></a>
-            <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova Vlna online</button></a>
+            <a href="/home/results/strela-2026-online"><button class="result-button">Pražská střela online</button></a>
+            <a href="/home/results/vlna-2025-online"><button class="result-button-disabled" disabled>Dopplerova Vlna online</button></a>
             <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
         </div>
         <div class="buttons">
-            <a href="/home/results/strela-2025"><button class="result-button">Pražská střela</button></a>
-            <a href="/home/results/vlna-2025"><button class="result-button">Dopplerova Vlna</button></a>
+            <a href="/home/results/strela-2025"><button class="result-button-disabled" disabled>Pražská střela</button></a>
+            <a href="/home/results/vlna-2025"><button class="result-button-disabled" disabled>Dopplerova Vlna</button></a>
             <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
         </div>
     </div>
@@ -403,6 +403,22 @@ $effect(() => {
     width: 270px;
     margin: auto;
     transition: all 0.3s ease-out;
+}
+
+.result-button-disabled{
+    cursor: not-allowed;
+    font-family: 'Lexend';
+    font-size: 20px;
+    font-weight: 500;
+    padding: 10px;  
+    padding-inline: 12px;
+    color: white;
+    border-radius: 10px;
+    background-color: grey;
+    padding-top: 7px;
+    width: 270px;
+    margin: auto;
+    
 }
 
 .buttons{
