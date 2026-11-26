@@ -320,7 +320,7 @@ $effect(() => {
         <h1>Výsledky 2026</h1>
         <div class="buttons">
             <a href="/home/results/strela-2026-online"><button class="result-button">Pražská střela online</button></a>
-            <a href="/home/results/vlna-2025-online"><button class="result-button-disabled" disabled>Dopplerova Vlna online</button></a>
+            <a href="/home/results/vlna-2026-online"><button class="result-button">Dopplerova Vlna online</button></a>
             <!-- <a href="/home/results/vlna-2025-online"><button class="result-button">Dopplerova vlna online</button></a> -->
         </div>
         <div class="buttons">
@@ -423,6 +423,7 @@ $effect(() => {
 
 .buttons{
     display: flex;
+    flex-wrap: wrap;
     justify-content: start;
     gap: 2vw;
     padding-bottom: 20px;
@@ -673,6 +674,7 @@ h3{
         margin: auto;
         max-width: 90vw;
         padding: 0px;
+        margin-bottom: 100px;
     }
     .grid-header{
         grid-template: 
@@ -737,6 +739,10 @@ h3{
         height: auto;
         margin: auto;
         max-width: 80vw;
+    }
+    .buttons{
+        justify-content: center;
+        margin-left: 0px;
     }
 }
 @media (max-width:300px){
