@@ -1222,7 +1222,7 @@ func adminManager(self chan Msg) {
 					}
 				}
 				if adminid == "" {
-					adminid = "ghost"
+					continue
 				}
 				if err := setTCorr(conn, teamid, prob.Id, adminid); err != nil {
 					fmt.Printf("admin error: %v\n", err)
@@ -1232,9 +1232,9 @@ func adminManager(self chan Msg) {
 					fmt.Printf("admin error: %v\n", err)
 					continue
 				}
-			}
-			if err := clearCorrTickets(conn, "ghost"); err != nil {
-				fmt.Printf("admin error: %v\n", err)
+				if err := removeCorrTicket(conn, "ghost", teamid, probid); err != nil {
+					fmt.Printf("admin error: %v\n", err)
+				}
 			}
 			iload, err := corrInitLoad(conn, data.Id)
 			if err != nil {
@@ -1429,7 +1429,6 @@ func adminManager(self chan Msg) {
 			}
 
 		case Results:
-			setState(conn, StateResults)
 			moneys := make(map[int][]string)
 			for id := range teams {
 				money, err := getMoney(conn, id)
@@ -1467,12 +1466,17 @@ func adminManager(self chan Msg) {
 						continue
 					}
 					resmap[id] = TeamMoneyResult{tmr.money, rank, tname}
-					select {
-					case teams[id] <- Msg{Results, "", self, TeamMoneyResult{tmr.money, rank, ""}}:
-					default:
-					}
 				}
 				i += len(tmr.ids)
+			}
+			if err := setState(conn, StateResults); err != nil {
+				fmt.Printf("admin error: %v\n", err)
+			}
+			for id, res := range resmap {
+				select {
+				case teams[id] <- Msg{Results, "", self, TeamMoneyResult{res.Money, res.Rank, ""}}:
+				default:
+				}
 			}
 			for _, corr := range correctors {
 				select {
@@ -1820,6 +1824,7 @@ chanloop:
 			if !ok {
 				break
 			}
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteJSON(map[string]any{
 				"name": "results",
 				"data": data,

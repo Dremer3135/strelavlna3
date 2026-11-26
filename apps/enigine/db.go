@@ -86,6 +86,10 @@ func addCorrTicket(conn *redis.Client, corrid, teamid, probid string) error {
 	return conn.SAdd(ctx, "corrtickets:"+corrid, teamid+":"+probid).Err()
 }
 
+func removeCorrTicket(conn *redis.Client, corrid, teamid, probid string) error {
+	return conn.SRem(ctx, "corrtickets:"+corrid, teamid+":"+probid).Err()
+}
+
 func clearCorrTickets(conn *redis.Client, corrid string) error {
 	return conn.Del(ctx, "corrtickets:"+corrid).Err()
 }
@@ -399,9 +403,15 @@ func getNumberRemProbs(conn *redis.Client, teamid string, diff string) (int, err
 }
 
 func setTeams(conn *redis.Client, teams []string) error {
-	teamsany := []any{}
-	for _, team := range teams {
-		teamsany = append(teamsany, team)
+	if err := conn.Del(ctx, "teams").Err(); err != nil {
+		return err
+	}
+	if len(teams) == 0 {
+		return nil
+	}
+	teamsany := make([]any, len(teams))
+	for i, team := range teams {
+		teamsany[i] = team
 	}
 	return conn.SAdd(ctx, "teams", teamsany...).Err()
 }

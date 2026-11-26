@@ -27,6 +27,11 @@
       await pocketbase.send("/api/rdb", {query: {id: rdbid} })
     }
 
+    let ranksid = $state("");
+    async function genRanks() {
+      await pocketbase.send("/api/genranks", {query: {id: ranksid} })
+    }
+
     let admintext = $state("");
     async function genAdmins() {
       await pocketbase.send("/api/createadmins", {query: {text: admintext} })
@@ -63,6 +68,9 @@
     <br>
     <input type="text" bind:value={rdbid}>
     <button onclick={genRdb}>GenRdb</button>
+    <br>
+    <input type="text" bind:value={ranksid} placeholder="contest id">
+    <button onclick={genRanks}>genRanks &amp; sendBetweenmails</button>
     <br>
     <button onclick={start}>Start</button>
     <br>
